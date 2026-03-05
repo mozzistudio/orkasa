@@ -54,6 +54,7 @@ export default function Chat({
   const [lastBrief, setLastBrief] = useState<Brief | null>(null);
   const [lastEstimation, setLastEstimation] = useState<Estimation | null>(null);
   const [briefReceived, setBriefReceived] = useState(false);
+  const [showWelcomeScreen, setShowWelcomeScreen] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -227,29 +228,18 @@ export default function Chat({
           }
 
           setChatMessages(chatMsgs);
+          setShowWelcomeScreen(false);
           return;
         }
       }
 
-      // Create new conversation
+      // Create new conversation — show welcome screen instead of auto-message
       const newId = await createConversation();
       if (newId) {
         setConversationId(newId);
         onConversationCreated?.(newId);
       }
-
-      // Add welcome message
-      const welcomeMsg: ChatMessage = {
-        id: 'welcome',
-        role: 'assistant',
-        content: WELCOME_MESSAGE,
-        timestamp: new Date(),
-      };
-      setChatMessages([welcomeMsg]);
-
-      if (newId) {
-        await saveMessage(newId, 'assistant', WELCOME_MESSAGE);
-      }
+      setShowWelcomeScreen(true);
     }
 
     init();
@@ -265,8 +255,28 @@ export default function Chat({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, isLoading]);
 
+  const handleStartChat = useCallback(() => {
+    setShowWelcomeScreen(false);
+    // Add welcome message when user starts
+    const welcomeMsg: ChatMessage = {
+      id: 'welcome',
+      role: 'assistant',
+      content: WELCOME_MESSAGE,
+      timestamp: new Date(),
+    };
+    setChatMessages([welcomeMsg]);
+    if (conversationId) {
+      saveMessage(conversationId, 'assistant', WELCOME_MESSAGE);
+    }
+  }, [conversationId]);
+
   const handleSendMessage = async (text: string, images: string[]) => {
     if (!conversationId) return;
+
+    // Hide welcome screen on first message
+    if (showWelcomeScreen) {
+      handleStartChat();
+    }
 
     // Cancel inactivity timer on user input
     cancelInactivityTimer();
@@ -357,18 +367,24 @@ export default function Chat({
 
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-4 py-6">
-        {chatMessages.map((message) => (
-          <MessageBubble
-            key={message.id}
-            message={message}
-            onWhatsAppSent={handleWhatsAppSent}
-          />
-        ))}
+        {showWelcomeScreen && chatMessages.length === 0 ? (
+          <WelcomeScreen onStart={handleStartChat} />
+        ) : (
+          <>
+            {chatMessages.map((message) => (
+              <MessageBubble
+                key={message.id}
+                message={message}
+                onWhatsAppSent={handleWhatsAppSent}
+              />
+            ))}
 
-        {isLoading && (
-          <div className="mb-4">
-            <TypingIndicator />
-          </div>
+            {isLoading && (
+              <div className="mb-4">
+                <TypingIndicator />
+              </div>
+            )}
+          </>
         )}
 
         <div ref={messagesEndRef} />
@@ -380,6 +396,46 @@ export default function Chat({
         disabled={isLoading}
         initialMessage={initialCategory ? `Necesito ayuda con ${initialCategory}` : undefined}
       />
+    </div>
+  );
+}
+
+// Welcome Screen Component (Task 2.1)
+function WelcomeScreen({ onStart }: { onStart: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center h-full px-6 text-center">
+      <img src="/dona-obra-logo.png" alt="Doña Obra" className="w-20 h-20 rounded-full shadow-lg mb-6" />
+      <h2 className="font-display text-2xl sm:text-3xl text-charcoal mb-2">
+        ¡Hola! Soy Doña Obra 👷‍♀️
+      </h2>
+      <p className="text-muted text-base mb-8 max-w-sm">
+        Tu vecina de confianza para servicios del hogar en Panamá
+      </p>
+
+      <div className="flex flex-col sm:flex-row items-center gap-6 mb-8">
+        <div className="flex flex-col items-center gap-1.5">
+          <span className="text-2xl">💬</span>
+          <span className="text-sm font-medium text-charcoal">Describe tu problema</span>
+        </div>
+        <div className="hidden sm:block w-8 h-px bg-gray-300" />
+        <div className="flex flex-col items-center gap-1.5">
+          <span className="text-2xl">💡</span>
+          <span className="text-sm font-medium text-charcoal">Estimación en 30 seg</span>
+        </div>
+        <div className="hidden sm:block w-8 h-px bg-gray-300" />
+        <div className="flex flex-col items-center gap-1.5">
+          <span className="text-2xl">👷</span>
+          <span className="text-sm font-medium text-charcoal">Elige tu contratista</span>
+        </div>
+      </div>
+
+      <button
+        onClick={onStart}
+        className="bg-coral hover:bg-coral-dark text-white px-8 py-3.5 rounded-full text-base font-semibold transition-all shadow-lg shadow-coral/25 hover:shadow-xl hover:shadow-coral/30 active:scale-[0.98] mb-3"
+      >
+        Obtener cotización →
+      </button>
+      <p className="text-xs text-muted">Gratis · Sin compromiso · Respuesta instantánea</p>
     </div>
   );
 }
