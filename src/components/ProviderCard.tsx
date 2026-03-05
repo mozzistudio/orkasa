@@ -1,18 +1,49 @@
-import { Provider, EstimationData } from '@/lib/types';
+import { Provider, Brief, Estimation } from '@/lib/types';
 import { Star, MapPin, DollarSign } from 'lucide-react';
 
 interface ProviderCardProps {
   provider: Provider;
   isTopPick?: boolean;
-  estimation?: EstimationData;
-  onShareProject?: (provider: Provider) => void;
+  brief?: Brief;
+  estimation?: Estimation;
+  onWhatsAppSent?: (providerName: string) => void;
 }
 
-export default function ProviderCard({ provider, isTopPick, estimation, onShareProject }: ProviderCardProps) {
-  const handleShareProject = () => {
-    if (onShareProject) {
-      onShareProject(provider);
-    }
+function buildWhatsAppMessage(brief: Brief, estimation: Estimation): string {
+  return `🏠 *NUEVA SOLICITUD - Doña Obra*
+
+👤 *Cliente:* ${brief.contact.name}
+📱 *WhatsApp:* ${brief.contact.whatsapp}
+
+🔧 *Servicio:* ${brief.category}
+📍 *Ubicación:* ${brief.location}
+⏰ *Urgencia:* ${brief.urgency}
+🕐 *Disponibilidad:* ${brief.availability}
+💰 *Presupuesto del cliente:* ${brief.budget}
+
+📝 *Descripción:*
+${brief.problem_summary}
+
+📸 *Fotos:* ${brief.photos_count} imagen(es) enviada(s) por el cliente
+
+💡 *Estimación Doña Obra:* B/. ${estimation.range_low}–${estimation.range_high}
+⏱️ *Duración estimada:* ${estimation.duration_estimate}
+
+---
+Responde para confirmar tu disponibilidad.
+_Enviado por Doña Obra 🏡_`;
+}
+
+export default function ProviderCard({ provider, isTopPick, brief, estimation, onWhatsAppSent }: ProviderCardProps) {
+  const handleSolicitar = () => {
+    if (!brief || !estimation) return;
+
+    const message = buildWhatsAppMessage(brief, estimation);
+    const phone = (provider.whatsapp || provider.phone || '').replace(/[^0-9+]/g, '');
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+
+    onWhatsAppSent?.(provider.name);
   };
 
   const primaryCategory = provider.categories[0] || '';
@@ -72,12 +103,13 @@ export default function ProviderCard({ provider, isTopPick, estimation, onShareP
           </div>
         )}
 
-        {/* Share Project button */}
+        {/* Solicitar button — opens WhatsApp with structured brief */}
         <button
-          onClick={handleShareProject}
-          className="w-full px-3 py-2 bg-coral text-white rounded-lg hover:bg-coral-dark transition-colors font-medium text-sm flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md"
+          onClick={handleSolicitar}
+          disabled={!brief || !estimation}
+          className="w-full px-3 py-2 bg-[#25D366] text-white rounded-lg hover:bg-[#1da851] transition-colors font-medium text-sm flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          📤 Compartir Proyecto
+          📲 Solicitar
         </button>
       </div>
     </div>

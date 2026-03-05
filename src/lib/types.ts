@@ -61,6 +61,35 @@ export interface EstimationData {
   topPickComment: string;
 }
 
+// New Brief types for the 3-phase collection flow
+export interface Brief {
+  problem_summary: string;
+  category: string;
+  location: string;
+  urgency: 'HOY' | 'Esta semana' | 'Sin prisa';
+  availability: string;
+  budget: string;
+  photos_count: number;
+  contact: { name: string; whatsapp: string };
+  collected_at: string;
+}
+
+export interface Estimation {
+  range_low: number;
+  range_high: number;
+  currency: string;
+  includes: string[];
+  excludes: string[];
+  duration_estimate: string;
+  confidence: 'alta' | 'media' | 'baja';
+}
+
+export interface ChatBrief {
+  brief: Brief;
+  estimation: Estimation;
+  providers: Provider[];
+}
+
 export interface ContactRequest {
   id: string;
   conversation_id: string | null;
@@ -77,7 +106,8 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   images?: string[];
-  estimation?: EstimationData;
+  estimation?: Estimation;
+  brief?: Brief;
   providers?: Provider[];
   topPickId?: string;
   timestamp: Date;

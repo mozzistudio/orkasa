@@ -1,13 +1,13 @@
-import { ChatMessage, Provider } from '@/lib/types';
+import { ChatMessage } from '@/lib/types';
 import ImagePreview from './ImagePreview';
 import ProviderCarousel from './ProviderCarousel';
 
 interface MessageBubbleProps {
   message: ChatMessage;
-  onShareProject?: (provider: Provider) => void;
+  onWhatsAppSent?: (providerName: string) => void;
 }
 
-export default function MessageBubble({ message, onShareProject }: MessageBubbleProps) {
+export default function MessageBubble({ message, onWhatsAppSent }: MessageBubbleProps) {
   const isUser = message.role === 'user';
 
   return (
@@ -45,8 +45,9 @@ export default function MessageBubble({ message, onShareProject }: MessageBubble
             <ProviderCarousel
               providers={message.providers}
               topPickId={message.topPickId}
+              brief={message.brief}
               estimation={message.estimation}
-              onShareProject={onShareProject}
+              onWhatsAppSent={onWhatsAppSent}
             />
           </div>
         )}

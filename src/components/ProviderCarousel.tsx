@@ -1,16 +1,17 @@
 'use client';
 
-import { Provider, EstimationData } from '@/lib/types';
+import { Provider, Brief, Estimation } from '@/lib/types';
 import ProviderCard from './ProviderCard';
 
 interface ProviderCarouselProps {
   providers: Provider[];
   topPickId?: string;
-  estimation?: EstimationData;
-  onShareProject?: (provider: Provider) => void;
+  brief?: Brief;
+  estimation?: Estimation;
+  onWhatsAppSent?: (providerName: string) => void;
 }
 
-export default function ProviderCarousel({ providers, topPickId, estimation, onShareProject }: ProviderCarouselProps) {
+export default function ProviderCarousel({ providers, topPickId, brief, estimation, onWhatsAppSent }: ProviderCarouselProps) {
   return (
     <>
       <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-hide">
@@ -19,8 +20,9 @@ export default function ProviderCarousel({ providers, topPickId, estimation, onS
             <ProviderCard
               provider={provider}
               isTopPick={provider.id === topPickId}
+              brief={brief}
               estimation={estimation}
-              onShareProject={onShareProject}
+              onWhatsAppSent={onWhatsAppSent}
             />
           </div>
         ))}
