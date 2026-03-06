@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 import { setConversationMeta } from './conversations';
 import { ConversationMeta } from './types';
 
-const SEED_KEY = 'donaObraSeeded';
+const SEED_KEY = 'donaObraSeeded_v2';
 
 const WELCOME_MESSAGE = `¡Ey, dimelo! 👷‍♀️ Soy Doña Obra, tu vecina de confianza pa' todo lo que es reparaciones y servicios del hogar. Yo conozco a todos los buenos maestros de la ciudad 💪
 
@@ -17,20 +17,23 @@ interface SeedMsg {
 
 interface SeedConv {
   meta: Omit<ConversationMeta, 'id'>;
+  user_name: string;
+  user_avatar: string;
+  topic: string;
   messages: SeedMsg[];
 }
 
-/* ── Sample conversations ── */
-
 const SAMPLE_CONVERSATIONS: SeedConv[] = [
-  // ─ Conversation 1: Plumbing repair (full flow with photo) ─
   {
     meta: {
       type: 'dona_obra',
-      title: 'Doña Obra',
-      lastMessage: '✅ ¡Solicitud enviada! Roberto M. recibirá tu...',
-      lastMessageAt: '', // set dynamically
+      title: 'Ana Martínez',
+      lastMessage: 'Incluye materiales básicos y mano de obra.',
+      lastMessageAt: '',
     },
+    user_name: 'Ana Martínez',
+    user_avatar: 'https://ui-avatars.com/api/?name=Ana+Martinez&background=E8614D&color=fff&size=128&bold=true',
+    topic: 'Tubería goteando',
     messages: [
       {
         role: 'assistant',
@@ -59,96 +62,14 @@ const SAMPLE_CONVERSATIONS: SeedConv[] = [
       {
         role: 'assistant',
         content:
-          'Listo mijo, aquí va tu estimación 💪\n\n🔧 Reparación de tubería de agua fría\n💰 $30 — $80\n⭐ Complejidad: Baja\n\nIncluye materiales básicos y mano de obra. Una tubería de agua fría con goteo activo se resuelve rápido.',
+          'Listo mijo, aquí va tu estimación 💪\n\n🔧 Reparación de tubería de agua fría\n💰 $30 — $80\n⭐ Complejidad: Baja\n\nIncluye materiales básicos y mano de obra.',
         delay_minutes: 6,
-      },
-      {
-        role: 'assistant',
-        content:
-          'Te encontré 3 plomeros verificados en tu zona 💪\n\n⭐ Roberto M. — 4.9★ (127 reseñas) · Desde $30\n🔧 Carlos P. — 4.8★ (89 reseñas) · Desde $35\n🛠️ Miguel A. — 4.7★ (64 reseñas) · Desde $40\n\nRoberto es mi pick — trabaja limpio y es super puntual 👌',
-        delay_minutes: 7,
-      },
-      {
-        role: 'user',
-        content: 'Quiero contactar a Roberto 👍',
-        delay_minutes: 9,
-      },
-      {
-        role: 'assistant',
-        content:
-          '✅ ¡Solicitud enviada!\n\nRoberto M. recibirá tu solicitud y se pondrá en contacto contigo pronto.\n\n📱 WhatsApp · Llamada disponible\n\n¡Va a quedar como nuevo ese baño, mijo! Roberto es de los mejores 🔧💪',
-        delay_minutes: 10,
-      },
-    ],
-  },
-
-  // ─ Conversation 2: Interior painting (full flow with photo) ─
-  {
-    meta: {
-      type: 'dona_obra',
-      title: 'Doña Obra',
-      lastMessage: '✅ ¡Solicitud enviada! José L. recibirá tu...',
-      lastMessageAt: '',
-    },
-    messages: [
-      {
-        role: 'assistant',
-        content: WELCOME_MESSAGE,
-        delay_minutes: 0,
-      },
-      {
-        role: 'user',
-        content: 'Quiero pintar la sala y el comedor de mi apartamento, ¿cuánto me sale?',
-        image_urls: [
-          'https://images.unsplash.com/photo-1631679706909-1844bbd07221?w=600&h=400&fit=crop&auto=format',
-        ],
-        delay_minutes: 1,
-      },
-      {
-        role: 'assistant',
-        content:
-          '¡Dale! Pintura le cambia la cara a cualquier espacio 🎨\n\n¿Cuántos metros cuadrados tiene el área entre la sala y el comedor? ¿Y ya tienes algún color en mente?',
-        delay_minutes: 2,
-      },
-      {
-        role: 'user',
-        content: 'Como 40 metros entre las dos áreas. Quiero un tono beige o crema',
-        delay_minutes: 4,
-      },
-      {
-        role: 'assistant',
-        content:
-          'Buena elección, los tonos claros dan amplitud y frescura 👌\n\n🎨 Pintura interior — Sala y comedor (40 m²)\n💰 $200 — $450\n⭐ Complejidad: Media\n\nIncluye materiales, preparación de superficies y 2 manos de pintura.',
-        delay_minutes: 5,
-      },
-      {
-        role: 'assistant',
-        content:
-          'Te encontré 2 pintores de confianza 💪\n\n⭐ José L. — 4.9★ (156 reseñas) · Desde $180\n🎨 Ana M. — 4.8★ (92 reseñas) · Desde $220\n\nJosé es un crack con la brocha, te lo recomiendo 🤙',
-        delay_minutes: 6,
-      },
-      {
-        role: 'user',
-        content: 'Me interesa José, tiene buenas reseñas 🙌',
-        delay_minutes: 8,
-      },
-      {
-        role: 'assistant',
-        content:
-          '✅ ¡Solicitud enviada!\n\nJosé L. recibirá tu solicitud y se pondrá en contacto contigo en las próximas horas.\n\n📱 WhatsApp · Llamada disponible\n\n¡Te va a quedar espectacular! José tiene mano de artista 🎨💪',
-        delay_minutes: 9,
       },
     ],
   },
 ];
 
-/**
- * Seeds sample conversations into the database.
- * Only runs once (tracked by localStorage flag).
- * Returns the created conversation metas for the sidebar.
- */
 export async function seedSampleConversations(): Promise<ConversationMeta[]> {
-  // Check if already seeded
   if (typeof window !== 'undefined' && localStorage.getItem(SEED_KEY)) {
     return [];
   }
@@ -157,10 +78,8 @@ export async function seedSampleConversations(): Promise<ConversationMeta[]> {
 
   for (const conv of SAMPLE_CONVERSATIONS) {
     try {
-      // Create conversation
       const baseTime = new Date();
-      // Offset conversations so they have different "started_at" times
-      const convOffset = SAMPLE_CONVERSATIONS.indexOf(conv) * 60; // 60 min apart
+      const convOffset = SAMPLE_CONVERSATIONS.indexOf(conv) * 60;
       const convStartTime = new Date(baseTime.getTime() - convOffset * 60 * 1000);
 
       const { data: convData, error: convError } = await supabase
@@ -172,6 +91,9 @@ export async function seedSampleConversations(): Promise<ConversationMeta[]> {
             convStartTime.getTime() +
               conv.messages[conv.messages.length - 1].delay_minutes * 60 * 1000
           ).toISOString(),
+          user_name: conv.user_name,
+          user_avatar: conv.user_avatar,
+          topic: conv.topic,
         })
         .select('id')
         .single();
@@ -183,7 +105,6 @@ export async function seedSampleConversations(): Promise<ConversationMeta[]> {
 
       const convId = convData.id;
 
-      // Insert messages with proper timestamps
       const messagesToInsert = conv.messages.map((msg) => ({
         conversation_id: convId,
         role: msg.role,
@@ -204,19 +125,18 @@ export async function seedSampleConversations(): Promise<ConversationMeta[]> {
         continue;
       }
 
-      // Set conversation metadata
       const lastMsg = conv.messages[conv.messages.length - 1];
       const meta: ConversationMeta = {
         id: convId,
         type: conv.meta.type,
-        title: conv.meta.title,
+        title: conv.user_name,
         lastMessage: lastMsg.content.slice(0, 80),
         lastMessageAt: new Date(
           convStartTime.getTime() + lastMsg.delay_minutes * 60 * 1000
         ).toISOString(),
-        providerName: conv.meta.providerName,
-        providerId: conv.meta.providerId,
-        providerAvatar: conv.meta.providerAvatar,
+        userName: conv.user_name,
+        userAvatar: conv.user_avatar,
+        topic: conv.topic,
       };
 
       setConversationMeta(meta);
@@ -226,7 +146,6 @@ export async function seedSampleConversations(): Promise<ConversationMeta[]> {
     }
   }
 
-  // Mark as seeded
   if (typeof window !== 'undefined' && createdMetas.length > 0) {
     localStorage.setItem(SEED_KEY, 'true');
   }

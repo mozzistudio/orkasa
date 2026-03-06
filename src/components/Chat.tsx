@@ -8,7 +8,7 @@ import ChatInput from './ChatInput';
 import TypingIndicator from './TypingIndicator';
 import { createConversation, saveMessage, getConversationMessages } from '@/lib/conversations';
 import { validateAndFetchProviders } from '@/lib/providers';
-import { RotateCcw, Menu, Home } from 'lucide-react';
+import { Menu, Search, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
 
 const WELCOME_MESSAGE = `¡Ey, dimelo! 👷‍♀️ Soy Doña Obra, tu vecina de confianza pa' todo lo que es reparaciones y servicios del hogar. Yo conozco a todos los buenos maestros de la ciudad 💪
@@ -40,6 +40,8 @@ interface ChatProps {
   onMessageUpdate?: (conversationId: string, lastMessage: string) => void;
   onToggleSidebar?: () => void;
   initialCategory?: string | null;
+  userName?: string;
+  userAvatar?: string;
 }
 
 export default function Chat({
@@ -48,6 +50,8 @@ export default function Chat({
   onMessageUpdate,
   onToggleSidebar,
   initialCategory,
+  userName,
+  userAvatar,
 }: ChatProps) {
   const [conversationId, setConversationId] = useState<string | null>(externalConversationId);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -88,7 +92,6 @@ export default function Chat({
     api: '/api/chat',
     body: { conversationId },
     onFinish: async (message) => {
-      // Start inactivity timer after each AI message
       startInactivityTimer();
 
       const result = parseBrief(message.content);
@@ -105,7 +108,6 @@ export default function Chat({
           chatBrief.brief.category
         );
 
-        // Message 1: Summary with estimation details
         const intro = textPart || chatBrief.brief.problem_summary;
         const estimationText = `${intro}\n\n🔧 ${chatBrief.brief.problem_summary}\n📍 ${chatBrief.brief.location}\n💰 B/. ${chatBrief.estimation.range_low} — ${chatBrief.estimation.range_high}\n⏱️ ${chatBrief.estimation.duration_estimate}\n📊 Confianza: ${chatBrief.estimation.confidence}`;
         const summaryMessage: ChatMessage = {
@@ -118,7 +120,6 @@ export default function Chat({
         };
         setChatMessages((prev) => [...prev, summaryMessage]);
 
-        // Message 2: Provider cards
         if (providers.length > 0) {
           const providerMessage: ChatMessage = {
             id: (Date.now() + 1).toString(),
@@ -133,7 +134,6 @@ export default function Chat({
           onMessageUpdate?.(conversationId!, `Te encontré ${providers.length} profesionales de confianza`);
         }
       } else {
-        // Regular message (no brief delimiter)
         addAssistantMessage(message.content);
         onMessageUpdate?.(conversationId!, message.content);
       }
@@ -164,7 +164,6 @@ export default function Chat({
           const chatMsgs: ChatMessage[] = [];
 
           for (const m of dbMessages) {
-            // Check for %%%BRIEF%%% delimiter (new format)
             const briefResult = parseBrief(m.content);
             if (briefResult && m.role === 'assistant') {
               const { textPart, chatBrief } = briefResult;
@@ -202,10 +201,8 @@ export default function Chat({
               continue;
             }
 
-            // Legacy: check for %%%ESTIMATION%%% delimiter (old format)
             const legacyDelimIdx = m.content.indexOf('%%%ESTIMATION%%%');
             if (legacyDelimIdx !== -1 && m.role === 'assistant') {
-              // Skip legacy estimation messages - show text part only
               const textPart = m.content.substring(0, legacyDelimIdx).trim();
               if (textPart) {
                 chatMsgs.push({
@@ -233,7 +230,6 @@ export default function Chat({
         }
       }
 
-      // Create new conversation — show welcome screen instead of auto-message
       const newId = await createConversation();
       if (newId) {
         setConversationId(newId);
@@ -257,7 +253,6 @@ export default function Chat({
 
   const handleStartChat = useCallback(() => {
     setShowWelcomeScreen(false);
-    // Add welcome message when user starts
     const welcomeMsg: ChatMessage = {
       id: 'welcome',
       role: 'assistant',
@@ -273,12 +268,10 @@ export default function Chat({
   const handleSendMessage = async (text: string, images: string[]) => {
     if (!conversationId) return;
 
-    // Hide welcome screen on first message
     if (showWelcomeScreen) {
       handleStartChat();
     }
 
-    // Cancel inactivity timer on user input
     cancelInactivityTimer();
 
     const userMessage: ChatMessage = {
@@ -322,42 +315,53 @@ export default function Chat({
   }, []);
 
   return (
-    <div className="flex flex-col flex-1 h-full bg-cream min-w-0">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-sand px-4 py-3 flex items-center gap-3 shadow-sm shrink-0">
+    <div className="flex flex-col flex-1 h-full min-w-0">
+      {/* WhatsApp-style Header */}
+      <div className="bg-wa-panel-header border-b border-wa-border px-4 py-[10px] flex items-center gap-3 shrink-0">
         {onToggleSidebar && (
           <button
             onClick={onToggleSidebar}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors md:hidden"
+            className="p-2 hover:bg-wa-hover rounded-full transition-colors md:hidden"
           >
-            <Menu className="w-5 h-5 text-gray-600" />
+            <Menu className="w-5 h-5 text-wa-text-secondary" />
           </button>
         )}
-        <img src="/dona-obra-logo.png" alt="Doña Obra" className="w-10 h-10 rounded-full object-cover shadow-lg" />
-        <div className="flex-1">
-          <h1 className="font-display font-black text-charcoal text-lg">Doña Obra</h1>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 bg-jungle rounded-full"></div>
-            <p className="text-sm text-jungle font-medium">En línea</p>
-          </div>
+        {userAvatar ? (
+          <img
+            src={userAvatar}
+            alt={userName || 'Usuario'}
+            className="w-10 h-10 rounded-full object-cover"
+          />
+        ) : (
+          <img
+            src="/dona-obra-logo.png"
+            alt="Doña Obra"
+            className="w-10 h-10 rounded-full object-cover"
+          />
+        )}
+        <div className="flex-1 min-w-0">
+          <h1 className="font-normal text-wa-text text-[16px] leading-tight">{userName || 'Doña Obra'}</h1>
+          <p className="text-[13px] text-wa-text-secondary leading-tight">en línea</p>
         </div>
-        <Link
-          href="/"
-          className="p-2.5 hover:bg-warm rounded-full transition-colors"
-          title="Ir al inicio"
-        >
-          <Home className="w-5 h-5 text-muted" />
-        </Link>
-        <button
-          onClick={() => {
-            localStorage.removeItem('conversationId');
-            window.location.reload();
-          }}
-          className="p-2.5 hover:bg-warm rounded-full transition-colors"
-          title="Nueva consulta"
-        >
-          <RotateCcw className="w-5 h-5 text-muted" />
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/"
+            className="p-2 hover:bg-wa-hover rounded-full transition-colors"
+            title="Ir al inicio"
+          >
+            <Search className="w-5 h-5 text-wa-text-secondary" />
+          </Link>
+          <button
+            onClick={() => {
+              localStorage.removeItem('conversationId');
+              window.location.reload();
+            }}
+            className="p-2 hover:bg-wa-hover rounded-full transition-colors"
+            title="Más opciones"
+          >
+            <MoreVertical className="w-5 h-5 text-wa-text-secondary" />
+          </button>
+        </div>
       </div>
 
       {/* Collection Progress Indicator */}
@@ -365,22 +369,26 @@ export default function Chat({
         <CollectionProgress messages={chatMessages} />
       )}
 
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
+      {/* Messages area with WhatsApp wallpaper */}
+      <div className="flex-1 overflow-y-auto wa-chat-bg px-3 sm:px-16 py-4">
         {showWelcomeScreen && chatMessages.length === 0 ? (
           <WelcomeScreen onStart={handleStartChat} />
         ) : (
           <>
-            {chatMessages.map((message) => (
+            {chatMessages.map((message, index) => (
               <MessageBubble
                 key={message.id}
                 message={message}
                 onWhatsAppSent={handleWhatsAppSent}
+                showTail={
+                  index === 0 ||
+                  chatMessages[index - 1]?.role !== message.role
+                }
               />
             ))}
 
             {isLoading && (
-              <div className="mb-4">
+              <div className="mb-1">
                 <TypingIndicator />
               </div>
             )}
@@ -400,47 +408,47 @@ export default function Chat({
   );
 }
 
-// Welcome Screen Component (Task 2.1)
+// Welcome Screen Component
 function WelcomeScreen({ onStart }: { onStart: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-      <img src="/dona-obra-logo.png" alt="Doña Obra" className="w-20 h-20 rounded-full shadow-lg mb-6" />
-      <h2 className="font-display text-2xl sm:text-3xl text-charcoal mb-2">
-        ¡Hola! Soy Doña Obra 👷‍♀️
-      </h2>
-      <p className="text-muted text-base mb-8 max-w-sm">
-        Tu vecina de confianza para servicios del hogar en Panamá
-      </p>
+      <div className="bg-white rounded-2xl shadow-sm p-8 max-w-md">
+        <img src="/dona-obra-logo.png" alt="Doña Obra" className="w-20 h-20 rounded-full mx-auto mb-6" />
+        <h2 className="text-2xl font-semibold text-wa-text mb-2">
+          ¡Hola! Soy Doña Obra 👷‍♀️
+        </h2>
+        <p className="text-wa-text-secondary text-[15px] mb-6">
+          Tu vecina de confianza para servicios del hogar en Panamá
+        </p>
 
-      <div className="flex flex-col sm:flex-row items-center gap-6 mb-8">
-        <div className="flex flex-col items-center gap-1.5">
-          <span className="text-2xl">💬</span>
-          <span className="text-sm font-medium text-charcoal">Describe tu problema</span>
+        <div className="flex flex-col items-start gap-4 mb-6 text-left">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">💬</span>
+            <span className="text-[14px] text-wa-text">Describe tu problema</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xl">💡</span>
+            <span className="text-[14px] text-wa-text">Estimación en 30 seg</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xl">👷</span>
+            <span className="text-[14px] text-wa-text">Elige tu contratista</span>
+          </div>
         </div>
-        <div className="hidden sm:block w-8 h-px bg-gray-300" />
-        <div className="flex flex-col items-center gap-1.5">
-          <span className="text-2xl">💡</span>
-          <span className="text-sm font-medium text-charcoal">Estimación en 30 seg</span>
-        </div>
-        <div className="hidden sm:block w-8 h-px bg-gray-300" />
-        <div className="flex flex-col items-center gap-1.5">
-          <span className="text-2xl">👷</span>
-          <span className="text-sm font-medium text-charcoal">Elige tu contratista</span>
-        </div>
+
+        <button
+          onClick={onStart}
+          className="w-full bg-wa-green hover:bg-wa-green-dark text-white py-3 rounded-lg text-[15px] font-medium transition-colors"
+        >
+          Obtener cotización
+        </button>
+        <p className="text-xs text-wa-text-secondary mt-3">Gratis · Sin compromiso · Respuesta instantánea</p>
       </div>
-
-      <button
-        onClick={onStart}
-        className="bg-coral hover:bg-coral-dark text-white px-8 py-3.5 rounded-full text-base font-semibold transition-all shadow-lg shadow-coral/25 hover:shadow-xl hover:shadow-coral/30 active:scale-[0.98] mb-3"
-      >
-        Obtener cotización →
-      </button>
-      <p className="text-xs text-muted">Gratis · Sin compromiso · Respuesta instantánea</p>
     </div>
   );
 }
 
-// Collection Progress Indicator Component (Task 1.2)
+// Collection Progress Indicator Component
 interface CollectedFields {
   problem_description: boolean;
   location: boolean;
@@ -482,42 +490,35 @@ function detectCollectedFields(messages: ChatMessage[]): CollectedFields {
     .map(m => m.content.toLowerCase())
     .join(' ');
 
-  // Problem: any user message after the welcome counts
   if (messages.some(m => m.role === 'user' && m.content.length > 5)) {
     fields.problem_description = true;
   }
 
-  // Location: barrio/area names or AI confirming location
   const locationPatterns = /bella vista|san francisco|el cangrejo|paitilla|obarrio|marbella|costa del este|casco viejo|condado del rey|el dorado|pueblo nuevo|juan díaz|parque lefevre|betania|río abajo|calidonia|ancón|santa ana|chorrillo|pedregal|tocumen|las cumbres|villa lucre|arraiján|la chorrera|barrio|corregimiento|sector|zona/i;
   if (locationPatterns.test(allText) || /¿?en qué (barrio|zona|sector|área)/i.test(allAssistantText)) {
     if (locationPatterns.test(allText)) fields.location = true;
   }
 
-  // Property type: casa/apto mentions
   const propertyPatterns = /\b(casa|apartamento|apto|piso \d|edificio|townhouse|ph|penthouse|local|oficina)\b/i;
   if (propertyPatterns.test(allText)) {
     fields.property_type = true;
   }
 
-  // Urgency
   const urgencyPatterns = /\b(urgente|hoy|mañana|esta semana|sin prisa|cuando pueda|lo antes posible|cuanto antes|ya|ahorita|pronto)\b/i;
   if (urgencyPatterns.test(allText)) {
     fields.urgency = true;
   }
 
-  // Availability
   const availabilityPatterns = /\b(mañana|tarde|noche|después de las|antes de las|entre|lunes|martes|miércoles|jueves|viernes|sábado|domingo|am|pm|hora|disponible|libre|cualquier hora|todo el día)\b/i;
   if (availabilityPatterns.test(allText)) {
     fields.availability = true;
   }
 
-  // Budget
   const budgetPatterns = /\b(presupuesto|budget|\$|b\/\.|balboas?|dólares?|no sé|no se|lo que cueste|barato|caro|económico|\d{2,})\b/i;
   if (budgetPatterns.test(allText) && messages.filter(m => m.role === 'user').length >= 4) {
     fields.budget_range = true;
   }
 
-  // Contact info
   const contactPatterns = /(\+?507|\+?1)?\s?\d{4}[-\s]?\d{4}|whatsapp|mi (nombre|número|cel|teléfono)|me llamo/i;
   if (contactPatterns.test(allText)) {
     fields.contact_info = true;
@@ -530,7 +531,7 @@ function CollectionProgress({ messages }: { messages: ChatMessage[] }) {
   const fields = detectCollectedFields(messages);
 
   return (
-    <div className="bg-white/60 backdrop-blur-sm border-b border-sand/50 px-3 py-2 shrink-0 overflow-x-auto">
+    <div className="bg-wa-panel-header border-b border-wa-border px-3 py-2 shrink-0 overflow-x-auto">
       <div className="flex items-center gap-1.5 min-w-max">
         {fieldConfig.map(({ key, icon, label }) => {
           const collected = fields[key];
@@ -539,7 +540,7 @@ function CollectionProgress({ messages }: { messages: ChatMessage[] }) {
               key={key}
               className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all duration-500 ${
                 collected
-                  ? 'bg-jungle/10 text-jungle'
+                  ? 'bg-wa-green/10 text-wa-green-dark'
                   : 'bg-gray-100 text-gray-400 animate-pulse'
               }`}
             >

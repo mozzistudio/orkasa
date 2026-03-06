@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, ChangeEvent } from 'react';
-import { Send, Camera } from 'lucide-react';
+import { Send, Paperclip, Smile, Mic } from 'lucide-react';
 import ImagePreview from './ImagePreview';
 
 interface ChatInputProps {
@@ -51,7 +51,7 @@ export default function ChatInput({ onSend, disabled, initialMessage }: ChatInpu
     const files = e.target.files;
     if (!files) return;
 
-    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    const MAX_SIZE = 5 * 1024 * 1024;
     const validFiles = Array.from(files).filter((file) => {
       if (file.size > MAX_SIZE) {
         alert(`${file.name} es muy grande. Máximo 5MB.`);
@@ -64,7 +64,6 @@ export default function ChatInput({ onSend, disabled, initialMessage }: ChatInpu
     const newImages = await Promise.all(imagePromises);
     setImages((prev) => [...prev, ...newImages]);
 
-    // Reset input so the same file can be re-selected
     e.target.value = '';
   };
 
@@ -87,11 +86,13 @@ export default function ChatInput({ onSend, disabled, initialMessage }: ChatInpu
     }
   };
 
+  const hasContent = message.trim() || images.length > 0;
+
   return (
-    <div className="border-t border-black/6 bg-white/80 backdrop-blur-md p-4 shrink-0">
+    <div className="bg-wa-panel-header border-t border-wa-border px-4 py-[10px] shrink-0">
       {/* Image preview */}
       {images.length > 0 && (
-        <div className="mb-3">
+        <div className="mb-3 bg-white rounded-lg p-2">
           <ImagePreview images={images} onRemove={handleRemoveImage} size="small" />
         </div>
       )}
@@ -99,11 +100,18 @@ export default function ChatInput({ onSend, disabled, initialMessage }: ChatInpu
       {/* Input area */}
       <div className="flex items-end gap-2">
         <button
+          disabled={disabled}
+          className="p-2 text-wa-text-secondary hover:text-wa-text transition-colors disabled:opacity-50"
+        >
+          <Smile className="w-6 h-6" />
+        </button>
+
+        <button
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled}
-          className="p-3 text-muted hover:bg-warm rounded-full transition-colors disabled:opacity-50"
+          className="p-2 text-wa-text-secondary hover:text-wa-text transition-colors disabled:opacity-50"
         >
-          <Camera className="w-5 h-5" />
+          <Paperclip className="w-6 h-6 rotate-45" />
         </button>
 
         <input
@@ -115,29 +123,38 @@ export default function ChatInput({ onSend, disabled, initialMessage }: ChatInpu
           className="hidden"
         />
 
-        <div className="flex-1 relative">
+        <div className="flex-1">
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             disabled={disabled}
-            placeholder="Escribe tu mensaje..."
-            className="w-full px-5 py-3 bg-warm border-2 border-transparent rounded-[100px] resize-none focus:outline-none focus:border-coral/30 disabled:opacity-50 text-charcoal placeholder:text-muted/60 transition-colors"
+            placeholder="Escribe un mensaje"
+            className="w-full px-4 py-[9px] bg-white border border-wa-border rounded-lg resize-none focus:outline-none disabled:opacity-50 text-[15px] text-wa-text placeholder:text-wa-text-secondary transition-colors"
             rows={1}
             style={{
-              minHeight: '48px',
+              minHeight: '42px',
               maxHeight: '120px',
             }}
           />
         </div>
 
-        <button
-          onClick={handleSend}
-          disabled={disabled || (!message.trim() && images.length === 0)}
-          className="p-3 bg-coral text-white rounded-full hover:bg-coral-dark transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_12px_rgba(232,97,77,0.35)] hover:shadow-[0_8px_20px_rgba(232,97,77,0.4)]"
-        >
-          <Send className="w-5 h-5" />
-        </button>
+        {hasContent ? (
+          <button
+            onClick={handleSend}
+            disabled={disabled}
+            className="p-2 text-wa-text-secondary hover:text-wa-text transition-colors disabled:opacity-50"
+          >
+            <Send className="w-6 h-6 text-wa-text-secondary" />
+          </button>
+        ) : (
+          <button
+            disabled={disabled}
+            className="p-2 text-wa-text-secondary hover:text-wa-text transition-colors disabled:opacity-50"
+          >
+            <Mic className="w-6 h-6" />
+          </button>
+        )}
       </div>
     </div>
   );

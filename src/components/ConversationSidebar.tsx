@@ -1,7 +1,8 @@
 'use client';
 
 import { ConversationMeta } from '@/lib/types';
-import { MessageSquarePlus, X } from 'lucide-react';
+import { MessageSquarePlus, Search, X } from 'lucide-react';
+import { useState } from 'react';
 
 interface ConversationSidebarProps {
   conversations: ConversationMeta[];
@@ -47,6 +48,16 @@ export default function ConversationSidebar({
   isOpen,
   onToggle,
 }: ConversationSidebarProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filtered = searchQuery
+    ? conversations.filter(
+        (c) =>
+          c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          c.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : conversations;
+
   return (
     <>
       {/* Mobile overlay */}
@@ -61,43 +72,57 @@ export default function ConversationSidebar({
       <div
         className={`
           fixed md:relative z-40 md:z-auto
-          h-full bg-white border-r border-sand
+          h-full bg-wa-sidebar border-r border-wa-border
           flex flex-col
           transition-all duration-300 ease-in-out
-          md:w-80 md:translate-x-0 md:shrink-0
+          md:w-[420px] md:translate-x-0 md:shrink-0
           ${isOpen ? 'w-80 translate-x-0' : 'w-0 -translate-x-full'}
           overflow-hidden
         `}
       >
-        {/* Sidebar header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-sand bg-white shrink-0">
-          <h2 className="font-bold text-gray-800 text-lg">Conversaciones</h2>
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 bg-wa-panel-header shrink-0">
+          <h2 className="font-bold text-wa-text text-xl">Chats</h2>
           <div className="flex items-center gap-1">
             <button
               onClick={onNewConversation}
-              className="p-2 hover:bg-warm rounded-full transition-colors"
+              className="p-2 hover:bg-wa-hover rounded-full transition-colors"
               title="Nueva conversación"
             >
-              <MessageSquarePlus className="w-5 h-5 text-coral" />
+              <MessageSquarePlus className="w-5 h-5 text-wa-text-secondary" />
             </button>
             <button
               onClick={onToggle}
-              className="p-2 hover:bg-warm rounded-full transition-colors md:hidden"
+              className="p-2 hover:bg-wa-hover rounded-full transition-colors md:hidden"
             >
-              <X className="w-5 h-5 text-gray-500" />
+              <X className="w-5 h-5 text-wa-text-secondary" />
             </button>
+          </div>
+        </div>
+
+        {/* Search bar */}
+        <div className="px-3 py-2 bg-wa-sidebar shrink-0">
+          <div className="flex items-center gap-3 bg-wa-input-bg rounded-lg px-3 py-1.5">
+            <Search className="w-4 h-4 text-wa-text-secondary shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar o empezar un nuevo chat"
+              className="flex-1 bg-transparent text-sm text-wa-text placeholder:text-wa-text-secondary outline-none py-1"
+            />
           </div>
         </div>
 
         {/* Conversation list */}
         <div className="flex-1 overflow-y-auto">
-          {conversations.length === 0 && (
-            <div className="p-6 text-center text-muted text-sm">
-              No hay conversaciones aún
+          {filtered.length === 0 && (
+            <div className="p-6 text-center text-wa-text-secondary text-sm">
+              No hay conversaciones
             </div>
           )}
 
-          {conversations.map((conv) => {
+          {filtered.map((conv) => {
             const isActive = conv.id === activeId;
             const isProvider = conv.type === 'provider';
 
@@ -106,58 +131,53 @@ export default function ConversationSidebar({
                 key={conv.id}
                 onClick={() => onSelectConversation(conv.id)}
                 className={`
-                  w-full text-left px-4 py-3 flex items-center gap-3
-                  border-b border-sand/50 transition-colors
-                  ${isActive ? 'bg-sand' : 'hover:bg-warm/50'}
+                  w-full text-left px-3 py-3 flex items-center gap-3
+                  transition-colors cursor-pointer
+                  ${isActive ? 'bg-wa-active' : 'hover:bg-wa-hover'}
                 `}
               >
                 {/* Avatar */}
-                <div className={`w-11 h-11 rounded-full flex items-center justify-center text-xl shrink-0 shadow-sm ${
-                  isProvider ? 'bg-jungle/10' : 'bg-coral/10'
-                }`}>
-                  {isProvider ? (
-                    conv.providerAvatar ? (
-                      <img
-                        src={conv.providerAvatar}
-                        alt={conv.providerName || ''}
-                        className="w-11 h-11 rounded-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-lg">🔧</span>
-                    )
+                <div className="w-[49px] h-[49px] rounded-full shrink-0 overflow-hidden bg-gray-200">
+                  {conv.userAvatar ? (
+                    <img
+                      src={conv.userAvatar}
+                      alt={conv.userName || conv.title}
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  ) : isProvider && conv.providerAvatar ? (
+                    <img
+                      src={conv.providerAvatar}
+                      alt={conv.providerName || ''}
+                      className="w-full h-full rounded-full object-cover"
+                    />
                   ) : (
-                    <img src="/dona-obra-logo.png" alt="Doña Obra" className="w-8 h-8 rounded-full object-cover" />
+                    <img
+                      src="/dona-obra-logo.png"
+                      alt="Doña Obra"
+                      className="w-full h-full rounded-full object-cover"
+                    />
                   )}
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 border-b border-wa-border/50 pb-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className={`font-semibold text-sm truncate ${
-                      isActive ? 'text-coral' : 'text-gray-800'
-                    }`}>
+                    <span className="font-normal text-[17px] text-wa-text truncate">
                       {conv.title}
                     </span>
-                    <span className="text-xs text-muted shrink-0">
+                    <span className="text-xs text-wa-text-secondary shrink-0">
                       {formatTime(conv.lastMessageAt)}
                     </span>
                   </div>
-                  <p className="text-xs text-muted truncate mt-0.5">
-                    {truncate(conv.lastMessage, 45)}
+                  <p className="text-[14px] text-wa-text-secondary truncate mt-0.5 leading-snug">
+                    {truncate(conv.lastMessage, 55)}
                   </p>
                 </div>
-
-                {/* Active indicator */}
-                {isActive && (
-                  <div className="w-2 h-2 bg-coral rounded-full shrink-0" />
-                )}
               </button>
             );
           })}
         </div>
       </div>
-
-      {/* Mobile toggle button (when sidebar is closed) - uses hamburger in chat header */}
     </>
   );
 }

@@ -1,47 +1,55 @@
 import { ChatMessage } from '@/lib/types';
 import ImagePreview from './ImagePreview';
 import ProviderCarousel from './ProviderCarousel';
+import { CheckCheck } from 'lucide-react';
 
 interface MessageBubbleProps {
   message: ChatMessage;
   onWhatsAppSent?: (providerName: string) => void;
+  showTail?: boolean;
 }
 
-export default function MessageBubble({ message, onWhatsAppSent }: MessageBubbleProps) {
+export default function MessageBubble({ message, onWhatsAppSent, showTail = true }: MessageBubbleProps) {
   const isUser = message.role === 'user';
 
-  return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
-      <div className={`max-w-[85%] md:max-w-[70%] ${isUser ? 'order-2' : 'order-1'}`}>
-        {!isUser && (
-          <div className="flex items-center gap-2 mb-1">
-            <img src="/dona-obra-logo.png" alt="Doña Obra" className="w-7 h-7 rounded-full object-cover" />
-            <span className="text-sm font-semibold text-gray-600">Doña Obra</span>
-          </div>
-        )}
+  const time = message.timestamp.toLocaleTimeString('es-PA', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
-        <div
-          className={`px-4 py-3 ${
-            isUser
-              ? 'bg-coral text-white rounded-[18px_18px_4px_18px] shadow-[0_2px_8px_rgba(232,97,77,0.25)]'
-              : 'bg-white text-charcoal rounded-[18px_18px_18px_4px] shadow-[0_2px_8px_rgba(0,0,0,0.04)]'
-          }`}
-        >
+  return (
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-[2px]`}>
+      <div
+        className={`relative max-w-[85%] sm:max-w-[65%] ${
+          isUser
+            ? `bg-wa-bubble-out rounded-lg ${showTail ? 'wa-bubble-out rounded-tr-none' : ''}`
+            : `bg-wa-bubble-in rounded-lg ${showTail ? 'wa-bubble-in rounded-tl-none' : ''}`
+        } shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] ${showTail ? 'mt-2' : ''}`}
+      >
+        <div className="px-[9px] pt-[6px] pb-[8px]">
           {message.images && message.images.length > 0 && (
-            <div className="mb-2">
+            <div className="mb-1 -mx-[9px] -mt-[6px] overflow-hidden rounded-t-lg">
               <ImagePreview images={message.images} size="small" />
             </div>
           )}
 
           {message.content && (
-            <p className={`whitespace-pre-wrap leading-relaxed ${isUser ? 'text-white' : 'text-charcoal'}`}>
+            <p className="whitespace-pre-wrap text-[14.2px] leading-[19px] text-[#111B21] pb-3">
               {message.content}
             </p>
           )}
+
+          {/* Timestamp + read receipt pinned bottom-right */}
+          <div className="flex items-center justify-end gap-[3px] -mt-2 -mb-[2px]">
+            <span className="text-[11px] text-[#667781] leading-none">{time}</span>
+            {isUser && (
+              <CheckCheck className="w-[16px] h-[16px] text-[#53BDEB] shrink-0" />
+            )}
+          </div>
         </div>
 
         {message.providers && message.providers.length > 0 && (
-          <div className="mt-3">
+          <div className="px-[9px] pb-[6px]">
             <ProviderCarousel
               providers={message.providers}
               topPickId={message.topPickId}
@@ -51,13 +59,6 @@ export default function MessageBubble({ message, onWhatsAppSent }: MessageBubble
             />
           </div>
         )}
-
-        <p className="text-xs text-muted mt-1.5 px-2">
-          {message.timestamp.toLocaleTimeString('es-PA', {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </p>
       </div>
     </div>
   );

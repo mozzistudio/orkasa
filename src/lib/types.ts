@@ -34,6 +34,9 @@ export interface Conversation {
   started_at: string;
   last_message_at: string;
   status: 'active' | 'completed' | 'abandoned';
+  user_name: string | null;
+  user_avatar: string | null;
+  topic: string | null;
 }
 
 export interface Message {
@@ -119,6 +122,9 @@ export interface ConversationMeta {
   title: string;
   lastMessage: string;
   lastMessageAt: string;
+  userName?: string;
+  userAvatar?: string;
+  topic?: string;
   providerName?: string;
   providerId?: string;
   providerAvatar?: string;
