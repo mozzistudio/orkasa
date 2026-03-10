@@ -350,7 +350,22 @@
   "phoneMockup": {
     "online": "online",
     "writeYourMessage": "Write your message...",
-    "professionals": "15+ professionals"
+    "professionals": "15+ professionals",
+    "msg1": "Hey, what's up! 👷‍♀️ I'm Doña Obra. Tell me what you need and I'll help you out 💪",
+    "msg2": "A pipe broke in my bathroom and it's leaking 😰",
+    "msg3": "No worries, that's an easy fix. Is it hot or cold water? 🔧",
+    "msg4": "Cold water",
+    "msg5Text": "Here's your estimate 💪",
+    "msg5Service": "🔧 Pipe repair",
+    "msg5Price": "💰 $30 — $80",
+    "msg5Complexity": "⭐ Complexity: Low",
+    "msg6Text": "I found 3 professionals for you 💪",
+    "msg6Name": "Roberto M.",
+    "msg6Rating": "4.9 ★ · From $30",
+    "msg7": "I'd like to contact Roberto 👍",
+    "msg8Status": "Request sent!",
+    "msg8Detail": "Roberto M. will receive your request and get in touch with you soon.",
+    "msg8Contact": "WhatsApp · Call"
   },
   "languageSwitcher": {
     "es": "Español",

@@ -350,7 +350,22 @@
   "phoneMockup": {
     "online": "en ligne",
     "writeYourMessage": "Écrivez votre message...",
-    "professionals": "15+ professionnels"
+    "professionals": "15+ professionnels",
+    "msg1": "Salut ! 👷‍♀️ Moi c'est Doña Obra. Dis-moi ce qu'il te faut et je m'en occupe 💪",
+    "msg2": "Un tuyau a cassé dans ma salle de bain et ça fuit 😰",
+    "msg3": "Pas de panique, c'est facile à réparer. C'est de l'eau chaude ou froide ? 🔧",
+    "msg4": "Eau froide",
+    "msg5Text": "Voici ton estimation 💪",
+    "msg5Service": "🔧 Réparation de tuyauterie",
+    "msg5Price": "💰 30 $ — 80 $",
+    "msg5Complexity": "⭐ Complexité : Faible",
+    "msg6Text": "J'ai trouvé 3 professionnels pour toi 💪",
+    "msg6Name": "Roberto M.",
+    "msg6Rating": "4.9 ★ · À partir de 30 $",
+    "msg7": "Je veux contacter Roberto 👍",
+    "msg8Status": "Demande envoyée !",
+    "msg8Detail": "Roberto M. recevra ta demande et te contactera bientôt.",
+    "msg8Contact": "WhatsApp · Appel"
   },
   "languageSwitcher": {
     "es": "Español",

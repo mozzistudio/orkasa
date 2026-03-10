@@ -350,7 +350,22 @@
   "phoneMockup": {
     "online": "online",
     "writeYourMessage": "Nachricht schreiben...",
-    "professionals": "15+ Fachkräfte"
+    "professionals": "15+ Fachkräfte",
+    "msg1": "Hallo! 👷‍♀️ Ich bin Doña Obra. Erzählen Sie mir, was Sie brauchen, und ich helfe Ihnen 💪",
+    "msg2": "Ein Rohr im Bad ist gebrochen und es tropft 😰",
+    "msg3": "Kein Problem, das ist schnell repariert. Ist es Kalt- oder Warmwasser? 🔧",
+    "msg4": "Kaltwasser",
+    "msg5Text": "Hier ist Ihr Kostenvoranschlag 💪",
+    "msg5Service": "🔧 Rohrreparatur",
+    "msg5Price": "💰 30 $ — 80 $",
+    "msg5Complexity": "⭐ Schwierigkeit: Gering",
+    "msg6Text": "Ich habe 3 Fachkräfte für Sie gefunden 💪",
+    "msg6Name": "Roberto M.",
+    "msg6Rating": "4.9 ★ · Ab 30 $",
+    "msg7": "Ich möchte Roberto kontaktieren 👍",
+    "msg8Status": "Anfrage gesendet!",
+    "msg8Detail": "Roberto M. erhält Ihre Anfrage und wird sich bald bei Ihnen melden.",
+    "msg8Contact": "WhatsApp · Anruf"
   },
   "languageSwitcher": {
     "es": "Español",

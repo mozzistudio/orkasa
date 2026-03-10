@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 
 /* ─── message definitions ─── */
 
@@ -11,113 +12,6 @@ interface ChatMsg {
   time: string;
   delay: number; // ms from start of cycle when this message appears
 }
-
-const MESSAGES: ChatMsg[] = [
-  {
-    id: 1,
-    type: 'bot',
-    content: '¡Ey, dimelo! 👷‍♀️ Soy Doña Obra. Cuéntame qué necesitas y te ayudo al tiro 💪',
-    time: '3:27 p.m.',
-    delay: 0,
-  },
-  {
-    id: 2,
-    type: 'user',
-    content: 'Se me rompió una tubería en el baño y está goteando 😰',
-    time: '3:27 p.m.',
-    delay: 2000,
-  },
-  // typing at 3500, replaced at 5000
-  {
-    id: 3,
-    type: 'bot',
-    content: 'Tranqui mijo, eso se arregla fácil. ¿Es agua fría o caliente? 🔧',
-    time: '3:27 p.m.',
-    delay: 5000,
-  },
-  {
-    id: 4,
-    type: 'user',
-    content: 'Agua fría',
-    time: '3:28 p.m.',
-    delay: 7000,
-  },
-  // typing at 8500, replaced at 10000
-  {
-    id: 5,
-    type: 'bot',
-    content: (
-      <>
-        Listo, aquí va tu estimación 💪
-        <span className="block mt-1.5">
-          <span className="block bg-sand rounded-lg px-2 py-1.5 space-y-0.5">
-            <span className="block text-[10px] text-charcoal font-semibold">🔧 Reparación de tubería</span>
-            <span className="block text-[10px] text-jungle font-bold">💰 $30 — $80</span>
-            <span className="block text-[10px] text-muted">⭐ Complejidad: Baja</span>
-          </span>
-        </span>
-      </>
-    ),
-    time: '3:28 p.m.',
-    delay: 10000,
-  },
-  // typing at 12500, replaced at 14000
-  {
-    id: 6,
-    type: 'bot',
-    content: (
-      <>
-        Te encontré 3 profesionales 💪
-        <span className="block mt-1.5">
-          <span className="flex items-center gap-2 bg-sand rounded-lg px-2 py-1.5">
-            <span className="w-7 h-7 bg-coral/20 rounded-full flex items-center justify-center shrink-0">
-              <span className="text-[10px]">⭐</span>
-            </span>
-            <span className="min-w-0">
-              <span className="block text-[10px] font-bold text-charcoal truncate">Roberto M.</span>
-              <span className="block text-[9px] text-jungle font-semibold">4.9 ★ · Desde $30</span>
-            </span>
-          </span>
-        </span>
-      </>
-    ),
-    time: '3:28 p.m.',
-    delay: 14000,
-  },
-  {
-    id: 7,
-    type: 'user',
-    content: 'Quiero contactar a Roberto 👍',
-    time: '3:29 p.m.',
-    delay: 16500,
-  },
-  // typing at 18000, replaced at 20000
-  {
-    id: 8,
-    type: 'bot',
-    content: (
-      <>
-        <span className="block mt-1">
-          <span className="block bg-jungle/10 border border-jungle/20 rounded-lg px-2.5 py-2 space-y-1">
-            <span className="flex items-center gap-1.5">
-              <span className="text-[12px]">✅</span>
-              <span className="block text-[10px] text-jungle font-bold">¡Solicitud enviada!</span>
-            </span>
-            <span className="block text-[9px] text-charcoal/70 leading-snug">
-              Roberto M. recibirá tu solicitud y se pondrá en contacto contigo pronto.
-            </span>
-            <span className="flex items-center gap-1 mt-0.5">
-              <span className="text-[10px]">📱</span>
-              <span className="block text-[9px] text-jungle font-semibold">WhatsApp · Llamada</span>
-            </span>
-          </span>
-        </span>
-      </>
-    ),
-    time: '3:29 p.m.',
-    delay: 20000,
-  },
-];
 
 /* Typing indicator appears before certain bot messages */
 const TYPING_SCHEDULE = [
@@ -148,9 +42,124 @@ function TypingDots() {
   );
 }
 
+/* ─── helper to build translated messages ─── */
+
+function buildMessages(t: (key: string) => string): ChatMsg[] {
+  return [
+    {
+      id: 1,
+      type: 'bot',
+      content: t('msg1'),
+      time: '3:27 p.m.',
+      delay: 0,
+    },
+    {
+      id: 2,
+      type: 'user',
+      content: t('msg2'),
+      time: '3:27 p.m.',
+      delay: 2000,
+    },
+    {
+      id: 3,
+      type: 'bot',
+      content: t('msg3'),
+      time: '3:27 p.m.',
+      delay: 5000,
+    },
+    {
+      id: 4,
+      type: 'user',
+      content: t('msg4'),
+      time: '3:28 p.m.',
+      delay: 7000,
+    },
+    {
+      id: 5,
+      type: 'bot',
+      content: (
+        <>
+          {t('msg5Text')}
+          <span className="block mt-1.5">
+            <span className="block bg-sand rounded-lg px-2 py-1.5 space-y-0.5">
+              <span className="block text-[10px] text-charcoal font-semibold">{t('msg5Service')}</span>
+              <span className="block text-[10px] text-jungle font-bold">{t('msg5Price')}</span>
+              <span className="block text-[10px] text-muted">{t('msg5Complexity')}</span>
+            </span>
+          </span>
+        </>
+      ),
+      time: '3:28 p.m.',
+      delay: 10000,
+    },
+    {
+      id: 6,
+      type: 'bot',
+      content: (
+        <>
+          {t('msg6Text')}
+          <span className="block mt-1.5">
+            <span className="flex items-center gap-2 bg-sand rounded-lg px-2 py-1.5">
+              <span className="w-7 h-7 bg-coral/20 rounded-full flex items-center justify-center shrink-0">
+                <span className="text-[10px]">⭐</span>
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[10px] font-bold text-charcoal truncate">{t('msg6Name')}</span>
+                <span className="block text-[9px] text-jungle font-semibold">{t('msg6Rating')}</span>
+              </span>
+            </span>
+          </span>
+        </>
+      ),
+      time: '3:28 p.m.',
+      delay: 14000,
+    },
+    {
+      id: 7,
+      type: 'user',
+      content: t('msg7'),
+      time: '3:29 p.m.',
+      delay: 16500,
+    },
+    {
+      id: 8,
+      type: 'bot',
+      content: (
+        <>
+          <span className="block mt-1">
+            <span className="block bg-jungle/10 border border-jungle/20 rounded-lg px-2.5 py-2 space-y-1">
+              <span className="flex items-center gap-1.5">
+                <span className="text-[12px]">✅</span>
+                <span className="block text-[10px] text-jungle font-bold">{t('msg8Status')}</span>
+              </span>
+              <span className="block text-[9px] text-charcoal/70 leading-snug">
+                {t('msg8Detail')}
+              </span>
+              <span className="flex items-center gap-1 mt-0.5">
+                <span className="text-[10px]">📱</span>
+                <span className="block text-[9px] text-jungle font-semibold">{t('msg8Contact')}</span>
+              </span>
+            </span>
+          </span>
+        </>
+      ),
+      time: '3:29 p.m.',
+      delay: 20000,
+    },
+  ];
+}
+
 /* ─── main component ─── */
 
 export default function AnimatedPhoneMockup() {
+  const t = useTranslations('phoneMockup');
+  const messages = useRef<ChatMsg[]>(buildMessages(t));
+
+  // Rebuild messages when translations change (locale switch)
+  useEffect(() => {
+    messages.current = buildMessages(t);
+  }, [t]);
+
   const [visibleIds, setVisibleIds] = useState<number[]>([]);
   const [showTyping, setShowTyping] = useState(false);
   const [fading, setFading] = useState(false);
@@ -170,7 +179,7 @@ export default function AnimatedPhoneMockup() {
     setFading(false);
 
     // Schedule each message
-    MESSAGES.forEach((msg) => {
+    messages.current.forEach((msg) => {
       const t = setTimeout(() => {
         if (pausedRef.current) return;
         setVisibleIds((prev) => [...prev, msg.id]);
@@ -225,7 +234,7 @@ export default function AnimatedPhoneMockup() {
     });
   }, [visibleIds, showTyping]);
 
-  const visibleMessages = MESSAGES.filter((m) => visibleIds.includes(m.id));
+  const visibleMessages = messages.current.filter((m) => visibleIds.includes(m.id));
 
   return (
     <div
@@ -265,7 +274,7 @@ export default function AnimatedPhoneMockup() {
               <p className="text-xs font-bold text-charcoal leading-tight">Doña Obra</p>
               <div className="flex items-center gap-1">
                 <div className="w-1.5 h-1.5 bg-jungle rounded-full" />
-                <p className="text-[10px] text-jungle">en línea</p>
+                <p className="text-[10px] text-jungle">{t('online')}</p>
               </div>
             </div>
           </div>
@@ -303,7 +312,7 @@ export default function AnimatedPhoneMockup() {
           {/* Input bar */}
           <div className="bg-white border-t border-black/5 px-2.5 py-2 flex items-center gap-2">
             <div className="flex-1 bg-cream rounded-full px-3 py-1.5">
-              <p className="text-[10px] text-muted">Escribe tu mensaje...</p>
+              <p className="text-[10px] text-muted">{t('writeYourMessage')}</p>
             </div>
             <div className="w-7 h-7 bg-coral rounded-full flex items-center justify-center shrink-0">
               <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -319,7 +328,7 @@ export default function AnimatedPhoneMockup() {
         <span className="text-xs font-semibold text-jungle">4.8 ⭐</span>
       </div>
       <div className="absolute -bottom-3 -left-6 bg-white rounded-xl shadow-lg px-3 py-1.5 border border-black/5 z-20">
-        <span className="text-xs font-semibold text-coral">15+ profesionales</span>
+        <span className="text-xs font-semibold text-coral">{t('professionals')}</span>
       </div>
     </div>
   );

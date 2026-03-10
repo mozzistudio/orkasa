@@ -350,7 +350,22 @@
   "phoneMockup": {
     "online": "en línea",
     "writeYourMessage": "Escribe tu mensaje...",
-    "professionals": "15+ profesionales"
+    "professionals": "15+ profesionales",
+    "msg1": "¡Ey, dimelo! 👷‍♀️ Soy Doña Obra. Cuéntame qué necesitas y te ayudo al tiro 💪",
+    "msg2": "Se me rompió una tubería en el baño y está goteando 😰",
+    "msg3": "Tranqui mijo, eso se arregla fácil. ¿Es agua fría o caliente? 🔧",
+    "msg4": "Agua fría",
+    "msg5Text": "Listo, aquí va tu estimación 💪",
+    "msg5Service": "🔧 Reparación de tubería",
+    "msg5Price": "💰 $30 — $80",
+    "msg5Complexity": "⭐ Complejidad: Baja",
+    "msg6Text": "Te encontré 3 profesionales 💪",
+    "msg6Name": "Roberto M.",
+    "msg6Rating": "4.9 ★ · Desde $30",
+    "msg7": "Quiero contactar a Roberto 👍",
+    "msg8Status": "¡Solicitud enviada!",
+    "msg8Detail": "Roberto M. recibirá tu solicitud y se pondrá en contacto contigo pronto.",
+    "msg8Contact": "WhatsApp · Llamada"
   },
   "languageSwitcher": {
     "es": "Español",
