@@ -1,0 +1,365 @@
+{
+  "nav": {
+    "producto": "Producto",
+    "precios": "Precios",
+    "recursos": "Recursos",
+    "login": "Iniciar sesión",
+    "startFree": "Empezar gratis"
+  },
+  "hero": {
+    "line1": "Vendé más propiedades.",
+    "line2": "En menos tiempo.",
+    "subtitle": "La plataforma inmobiliaria con IA que automatiza publicaciones, califica leads y cierra negocios más rápido.",
+    "cta1": "Probar 14 días",
+    "cta2": "Ver demo"
+  },
+  "logos": {
+    "title": "Usado por agencias en Panamá, RD, Costa Rica, Colombia, México"
+  },
+  "pillars": {
+    "listing": {
+      "title": "Listing studio IA",
+      "description": "Genera descripciones, optimiza fotos y publica en 28+ portales con un clic.",
+      "link": "Saber más"
+    },
+    "multipost": {
+      "title": "Multi-posting inteligente",
+      "description": "Publica y sincroniza tus propiedades en todos los portales desde un solo lugar.",
+      "link": "Saber más"
+    },
+    "leads": {
+      "title": "Lead engine 24/7",
+      "description": "Responde, califica y asigna leads automáticamente, de día o de noche.",
+      "link": "Saber más"
+    }
+  },
+  "stats": {
+    "hours": "15h",
+    "hoursLabel": "ahorradas/agente/semana",
+    "leads": "3.2×",
+    "leadsLabel": "más leads calificados",
+    "response": "<5min",
+    "responseLabel": "tiempo de respuesta IA",
+    "portals": "28+",
+    "portalsLabel": "portales conectados"
+  },
+  "pricing": {
+    "title": "Precios simples, sin sorpresas",
+    "subtitle": "Todos los planes incluyen 14 días de prueba. Sin tarjeta de crédito.",
+    "monthly": "/mes",
+    "cta": "Comenzar prueba",
+    "contact": "Contactar ventas",
+    "solo": {
+      "name": "Solo",
+      "price": "39",
+      "description": "Para agentes independientes",
+      "features": ["Hasta 50 listings", "3 portales", "Lead engine básico", "Soporte email"]
+    },
+    "team": {
+      "name": "Team",
+      "price": "89",
+      "description": "Para equipos de 2-10 agentes",
+      "popular": "Popular",
+      "features": ["Listings ilimitados", "15 portales", "Lead engine avanzado", "AI listing studio", "Reportes de equipo", "Soporte prioritario"]
+    },
+    "brokerage": {
+      "name": "Brokerage",
+      "price": "149",
+      "description": "Para brokerages establecidos",
+      "features": ["Todo en Team", "28+ portales", "API access", "Compliance module", "Account manager dedicado", "SSO & audit logs"]
+    }
+  },
+  "footer": {
+    "producto": "Producto",
+    "listings": "Listings",
+    "leads": "Leads",
+    "analytics": "Analítica",
+    "pricing": "Precios",
+    "empresa": "Empresa",
+    "about": "Sobre nosotros",
+    "blog": "Blog",
+    "careers": "Carreras",
+    "contact": "Contacto",
+    "legal": "Legal",
+    "privacy": "Privacidad",
+    "terms": "Términos",
+    "soporte": "Soporte",
+    "docs": "Documentación",
+    "api": "API",
+    "status": "Estado del sistema",
+    "copyright": "© 2026 Orkasa Inc. RUC E-8-193721. Panamá."
+  },
+  "login": {
+    "title": "Inicia sesión en Orkasa",
+    "email": "Email",
+    "emailPlaceholder": "tu@agencia.com",
+    "password": "Contraseña",
+    "submit": "Continuar",
+    "noAccount": "¿No tenés cuenta?",
+    "register": "Registrate",
+    "testimonial": "Orkasa nos ahorró 15 horas semanales en publicaciones y seguimiento de leads. Es como tener tres agentes extra.",
+    "testimonialAuthor": "Carolina Méndez",
+    "testimonialRole": "Directora, Premier Real Estate Panamá"
+  },
+  "signup": {
+    "title": "Creá tu cuenta",
+    "subtitle": "14 días de prueba gratis. Sin tarjeta de crédito.",
+    "fullName": "Nombre completo",
+    "fullNamePlaceholder": "Juan Pérez",
+    "brokerageName": "Nombre de la agencia",
+    "brokerageNamePlaceholder": "Premier Real Estate",
+    "email": "Email",
+    "emailPlaceholder": "tu@agencia.com",
+    "password": "Contraseña",
+    "passwordHint": "Mínimo 8 caracteres",
+    "submit": "Crear cuenta",
+    "haveAccount": "¿Ya tenés cuenta?",
+    "loginLink": "Iniciar sesión",
+    "checkEmail": "Revisá tu email",
+    "checkEmailDescription": "Te enviamos un link de confirmación a {email}. Hacé click ahí para activar tu cuenta.",
+    "testimonial": "El AI listing studio nos ahorra 8 horas por semana en redacción. Publicamos en 3 minutos lo que antes tomaba media hora.",
+    "testimonialAuthor": "Diego Vásquez",
+    "testimonialRole": "Founder, Vásquez Bienes Raíces"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "inventory": "Inventario",
+    "leads": "Leads",
+    "agents": "Agentes",
+    "analytics": "Análisis",
+    "compliance": "Compliance",
+    "settings": "Configuración",
+    "search": "Buscar...",
+    "uploadProperty": "Cargar propiedad",
+    "recentLeads": "Últimos leads",
+    "featuredProperties": "Propiedades destacadas",
+    "lead": "Lead",
+    "origin": "Origen",
+    "score": "Score",
+    "assigned": "Asignado",
+    "action": "Acción",
+    "view": "Ver",
+    "emptyTitle": "Tu brokerage está vacío",
+    "emptyDescription": "Cargá una propiedad o sembramos datos demo para que veas cómo funciona el dashboard.",
+    "seedDemo": "Sembrar datos demo",
+    "seeding": "Sembrando..."
+  },
+  "compliance": {
+    "title": "Compliance",
+    "subtitle": "KYC y verificaciones AML por cliente",
+    "empty": "Sin verificaciones pendientes. Cuando un lead pase a Negociando, se creará automáticamente una verificación KYC.",
+    "table": {
+      "lead": "Lead",
+      "type": "Tipo",
+      "status": "Estado",
+      "risk": "Riesgo",
+      "due": "Vence",
+      "created": "Creado"
+    },
+    "type": {
+      "kyc": "KYC",
+      "aml": "AML",
+      "sanctions": "Sanciones",
+      "pep": "PEP"
+    },
+    "status": {
+      "pending": "Pendiente",
+      "in_review": "En revisión",
+      "approved": "Aprobada",
+      "rejected": "Rechazada",
+      "requires_action": "Acción requerida"
+    },
+    "risk": {
+      "low": "Bajo",
+      "medium": "Medio",
+      "high": "Alto",
+      "critical": "Crítico"
+    },
+    "approve": "Aprobar",
+    "reject": "Rechazar",
+    "review": "Revisar"
+  },
+  "agents": {
+    "title": "Equipo",
+    "subtitle": "Agentes de tu brokerage",
+    "table": {
+      "name": "Nombre",
+      "email": "Email",
+      "role": "Rol",
+      "joined": "Se unió"
+    },
+    "role": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "agent": "Agent"
+    },
+    "invite": "Invitar agente",
+    "comingSoon": "Pronto: invitaciones por email + roles personalizados"
+  },
+  "settings": {
+    "title": "Configuración",
+    "profile": "Tu perfil",
+    "brokerage": "Tu brokerage",
+    "fullName": "Nombre completo",
+    "email": "Email",
+    "phone": "Teléfono",
+    "brokerageName": "Nombre de la agencia",
+    "ruc": "RUC",
+    "country": "País",
+    "save": "Guardar cambios",
+    "logout": "Cerrar sesión"
+  },
+  "analytics": {
+    "title": "Análisis",
+    "subtitle": "Métricas y KPIs de tu brokerage",
+    "kpi": {
+      "totalProperties": "Propiedades totales",
+      "activeProperties": "Activas",
+      "totalLeads": "Leads totales",
+      "avgScore": "Score IA promedio",
+      "conversionRate": "Tasa conversión"
+    },
+    "chart": {
+      "leadsByStatus": "Leads por estado",
+      "propertiesByType": "Propiedades por tipo",
+      "leadsOverTime": "Leads en el tiempo"
+    }
+  },
+  "leads": {
+    "title": "Leads",
+    "new": "Nuevo lead",
+    "create": "Crear lead",
+    "save": "Guardar cambios",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "back": "Volver",
+    "empty": "Aún no tenés leads. Creá el primero o esperá que el lead engine los califique.",
+    "view": {
+      "table": "Tabla",
+      "kanban": "Pipeline"
+    },
+    "form": {
+      "fullName": "Nombre completo",
+      "fullNamePlaceholder": "Ej: María García",
+      "email": "Email",
+      "emailPlaceholder": "lead@gmail.com",
+      "phone": "Teléfono",
+      "phonePlaceholder": "+507 6XXX-XXXX",
+      "origin": "Origen",
+      "status": "Estado",
+      "property": "Propiedad de interés",
+      "noProperty": "Ninguna",
+      "assignedAgent": "Asignado a",
+      "noAssignment": "Sin asignar",
+      "aiScore": "AI Score (0-100)",
+      "notes": "Notas",
+      "notesPlaceholder": "Notas internas, contexto, próximos pasos..."
+    },
+    "table": {
+      "name": "Lead",
+      "origin": "Origen",
+      "status": "Estado",
+      "score": "Score",
+      "assigned": "Asignado",
+      "property": "Propiedad",
+      "created": "Creado"
+    },
+    "origin": {
+      "portal": "Portal",
+      "web": "Web",
+      "referido": "Referido",
+      "whatsapp": "WhatsApp",
+      "walk_in": "Walk-in",
+      "other": "Otro"
+    },
+    "status": {
+      "new": "Nuevo",
+      "contacted": "Contactado",
+      "qualified": "Calificado",
+      "viewing_scheduled": "Visita agendada",
+      "negotiating": "Negociando",
+      "closed_won": "Ganado",
+      "closed_lost": "Perdido"
+    },
+    "interaction": {
+      "title": "Interacciones",
+      "addNote": "Agregar nota",
+      "notePlaceholder": "Escribí una nota o llamada...",
+      "submit": "Agregar",
+      "empty": "Sin interacciones aún. Agregá la primera nota.",
+      "type": {
+        "note": "Nota",
+        "call": "Llamada",
+        "email": "Email",
+        "whatsapp": "WhatsApp"
+      }
+    },
+    "deleteConfirm": "¿Eliminar este lead? Esta acción no se puede deshacer.",
+    "kanban": {
+      "title": "Pipeline",
+      "drag": "Arrastrá los leads entre columnas",
+      "noProperty": "Sin propiedad"
+    }
+  },
+  "properties": {
+    "title": "Inventario",
+    "new": "Nueva propiedad",
+    "create": "Crear propiedad",
+    "save": "Guardar cambios",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "back": "Volver",
+    "empty": "Aún no tenés propiedades. Creá la primera.",
+    "searchPlaceholder": "Buscar por título, ID, barrio...",
+    "table": {
+      "title": "Título",
+      "type": "Tipo",
+      "listing": "Operación",
+      "status": "Estado",
+      "price": "Precio",
+      "score": "Score",
+      "updated": "Actualizado"
+    },
+    "form": {
+      "title": "Título",
+      "titlePlaceholder": "Ej: Costa del Este PH 3BR",
+      "description": "Descripción",
+      "descriptionPlaceholder": "Detalles, amenities, ubicación...",
+      "propertyType": "Tipo",
+      "listingType": "Operación",
+      "status": "Estado",
+      "price": "Precio",
+      "currency": "Moneda",
+      "bedrooms": "Dormitorios",
+      "bathrooms": "Baños",
+      "areaM2": "Área (m²)",
+      "address": "Dirección",
+      "neighborhood": "Barrio",
+      "city": "Ciudad",
+      "externalId": "ID externo",
+      "externalIdPlaceholder": "Opcional"
+    },
+    "type": {
+      "apartment": "Apartamento",
+      "house": "Casa",
+      "condo": "Condo",
+      "land": "Terreno",
+      "commercial": "Comercial"
+    },
+    "listingType": {
+      "sale": "Venta",
+      "rent": "Alquiler"
+    },
+    "status": {
+      "draft": "Borrador",
+      "active": "Activa",
+      "pending": "Pendiente",
+      "sold": "Vendida",
+      "rented": "Alquilada",
+      "archived": "Archivada"
+    },
+    "deleteConfirm": "¿Eliminar esta propiedad? Esta acción no se puede deshacer.",
+    "createdAt": "Creado",
+    "updatedAt": "Actualizado"
+  }
+}
