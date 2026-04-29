@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { ChevronDown } from 'lucide-react'
 import { ImageUpload, type StoredImage } from '@/components/app/image-upload'
-import { AIDescriptionButton } from '@/components/app/ai-description-button'
+import { AIListingReview } from '@/components/app/ai-listing-review'
 
 const PROPERTY_TYPES = ['apartment', 'house', 'condo', 'land', 'commercial'] as const
 const LISTING_TYPES = ['sale', 'rent'] as const
@@ -93,6 +93,8 @@ export function PropertyForm({
   const [pending, startTransition] = useTransition()
   // Description is controlled so the AI Studio can write to it
   const [description, setDescription] = useState(defaults.description ?? '')
+  // Images lifted into form state so the AI review can reorder them
+  const [images, setImages] = useState<StoredImage[]>(defaults.images ?? [])
 
   function handleSubmit(formData: FormData) {
     setError(null)
@@ -113,11 +115,20 @@ export function PropertyForm({
 
       {/* Section: images */}
       <div className="space-y-2">
-        <Label className="text-[13px] text-ink">Imágenes</Label>
+        <div className="flex items-center justify-between">
+          <Label className="text-[13px] text-ink">Imágenes</Label>
+          <AIListingReview
+            formId="property-form"
+            images={images}
+            onApplyText={(text) => setDescription(text)}
+            onApplyImageOrder={(next) => setImages(next)}
+          />
+        </div>
         <ImageUpload
           brokerageId={brokerageId}
           propertyId={propertyId}
-          initialImages={defaults.images ?? []}
+          images={images}
+          onImagesChange={setImages}
         />
       </div>
 
@@ -139,15 +150,9 @@ export function PropertyForm({
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="description" className="text-[13px] text-ink">
-              {t('form.description')}
-            </Label>
-            <AIDescriptionButton
-              formId="property-form"
-              onApply={(text) => setDescription(text)}
-            />
-          </div>
+          <Label htmlFor="description" className="text-[13px] text-ink">
+            {t('form.description')}
+          </Label>
           <Textarea
             id="description"
             name="description"

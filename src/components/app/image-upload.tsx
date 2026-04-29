@@ -17,13 +17,36 @@ export function ImageUpload({
   propertyId,
   initialImages,
   hiddenInputName = 'images',
+  // Optional controlled mode — parent owns the images state (used by AI review for reordering)
+  images: controlledImages,
+  onImagesChange,
 }: {
   brokerageId: string
   propertyId: string
   initialImages?: StoredImage[]
   hiddenInputName?: string
+  images?: StoredImage[]
+  onImagesChange?: (next: StoredImage[]) => void
 }) {
-  const [images, setImages] = useState<StoredImage[]>(initialImages ?? [])
+  const [internalImages, setInternalImages] = useState<StoredImage[]>(
+    initialImages ?? [],
+  )
+  const isControlled = controlledImages !== undefined
+  const images = isControlled ? controlledImages : internalImages
+  const setImages = (
+    updater: StoredImage[] | ((prev: StoredImage[]) => StoredImage[]),
+  ) => {
+    const next =
+      typeof updater === 'function'
+        ? (updater as (p: StoredImage[]) => StoredImage[])(images)
+        : updater
+    if (isControlled) {
+      onImagesChange?.(next)
+    } else {
+      setInternalImages(next)
+      onImagesChange?.(next)
+    }
+  }
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

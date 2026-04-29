@@ -5,9 +5,15 @@ import {
   LISTING_STUDIO_MODEL,
   LISTING_STUDIO_SYSTEM_PROMPT,
 } from '@/lib/anthropic'
+import type Anthropic from '@anthropic-ai/sdk'
 
-export type GenerateDescriptionInput = {
+// =============================================================================
+// Listing review — analyzes photos + text and returns suggestions to validate
+// =============================================================================
+
+export type ReviewListingInput = {
   title: string
+  description?: string | null
   property_type: string
   listing_type: string
   bedrooms?: number | null
@@ -17,37 +23,100 @@ export type GenerateDescriptionInput = {
   currency?: string | null
   neighborhood?: string | null
   city?: string | null
-  hint?: string | null
+  /** Public URLs of the property images (max 8 reviewed) */
+  imageUrls: string[]
 }
 
-export type GenerateDescriptionResult =
-  | { description: string }
+export type TextVariant = {
+  tone: 'formal' | 'social' | 'concise'
+  description: string
+}
+
+export type PhotoReview = {
+  /** Index in the original imageUrls array */
+  index: number
+  /** Score 0-100 — marketing quality */
+  score: number
+  /** One-line critique in Spanish */
+  critique: string
+  /** Suggested accessibility alt text in Spanish */
+  altText: string
+  /** Suggested final position (0 = hero, 1 = second, ...) */
+  suggestedOrder: number
+}
+
+export type ReviewListingResult =
+  | {
+      textVariants: TextVariant[]
+      photoReview: PhotoReview[]
+    }
   | { error: string }
 
-function formatBrief(input: GenerateDescriptionInput): string {
+const REVIEW_SYSTEM_PROMPT = `${LISTING_STUDIO_SYSTEM_PROMPT}
+
+# Review mode
+
+You are now reviewing a draft listing. Output STRICT JSON in this shape:
+
+{
+  "textVariants": [
+    { "tone": "formal", "description": "..." },
+    { "tone": "social", "description": "..." },
+    { "tone": "concise", "description": "..." }
+  ],
+  "photoReview": [
+    { "index": 0, "score": 87, "critique": "...", "altText": "...", "suggestedOrder": 0 }
+  ]
+}
+
+# Text variants — exactly 3
+- tone "formal": portal-style, factual, 110-160 words. Like the brand voice rules above.
+- tone "social": Facebook/Instagram-friendly, hook-first, 80-120 words, line breaks between sentences. Casual but professional Spanish.
+- tone "concise": mobile-first, 50-80 words, 1-2 short paragraphs, the absolute essentials.
+
+All three respect the brand voice (no "perfect/luxury/dream", sentence case, no emojis, never start with "Discover").
+
+# Photo review — one entry per input image
+- index: matches the input image index (0-based)
+- score: 0-100. Anchor: 90+ professional/wide-angle/well-lit. 70-89 good amateur. 50-69 acceptable but flawed. <50 reshoot recommended.
+- critique: one short Spanish sentence about lighting, angle, framing, clutter, or missing elements. Be specific ("Sombra dura en pared izquierda, considerar reshoot en hora dorada"). Don't praise — only flag what to improve, OR confirm "Bien iluminada, encuadre amplio."
+- altText: descriptive Spanish sentence for screen readers (15-25 words). E.g. "Sala de estar con sofá gris, ventanal al fondo y piso de madera clara."
+- suggestedOrder: 0 = hero (use the most photogenic, wide-angle, well-lit photo). Then 1, 2, 3... ordered by marketing impact.
+
+# Hard rules
+- Output ONLY the JSON object. No preamble, no markdown fences, no explanation.
+- Be honest about photo quality — these are real listings, brokers need actionable feedback, not flattery.
+- The 3 text variants must be meaningfully different (not just length differences).`
+
+function buildBrief(input: ReviewListingInput): string {
   const facts = [
     `Título: ${input.title}`,
     `Tipo: ${input.property_type}`,
     `Operación: ${input.listing_type}`,
-    input.bedrooms !== null && input.bedrooms !== undefined ? `Dormitorios: ${input.bedrooms}` : null,
-    input.bathrooms !== null && input.bathrooms !== undefined ? `Baños: ${input.bathrooms}` : null,
-    input.area_m2 !== null && input.area_m2 !== undefined ? `Área: ${input.area_m2} m²` : null,
-    input.price !== null && input.price !== undefined ? `Precio: ${input.currency ?? 'USD'} ${input.price.toLocaleString('en-US')}` : null,
+    input.bedrooms != null ? `Dormitorios: ${input.bedrooms}` : null,
+    input.bathrooms != null ? `Baños: ${input.bathrooms}` : null,
+    input.area_m2 != null ? `Área: ${input.area_m2} m²` : null,
+    input.price != null
+      ? `Precio: ${input.currency ?? 'USD'} ${input.price.toLocaleString('en-US')}`
+      : null,
     input.neighborhood ? `Barrio: ${input.neighborhood}` : null,
     input.city ? `Ciudad: ${input.city}` : null,
-  ].filter(Boolean) as string[]
-
-  let prompt = `Generá una descripción para esta propiedad inmobiliaria:\n\n${facts.join('\n')}`
-  if (input.hint && input.hint.trim().length > 0) {
-    prompt += `\n\nNotas adicionales del agente: ${input.hint.trim()}`
-  }
-  prompt += `\n\nDevolvé únicamente el texto de la descripción, sin encabezado ni comillas.`
-  return prompt
+    input.description ? `Descripción actual del agente: ${input.description}` : null,
+  ].filter(Boolean)
+  return [
+    'Revisá esta propiedad inmobiliaria. Generá 3 variantes de descripción Y revisá cada foto.',
+    '',
+    facts.join('\n'),
+    '',
+    `Total de fotos a revisar: ${input.imageUrls.length}.`,
+    '',
+    'Devolvé únicamente el JSON especificado, sin texto adicional.',
+  ].join('\n')
 }
 
-export async function generateDescription(
-  input: GenerateDescriptionInput,
-): Promise<GenerateDescriptionResult> {
+export async function reviewListing(
+  input: ReviewListingInput,
+): Promise<ReviewListingResult> {
   const client = getAnthropicClient()
   if (!client) {
     return {
@@ -59,20 +128,44 @@ export async function generateDescription(
   if (!input.title || !input.property_type || !input.listing_type) {
     return { error: 'Faltan título, tipo o operación.' }
   }
+  if (input.imageUrls.length === 0) {
+    return { error: 'Subí al menos una foto antes de revisar con IA.' }
+  }
+
+  // Cap at 8 photos for the request — vision tokens add up fast
+  const reviewedImages = input.imageUrls.slice(0, 8)
+
+  // Build multimodal user message: text brief + each image
+  const content: Anthropic.ContentBlockParam[] = [
+    { type: 'text', text: buildBrief({ ...input, imageUrls: reviewedImages }) },
+  ]
+  for (let i = 0; i < reviewedImages.length; i++) {
+    const url = reviewedImages[i]
+    if (!url) continue
+    content.push(
+      {
+        type: 'text',
+        text: `Foto índice ${i}:`,
+      },
+      {
+        type: 'image',
+        source: { type: 'url', url },
+      },
+    )
+  }
 
   try {
     const response = await client.messages.create({
       model: LISTING_STUDIO_MODEL,
-      max_tokens: 800,
-      // Cache the system prompt (stable across all property generations)
+      max_tokens: 4000,
       system: [
         {
           type: 'text',
-          text: LISTING_STUDIO_SYSTEM_PROMPT,
+          text: REVIEW_SYSTEM_PROMPT,
           cache_control: { type: 'ephemeral' },
         },
       ],
-      messages: [{ role: 'user', content: formatBrief(input) }],
+      messages: [{ role: 'user', content }],
     })
 
     const textBlock = response.content.find((b) => b.type === 'text')
@@ -80,11 +173,44 @@ export async function generateDescription(
       return { error: 'La IA no devolvió texto. Intentá de nuevo.' }
     }
 
-    return { description: textBlock.text.trim() }
+    // Extract JSON — sometimes Claude wraps it in markdown despite instructions
+    let raw = textBlock.text.trim()
+    if (raw.startsWith('```')) {
+      raw = raw.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '')
+    }
+
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(raw)
+    } catch {
+      return {
+        error:
+          'La IA devolvió un formato inválido. Intentá de nuevo (a veces ayuda).',
+      }
+    }
+
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      !('textVariants' in parsed) ||
+      !('photoReview' in parsed)
+    ) {
+      return { error: 'Formato de respuesta inválido.' }
+    }
+
+    const obj = parsed as {
+      textVariants: TextVariant[]
+      photoReview: PhotoReview[]
+    }
+
+    return {
+      textVariants: obj.textVariants.slice(0, 3),
+      photoReview: obj.photoReview.slice(0, reviewedImages.length),
+    }
   } catch (err) {
     if (err instanceof Error) {
       return { error: err.message }
     }
-    return { error: 'Error desconocido al generar descripción.' }
+    return { error: 'Error desconocido al revisar el listing.' }
   }
 }
