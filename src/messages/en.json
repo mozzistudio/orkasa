@@ -128,6 +128,7 @@
     "agents": "Agents",
     "analytics": "Analytics",
     "compliance": "Compliance",
+    "integrations": "Integrations",
     "settings": "Settings",
     "search": "Search...",
     "uploadProperty": "Upload property",
@@ -143,6 +144,40 @@
     "emptyDescription": "Upload a property or seed demo data to see how the dashboard works.",
     "seedDemo": "Seed demo data",
     "seeding": "Seeding..."
+  },
+  "integrations": {
+    "title": "Integrations",
+    "subtitle": "Connect Orkasa to real estate portals, social networks and messaging tools",
+    "category": {
+      "portal": "Real estate portals",
+      "social": "Social networks",
+      "messaging": "Messaging",
+      "custom": "Custom"
+    },
+    "status": {
+      "disconnected": "Not connected",
+      "connecting": "Connecting",
+      "connected": "Connected",
+      "error": "Error",
+      "expired": "Expired"
+    },
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "configure": "Configure",
+    "comingSoon": "Coming soon",
+    "lastSynced": "Synced",
+    "neverSynced": "Never synced",
+    "modal": {
+      "credentialsTitle": "Credentials",
+      "credentialsHelp": "Credentials are stored encrypted in the database. Only the server can read them.",
+      "save": "Save and connect",
+      "cancel": "Cancel",
+      "regions": "Regions",
+      "comingSoonTitle": "Integration not available yet",
+      "comingSoonBody": "This integration is on the roadmap. Contact us if you need it prioritized — we'll build the real connection (OAuth, sync engine, retry logic) for your brokerage."
+    },
+    "disconnectConfirm": "Disconnect this integration? Your credentials will be deleted.",
+    "empty": "No integrations configured. Connect your first one below."
   },
   "compliance": {
     "title": "Compliance",

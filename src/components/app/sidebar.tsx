@@ -13,17 +13,19 @@ import {
   BarChart3,
   Shield,
   Settings,
+  Plug,
   LogOut,
 } from 'lucide-react'
 
 const navItems = [
-  { key: 'title',      href: '/app',            icon: LayoutDashboard, match: 'exact' as const },
-  { key: 'inventory',  href: '/app/properties', icon: Building2,       match: 'prefix' as const },
-  { key: 'leads',      href: '/app/leads',      icon: Users,           match: 'prefix' as const },
-  { key: 'agents',     href: '/app/agents',     icon: UserCheck,       match: 'prefix' as const },
-  { key: 'analytics',  href: '/app/analytics',  icon: BarChart3,       match: 'prefix' as const },
-  { key: 'compliance', href: '/app/compliance', icon: Shield,          match: 'prefix' as const },
-  { key: 'settings',   href: '/app/settings',   icon: Settings,        match: 'prefix' as const },
+  { key: 'title',        href: '/app',              icon: LayoutDashboard, match: 'exact' as const },
+  { key: 'inventory',    href: '/app/properties',   icon: Building2,       match: 'prefix' as const },
+  { key: 'leads',        href: '/app/leads',        icon: Users,           match: 'prefix' as const },
+  { key: 'agents',       href: '/app/agents',       icon: UserCheck,       match: 'prefix' as const },
+  { key: 'analytics',    href: '/app/analytics',    icon: BarChart3,       match: 'prefix' as const },
+  { key: 'compliance',   href: '/app/compliance',   icon: Shield,          match: 'prefix' as const },
+  { key: 'integrations', href: '/app/integrations', icon: Plug,            match: 'prefix' as const },
+  { key: 'settings',     href: '/app/settings',     icon: Settings,        match: 'prefix' as const },
 ] as const
 
 function initials(name: string): string {

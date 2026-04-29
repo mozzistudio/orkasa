@@ -128,6 +128,7 @@
     "agents": "Agentes",
     "analytics": "Análisis",
     "compliance": "Compliance",
+    "integrations": "Integraciones",
     "settings": "Configuración",
     "search": "Buscar...",
     "uploadProperty": "Cargar propiedad",
@@ -143,6 +144,40 @@
     "emptyDescription": "Cargá una propiedad o sembramos datos demo para que veas cómo funciona el dashboard.",
     "seedDemo": "Sembrar datos demo",
     "seeding": "Sembrando..."
+  },
+  "integrations": {
+    "title": "Integraciones",
+    "subtitle": "Conectá Orkasa a portales, redes sociales y herramientas de mensajería",
+    "category": {
+      "portal": "Portales inmobiliarios",
+      "social": "Redes sociales",
+      "messaging": "Mensajería",
+      "custom": "Personalizado"
+    },
+    "status": {
+      "disconnected": "Sin conectar",
+      "connecting": "Conectando",
+      "connected": "Conectado",
+      "error": "Error",
+      "expired": "Expirado"
+    },
+    "connect": "Conectar",
+    "disconnect": "Desconectar",
+    "configure": "Configurar",
+    "comingSoon": "Próximamente",
+    "lastSynced": "Sincronizado",
+    "neverSynced": "Sin sincronizar",
+    "modal": {
+      "credentialsTitle": "Credenciales",
+      "credentialsHelp": "Las credenciales se guardan encriptadas en la base. Sólo el servidor puede leerlas.",
+      "save": "Guardar y conectar",
+      "cancel": "Cancelar",
+      "regions": "Regiones",
+      "comingSoonTitle": "Integración no disponible aún",
+      "comingSoonBody": "Esta integración está en roadmap. Contactanos si la necesitás priorizada — armamos la conexión real (OAuth, sync engine, retry logic) para tu brokerage."
+    },
+    "disconnectConfirm": "¿Desconectar esta integración? Tus credenciales serán eliminadas.",
+    "empty": "Sin integraciones configuradas. Conectá la primera abajo."
   },
   "compliance": {
     "title": "Compliance",

@@ -168,6 +168,59 @@ export type Database = {
           },
         ]
       }
+      integrations: {
+        Row: {
+          account_label: string | null
+          brokerage_id: string
+          config: Json | null
+          created_at: string | null
+          credentials: Json | null
+          error_count: number | null
+          id: string
+          last_error: string | null
+          last_synced_at: string | null
+          provider: Database['public']['Enums']['integration_provider']
+          status: Database['public']['Enums']['integration_status']
+          updated_at: string | null
+        }
+        Insert: {
+          account_label?: string | null
+          brokerage_id: string
+          config?: Json | null
+          created_at?: string | null
+          credentials?: Json | null
+          error_count?: number | null
+          id?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          provider: Database['public']['Enums']['integration_provider']
+          status?: Database['public']['Enums']['integration_status']
+          updated_at?: string | null
+        }
+        Update: {
+          account_label?: string | null
+          brokerage_id?: string
+          config?: Json | null
+          created_at?: string | null
+          credentials?: Json | null
+          error_count?: number | null
+          id?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          provider?: Database['public']['Enums']['integration_provider']
+          status?: Database['public']['Enums']['integration_status']
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'integrations_brokerage_id_fkey'
+            columns: ['brokerage_id']
+            isOneToOne: false
+            referencedRelation: 'brokerages'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       lead_interactions: {
         Row: {
           agent_id: string | null
@@ -460,6 +513,25 @@ export type Database = {
         | 'approved'
         | 'rejected'
         | 'requires_action'
+      integration_provider:
+        | 'encuentra24'
+        | 'compreoalquile'
+        | 'inmuebles24'
+        | 'mercadolibre_inmuebles'
+        | 'properati'
+        | 'idealista'
+        | 'zonaprop'
+        | 'casas'
+        | 'facebook_marketplace'
+        | 'instagram_business'
+        | 'whatsapp_business'
+        | 'webhook_custom'
+      integration_status:
+        | 'disconnected'
+        | 'connecting'
+        | 'connected'
+        | 'error'
+        | 'expired'
       lead_origin: 'portal' | 'web' | 'referido' | 'whatsapp' | 'walk_in' | 'other'
       lead_status:
         | 'new'

@@ -17,6 +17,7 @@ function breadcrumbForPath(pathname: string): string {
   if (pathname.startsWith('/app/agents')) return 'Equipo'
   if (pathname.startsWith('/app/analytics')) return 'Análisis'
   if (pathname.startsWith('/app/compliance')) return 'Compliance'
+  if (pathname.startsWith('/app/integrations')) return 'Integraciones'
   if (pathname.startsWith('/app/settings')) return 'Configuración'
   if (pathname === '/app') return 'Dashboard'
   return 'Dashboard'
