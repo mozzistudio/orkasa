@@ -132,7 +132,7 @@ export function PropertyForm({
       ref={formRef}
       id="property-form"
       action={handleSubmit}
-      className="space-y-8"
+      className="space-y-6 md:space-y-8"
     >
       {/* Hidden property_id for create flow (so image uploads can use it) */}
       {isCreate && (
@@ -140,14 +140,14 @@ export function PropertyForm({
       )}
 
       {/* === SECTION 1: ESSENTIALS === */}
-      <section className="space-y-4">
-        <header className="flex items-baseline justify-between border-b border-bone pb-2">
+      <section className="space-y-3 md:space-y-4">
+        <header className="flex items-baseline justify-between border-b border-bone pb-1.5 md:pb-2">
           <h2 className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
             01 · Lo esencial
           </h2>
         </header>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5 md:space-y-2">
           <Label htmlFor="title" className="text-[13px] text-ink">
             {t('form.title')}
           </Label>
@@ -162,8 +162,12 @@ export function PropertyForm({
           />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
+        {/* Type + operation: 2-col on mobile (short selects), 3-col on
+            desktop where status is also visible (in edit mode). */}
+        <div
+          className={`grid grid-cols-2 gap-2 md:gap-4 ${isCreate ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}
+        >
+          <div className="space-y-1.5 md:space-y-2">
             <Label className="text-[13px] text-ink">
               {t('form.propertyType')}
             </Label>
@@ -177,7 +181,7 @@ export function PropertyForm({
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5 md:space-y-2">
             <Label className="text-[13px] text-ink">
               {t('form.listingType')}
             </Label>
@@ -194,7 +198,7 @@ export function PropertyForm({
           {/* Status is hidden on create (always 'draft') — agents publish
               from the wizard, not by toggling status here. */}
           {!isCreate && (
-            <div className="space-y-2">
+            <div className="space-y-1.5 md:space-y-2">
               <Label className="text-[13px] text-ink">{t('form.status')}</Label>
               <NativeSelect
                 name="status"
@@ -211,8 +215,10 @@ export function PropertyForm({
           )}
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
+        {/* Price + currency: inline on mobile (currency is 3 chars, no point
+            in giving it a full row) */}
+        <div className="grid grid-cols-[1fr_88px] gap-2 md:grid-cols-2 md:gap-4">
+          <div className="space-y-1.5 md:space-y-2">
             <Label htmlFor="price" className="text-[13px] text-ink">
               {t('form.price')}
             </Label>
@@ -226,7 +232,7 @@ export function PropertyForm({
               className="h-9 rounded-[4px] border-bone font-mono text-[13px] tabular-nums focus:border-ink focus:ring-0"
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5 md:space-y-2">
             <Label htmlFor="currency" className="text-[13px] text-ink">
               {t('form.currency')}
             </Label>
@@ -236,22 +242,23 @@ export function PropertyForm({
               defaultValue={defaults.currency ?? 'USD'}
               maxLength={3}
               pattern="[A-Z]{3}"
-              className="h-9 rounded-[4px] border-bone font-mono text-[13px] uppercase focus:border-ink focus:ring-0"
+              className="h-9 rounded-[4px] border-bone text-center font-mono text-[13px] uppercase focus:border-ink focus:ring-0 md:text-left"
             />
           </div>
         </div>
       </section>
 
       {/* === SECTION 2: SPECS === */}
-      <section className="space-y-4">
-        <header className="flex items-baseline justify-between border-b border-bone pb-2">
+      <section className="space-y-3 md:space-y-4">
+        <header className="flex items-baseline justify-between border-b border-bone pb-1.5 md:pb-2">
           <h2 className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
             02 · Especificaciones
           </h2>
         </header>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
+        {/* Specs: 3-col always (short numerical inputs fit even on mobile) */}
+        <div className="grid grid-cols-3 gap-2 md:gap-4">
+          <div className="space-y-1.5 md:space-y-2">
             <Label htmlFor="bedrooms" className="text-[13px] text-ink">
               {t('form.bedrooms')}
             </Label>
@@ -264,7 +271,7 @@ export function PropertyForm({
               className="h-9 rounded-[4px] border-bone font-mono text-[13px] tabular-nums focus:border-ink focus:ring-0"
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5 md:space-y-2">
             <Label htmlFor="bathrooms" className="text-[13px] text-ink">
               {t('form.bathrooms')}
             </Label>
@@ -278,7 +285,7 @@ export function PropertyForm({
               className="h-9 rounded-[4px] border-bone font-mono text-[13px] tabular-nums focus:border-ink focus:ring-0"
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5 md:space-y-2">
             <Label htmlFor="area_m2" className="text-[13px] text-ink">
               {t('form.areaM2')}
             </Label>
@@ -296,14 +303,14 @@ export function PropertyForm({
       </section>
 
       {/* === SECTION 3: LOCATION === */}
-      <section className="space-y-4">
-        <header className="flex items-baseline justify-between border-b border-bone pb-2">
+      <section className="space-y-3 md:space-y-4">
+        <header className="flex items-baseline justify-between border-b border-bone pb-1.5 md:pb-2">
           <h2 className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
             03 · Ubicación
           </h2>
         </header>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5 md:space-y-2">
           <Label htmlFor="address" className="text-[13px] text-ink">
             {t('form.address')}
           </Label>
@@ -314,8 +321,8 @@ export function PropertyForm({
             className="h-9 rounded-[4px] border-bone text-[13px] focus:border-ink focus:ring-0"
           />
         </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
+        <div className="grid gap-3 md:grid-cols-3 md:gap-4">
+          <div className="space-y-1.5 md:space-y-2">
             <Label htmlFor="neighborhood" className="text-[13px] text-ink">
               {t('form.neighborhood')}
             </Label>
@@ -326,7 +333,7 @@ export function PropertyForm({
               className="h-9 rounded-[4px] border-bone text-[13px] focus:border-ink focus:ring-0"
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5 md:space-y-2">
             <Label htmlFor="city" className="text-[13px] text-ink">
               {t('form.city')}
             </Label>
@@ -337,7 +344,7 @@ export function PropertyForm({
               className="h-9 rounded-[4px] border-bone text-[13px] focus:border-ink focus:ring-0"
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5 md:space-y-2">
             <Label htmlFor="external_id" className="text-[13px] text-ink">
               {t('form.externalId')}
             </Label>
@@ -353,8 +360,8 @@ export function PropertyForm({
       </section>
 
       {/* === SECTION 4: IMAGES === */}
-      <section className="space-y-4">
-        <header className="flex items-baseline justify-between border-b border-bone pb-2">
+      <section className="space-y-3 md:space-y-4">
+        <header className="flex items-baseline justify-between border-b border-bone pb-1.5 md:pb-2">
           <h2 className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
             04 · Imágenes
           </h2>
@@ -378,8 +385,8 @@ export function PropertyForm({
       </section>
 
       {/* === SECTION 5: DESCRIPTION (with mobile-only voice dictation) === */}
-      <section className="space-y-4">
-        <header className="flex items-baseline justify-between border-b border-bone pb-2">
+      <section className="space-y-3 md:space-y-4">
+        <header className="flex items-baseline justify-between border-b border-bone pb-1.5 md:pb-2">
           <h2 className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
             05 · Descripción
           </h2>

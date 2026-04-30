@@ -31,17 +31,20 @@ export default async function NewPropertyPage() {
     <div className="mx-auto max-w-3xl">
       <Link
         href="/app/properties"
-        className="mb-6 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-steel hover:text-ink transition-colors"
+        className="mb-4 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-steel hover:text-ink transition-colors md:mb-6"
       >
         <ArrowLeft className="h-3 w-3" strokeWidth={1.5} />
         {t('title')}
       </Link>
 
-      <h1 className="mb-8 text-[22px] font-medium tracking-[-0.5px] text-ink">
+      <h1 className="mb-5 text-[22px] font-medium tracking-[-0.5px] text-ink md:mb-8">
         {t('new')}
       </h1>
 
-      <div className="rounded-[4px] border border-bone bg-paper p-6">
+      {/* No outer card on mobile — sections inside the form already have
+          their own borders/dividers. The card adds redundant nesting + 48px
+          of horizontal padding that cramps fields on small screens. */}
+      <div className="md:rounded-[4px] md:border md:border-bone md:bg-paper md:p-6">
         <PropertyForm
           action={createProperty}
           submitLabel={t('create')}

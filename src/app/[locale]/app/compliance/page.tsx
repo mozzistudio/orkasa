@@ -15,7 +15,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, formatPriceCompact } from '@/lib/utils'
 import type { Database } from '@/lib/database.types'
 
 type Check = Database['public']['Tables']['compliance_checks']['Row']
@@ -317,44 +317,37 @@ export default async function CompliancePage({
   return (
     <div>
       {/* === HEADER + GLOBAL ACTIONS === */}
-      <div className="mb-6 flex flex-col gap-4 md:mb-8 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h1 className="text-[22px] font-medium tracking-[-0.5px] text-ink">
-            {t('title')}
-          </h1>
-          <p className="mt-1 text-[13px] text-steel">
-            Centro de control · KYC, AML, sanciones, PEP, UBO, declaraciones UAF
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
+      <div className="mb-5 md:mb-8">
+        <h1 className="text-[20px] font-medium tracking-[-0.5px] text-ink md:text-[22px]">
+          {t('title')}
+        </h1>
+        <p className="mt-1 text-[12px] text-steel md:text-[13px]">
+          KYC · AML · sanciones · PEP · UBO · declaraciones UAF
+        </p>
+
+        {/* Action chips — 4-col grid on mobile (squeezed into one row),
+            normal flex on desktop */}
+        <div className="mt-4 grid grid-cols-4 gap-2 md:mt-5 md:flex md:flex-wrap">
+          <ActionChip
             href="/app/compliance/reports"
-            className="inline-flex items-center gap-1.5 rounded-[4px] border border-bone bg-paper px-3 py-2 text-[12px] text-ink transition-colors hover:border-ink"
-          >
-            <FileDown className="h-3.5 w-3.5" strokeWidth={1.5} />
-            Reportes
-          </Link>
-          <Link
+            icon={FileDown}
+            label="Reportes"
+          />
+          <ActionChip
             href="/app/compliance/sanctions"
-            className="inline-flex items-center gap-1.5 rounded-[4px] border border-bone bg-paper px-3 py-2 text-[12px] text-ink transition-colors hover:border-ink"
-          >
-            <ShieldAlert className="h-3.5 w-3.5" strokeWidth={1.5} />
-            Sanciones
-          </Link>
-          <Link
+            icon={ShieldAlert}
+            label="Sanciones"
+          />
+          <ActionChip
             href="/app/compliance/audit-log"
-            className="inline-flex items-center gap-1.5 rounded-[4px] border border-bone bg-paper px-3 py-2 text-[12px] text-ink transition-colors hover:border-ink"
-          >
-            <History className="h-3.5 w-3.5" strokeWidth={1.5} />
-            Audit log
-          </Link>
-          <Link
+            icon={History}
+            label="Audit"
+          />
+          <ActionChip
             href="/app/compliance/policies"
-            className="inline-flex items-center gap-1.5 rounded-[4px] border border-bone bg-paper px-3 py-2 text-[12px] text-ink transition-colors hover:border-ink"
-          >
-            <SettingsIcon className="h-3.5 w-3.5" strokeWidth={1.5} />
-            Reglas
-          </Link>
+            icon={SettingsIcon}
+            label="Reglas"
+          />
         </div>
       </div>
 
@@ -362,7 +355,7 @@ export default async function CompliancePage({
       <div className="mb-6 grid grid-cols-2 gap-3 md:mb-8 md:grid-cols-4 md:gap-4">
         <Kpi
           icon={Shield}
-          label="Dossiers a tratar"
+          label="A tratar"
           value={openChecks.length}
           subValue={
             urgentChecks.length > 0
@@ -384,11 +377,11 @@ export default async function CompliancePage({
         />
         <Kpi
           icon={Wallet}
-          label="Volumen monitoreado"
-          value={formatPrice(volumeMonitored)}
+          label="Volumen"
+          value={formatPriceCompact(volumeMonitored)}
           subValue={
             volumeAboveThreshold > 0
-              ? `${formatPrice(volumeAboveThreshold)} > umbral UAF`
+              ? `${formatPriceCompact(volumeAboveThreshold)} > umbral UAF`
               : 'sin operaciones > umbral'
           }
           tone="ink"
@@ -587,6 +580,31 @@ export default async function CompliancePage({
 // Sub-components
 // =============================================================================
 
+function ActionChip({
+  href,
+  icon: Icon,
+  label,
+}: {
+  href: string
+  icon: typeof Shield
+  label: string
+}) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex flex-col items-center justify-center gap-1 rounded-[4px] border border-bone bg-paper px-2 py-2.5 text-ink transition-colors hover:border-ink md:flex-row md:gap-1.5 md:px-3 md:py-2"
+    >
+      <Icon
+        className="h-3.5 w-3.5 shrink-0 text-steel md:text-ink"
+        strokeWidth={1.5}
+      />
+      <span className="font-mono text-[10px] uppercase tracking-wider md:text-[12px] md:normal-case md:tracking-normal">
+        {label}
+      </span>
+    </Link>
+  )
+}
+
 function Kpi({
   icon: Icon,
   label,
@@ -609,19 +627,19 @@ function Kpi({
           ? 'text-steel'
           : 'text-ink'
   return (
-    <div className="rounded-[4px] border border-bone bg-paper p-4">
-      <div className="mb-2 flex items-center justify-between">
-        <Icon className="h-4 w-4 text-steel" strokeWidth={1.5} />
+    <div className="rounded-[4px] border border-bone bg-paper p-3 md:p-4">
+      <div className="mb-1.5 flex items-center justify-between">
+        <Icon className="h-3.5 w-3.5 text-steel md:h-4 md:w-4" strokeWidth={1.5} />
       </div>
       <p
-        className={`font-mono text-[24px] font-medium tabular-nums leading-none md:text-[28px] ${valueColor}`}
+        className={`font-mono text-[20px] font-medium tabular-nums leading-none md:text-[28px] ${valueColor}`}
       >
         {value}
       </p>
-      <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
+      <p className="mt-1.5 font-mono text-[9px] uppercase tracking-[1.5px] text-steel md:text-[10px]">
         {label}
       </p>
-      <p className="mt-2 truncate font-mono text-[11px] text-steel">
+      <p className="mt-1.5 truncate font-mono text-[10px] text-steel md:mt-2 md:text-[11px]">
         {subValue}
       </p>
     </div>
