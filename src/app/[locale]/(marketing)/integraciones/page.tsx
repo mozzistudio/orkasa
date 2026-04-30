@@ -4,6 +4,25 @@ import { Globe, Share2, MessageSquare, Webhook } from 'lucide-react'
 import { INTEGRATION_PROVIDERS } from '@/lib/integrations'
 import { pageMetadata, breadcrumbJsonLd, jsonLdScript } from '@/lib/seo'
 
+/**
+ * Extract a clean domain from a website URL for favicon lookup.
+ * "https://www.encuentra24.com/path" → "encuentra24.com"
+ */
+function domainOf(website: string | undefined): string | null {
+  if (!website) return null
+  try {
+    const url = new URL(website)
+    return url.hostname.replace(/^www\./, '')
+  } catch {
+    return null
+  }
+}
+
+/** Google's free public favicon service — 64×64 PNG, supports any domain. */
+function faviconUrl(domain: string): string {
+  return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -97,13 +116,29 @@ export default async function IntegracionesPage({
                   </span>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2 md:gap-4">
-                  {providers.map((p) => (
+                  {providers.map((p) => {
+                    const domain = domainOf(p.website)
+                    return (
                     <article
                       key={p.id}
                       className="flex items-start gap-3 rounded-[4px] border border-bone bg-paper p-4"
                     >
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] bg-bone font-mono text-[13px] font-medium text-ink">
-                        {p.shortLabel}
+                      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[4px] bg-bone">
+                        {domain ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={faviconUrl(domain)}
+                            alt=""
+                            width={32}
+                            height={32}
+                            className="h-8 w-8 object-contain"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <span className="font-mono text-[13px] font-medium text-ink">
+                            {p.shortLabel}
+                          </span>
+                        )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
@@ -130,7 +165,8 @@ export default async function IntegracionesPage({
                         )}
                       </div>
                     </article>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )

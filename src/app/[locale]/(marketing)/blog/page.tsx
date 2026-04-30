@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
+import { POSTS } from '@/lib/blog'
 import { pageMetadata, breadcrumbJsonLd, jsonLdScript } from '@/lib/seo'
 
 export async function generateMetadata({
@@ -20,38 +21,11 @@ export async function generateMetadata({
   })
 }
 
-const POSTS = [
-  {
-    slug: 'multi-publicacion-portales-latam',
-    title: 'Cómo funciona la multi-publicación adaptada por portal',
-    excerpt:
-      'No alcanza con copiar y pegar el mismo texto en 8 portales. Cada plataforma tiene un tono, un límite de caracteres, y reglas que castigan o premian — explicamos cómo Orkasa adapta cada listing automáticamente.',
-    date: '2026-04-22',
-    author: 'Equipo Orkasa',
-    readTime: '6 min',
-    tag: 'Producto',
-  },
-  {
-    slug: 'ia-en-listings-claude-vs-gemini',
-    title: 'IA en listings: Claude para texto, Gemini para fotos',
-    excerpt:
-      'Por qué usamos dos modelos distintos en lugar de uno solo, y cómo decidimos qué pasa por cuál. Notas técnicas para curiosos y para clientes que quieren saber qué corre detrás.',
-    date: '2026-04-15',
-    author: 'Equipo Orkasa',
-    readTime: '8 min',
-    tag: 'Engineering',
-  },
-  {
-    slug: 'compliance-kyc-inmobiliario-panama',
-    title: 'KYC inmobiliario en Panamá: lo que cambió en 2026',
-    excerpt:
-      'La Superintendencia ajustó los requisitos de debida diligencia para operaciones >$100K. Qué tenés que documentar, en qué plazo, y cómo Orkasa te lo ordena.',
-    date: '2026-03-30',
-    author: 'Equipo Orkasa',
-    readTime: '5 min',
-    tag: 'Compliance',
-  },
-] as const
+const TAG_COLOR: Record<string, string> = {
+  Producto: 'bg-bone text-ink',
+  Engineering: 'bg-ink text-paper',
+  Compliance: 'bg-signal/10 text-signal',
+}
 
 export default async function BlogPage() {
   const breadcrumb = breadcrumbJsonLd([{ name: 'Blog', path: 'blog' }])
@@ -91,19 +65,30 @@ export default async function BlogPage() {
                   })}
                 </time>
                 <span>·</span>
-                <span>{post.tag}</span>
+                <span
+                  className={`rounded-[4px] px-2 py-0.5 ${
+                    TAG_COLOR[post.tag] ?? 'bg-bone text-ink'
+                  }`}
+                >
+                  {post.tag}
+                </span>
                 <span>·</span>
                 <span>{post.readTime}</span>
               </div>
               <h2 className="text-[22px] font-medium tracking-[-0.5px] text-ink md:text-[28px]">
-                {post.title}
+                <Link
+                  href={`/blog/${post.slug}`}
+                  className="transition-colors hover:text-signal"
+                >
+                  {post.title}
+                </Link>
               </h2>
               <p className="mt-3 text-[15px] leading-relaxed text-steel">
                 {post.excerpt}
               </p>
               <Link
                 href={`/blog/${post.slug}`}
-                className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-signal hover:text-signal/80 transition-colors"
+                className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-signal transition-colors hover:text-signal/80"
                 aria-label={`Leer ${post.title}`}
               >
                 Leer artículo

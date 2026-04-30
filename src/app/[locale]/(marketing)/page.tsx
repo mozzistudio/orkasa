@@ -2,8 +2,11 @@ import type { Metadata } from 'next'
 import { Hero } from '@/components/marketing/hero'
 import { LogoBar } from '@/components/marketing/logo-bar'
 import { Pillars } from '@/components/marketing/pillars'
+import { HowItWorks } from '@/components/marketing/how-it-works'
 import { StatsBar } from '@/components/marketing/stats-bar'
+import { Testimonials } from '@/components/marketing/testimonials'
 import { Pricing } from '@/components/marketing/pricing'
+import { Faq } from '@/components/marketing/faq'
 import {
   pageMetadata,
   organizationJsonLd,
@@ -48,8 +51,11 @@ export default function HomePage() {
       <Hero />
       <LogoBar />
       <Pillars />
+      <HowItWorks />
       <StatsBar />
+      <Testimonials />
       <Pricing />
+      <Faq />
     </>
   )
 }

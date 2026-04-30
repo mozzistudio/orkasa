@@ -117,12 +117,17 @@ export function PropertyForm({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-[13px] text-ink">Imágenes</Label>
-          <AIListingReview
-            formId="property-form"
-            images={images}
-            onApplyText={(text) => setDescription(text)}
-            onImagesChange={(next) => setImages(next)}
-          />
+          {/* AI review only available on edit flow — needs persisted property
+              with images and form data already filled. On the create page it
+              triggers an empty-form error which feels broken. */}
+          {!isCreate && (
+            <AIListingReview
+              formId="property-form"
+              images={images}
+              onApplyText={(text) => setDescription(text)}
+              onImagesChange={(next) => setImages(next)}
+            />
+          )}
         </div>
         <ImageUpload
           brokerageId={brokerageId}

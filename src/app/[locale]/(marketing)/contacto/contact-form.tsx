@@ -32,7 +32,6 @@ export function ContactForm() {
       // TODO: replace with real /api/contact endpoint when wired
       // For now we simulate success after 600ms so the UI is testable
       await new Promise((resolve) => setTimeout(resolve, 600))
-      // eslint-disable-next-line no-console
       console.log('[contact] submitted', payload)
       setState({ stage: 'success' })
     } catch (err) {
