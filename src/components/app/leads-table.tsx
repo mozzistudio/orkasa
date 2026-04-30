@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import {
   Table,
@@ -33,18 +34,23 @@ export function LeadsTable({ leads }: { leads: readonly LeadRow[] }) {
       {/* Mobile: compact card list */}
       <ul className="divide-y divide-bone md:hidden">
         {leads.map((lead) => (
-          <li key={lead.id} className="flex items-center gap-3 px-4 py-3">
-            <div className="flex-1 min-w-0">
-              <p className="truncate text-[13px] font-medium text-ink">
-                {lead.name}
-              </p>
-              <p className="mt-0.5 truncate font-mono text-[11px] text-steel">
-                {lead.origin} · {lead.assigned}
-              </p>
-            </div>
-            <span className="font-mono text-[15px] tabular-nums text-signal">
-              {lead.score}
-            </span>
+          <li key={lead.id}>
+            <Link
+              href={`/app/leads/${lead.id}`}
+              className="flex items-center gap-3 px-4 py-3 transition-colors active:bg-bone/30"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="truncate text-[13px] font-medium text-ink">
+                  {lead.name}
+                </p>
+                <p className="mt-0.5 truncate font-mono text-[11px] text-steel">
+                  {lead.origin} · {lead.assigned}
+                </p>
+              </div>
+              <span className="font-mono text-[15px] tabular-nums text-signal">
+                {lead.score}
+              </span>
+            </Link>
           </li>
         ))}
       </ul>
@@ -73,9 +79,17 @@ export function LeadsTable({ leads }: { leads: readonly LeadRow[] }) {
           </TableHeader>
           <TableBody>
             {leads.map((lead) => (
-              <TableRow key={lead.id} className="border-bone">
+              <TableRow
+                key={lead.id}
+                className="border-bone hover:bg-bone/30 cursor-pointer"
+              >
                 <TableCell className="text-[13px] font-medium text-ink">
-                  {lead.name}
+                  <Link
+                    href={`/app/leads/${lead.id}`}
+                    className="block hover:text-signal transition-colors"
+                  >
+                    {lead.name}
+                  </Link>
                 </TableCell>
                 <TableCell className="font-mono text-[12px] text-steel">
                   {lead.origin}
@@ -87,9 +101,12 @@ export function LeadsTable({ leads }: { leads: readonly LeadRow[] }) {
                   {lead.assigned}
                 </TableCell>
                 <TableCell>
-                  <button className="font-mono text-[11px] text-ink hover:text-signal transition-colors">
+                  <Link
+                    href={`/app/leads/${lead.id}`}
+                    className="font-mono text-[11px] text-ink hover:text-signal transition-colors"
+                  >
                     {t('view')} →
-                  </button>
+                  </Link>
                 </TableCell>
               </TableRow>
             ))}

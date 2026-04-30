@@ -23,6 +23,17 @@ type ConnectedRow = {
   last_error: string | null
 }
 
+/** Clean domain from a website URL for favicon lookup. */
+function domainOf(website: string | undefined): string | null {
+  if (!website) return null
+  try {
+    const url = new URL(website)
+    return url.hostname.replace(/^www\./, '')
+  } catch {
+    return null
+  }
+}
+
 const STATUS_DOT: Record<IntegrationStatus, string> = {
   connected: 'bg-[#0A6B3D]',
   connecting: 'bg-ink',
@@ -79,8 +90,28 @@ export function ProviderCard({
         {/* Header: logo + name + status dot */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-[4px] bg-bone font-mono text-[13px] font-medium text-ink">
-              {meta.shortLabel}
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[4px] bg-bone">
+              {(() => {
+                const domain = domainOf(meta.website)
+                if (!domain) {
+                  return (
+                    <span className="font-mono text-[13px] font-medium text-ink">
+                      {meta.shortLabel}
+                    </span>
+                  )
+                }
+                return (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={`https://www.google.com/s2/favicons?domain=${domain}&sz=128`}
+                    alt=""
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 object-contain"
+                    loading="lazy"
+                  />
+                )
+              })()}
             </div>
             <div>
               <div className="flex items-center gap-2">

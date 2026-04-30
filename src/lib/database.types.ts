@@ -168,6 +168,84 @@ export type Database = {
           },
         ]
       }
+      compliance_documents: {
+        Row: {
+          brokerage_id: string
+          check_id: string
+          created_at: string | null
+          file_name: string | null
+          file_path: string | null
+          id: string
+          kind: Database['public']['Enums']['compliance_doc_kind']
+          notes: string | null
+          status: Database['public']['Enums']['compliance_doc_status']
+          updated_at: string | null
+          uploaded_at: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          brokerage_id: string
+          check_id: string
+          created_at?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          kind: Database['public']['Enums']['compliance_doc_kind']
+          notes?: string | null
+          status?: Database['public']['Enums']['compliance_doc_status']
+          updated_at?: string | null
+          uploaded_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          brokerage_id?: string
+          check_id?: string
+          created_at?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          kind?: Database['public']['Enums']['compliance_doc_kind']
+          notes?: string | null
+          status?: Database['public']['Enums']['compliance_doc_status']
+          updated_at?: string | null
+          uploaded_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: []
+      }
+      compliance_audit_log: {
+        Row: {
+          action: string
+          agent_id: string | null
+          brokerage_id: string
+          check_id: string
+          created_at: string | null
+          details: Json | null
+          id: string
+        }
+        Insert: {
+          action: string
+          agent_id?: string | null
+          brokerage_id: string
+          check_id: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+        }
+        Update: {
+          action?: string
+          agent_id?: string | null
+          brokerage_id?: string
+          check_id?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+        }
+        Relationships: []
+      }
       integrations: {
         Row: {
           account_label: string | null
@@ -578,6 +656,21 @@ export type Database = {
     Enums: {
       agent_role: 'owner' | 'admin' | 'agent'
       compliance_check_type: 'kyc' | 'aml' | 'sanctions' | 'pep'
+      compliance_doc_kind:
+        | 'identity'
+        | 'address_proof'
+        | 'income_proof'
+        | 'funds_origin'
+        | 'company_existence'
+        | 'company_ubo'
+        | 'pep_declaration'
+        | 'other'
+      compliance_doc_status:
+        | 'pending'
+        | 'uploaded'
+        | 'verified'
+        | 'rejected'
+        | 'expired'
       compliance_risk: 'low' | 'medium' | 'high' | 'critical'
       compliance_status:
         | 'pending'
