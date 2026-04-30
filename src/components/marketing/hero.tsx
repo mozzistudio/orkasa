@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 
@@ -25,35 +26,41 @@ export function Hero() {
             >
               {t('cta1')}
             </Link>
-            <a
-              href="#"
+            <Link
+              href="/producto"
               className="rounded-[4px] border border-ink px-5 py-3 text-center text-[14px] text-ink hover:bg-bone/50 transition-colors md:text-[13px]"
             >
               {t('cta2')} →
-            </a>
+            </Link>
           </div>
         </div>
 
-        {/* Fake dashboard screenshot */}
-        <div className="relative border border-ink bg-paper">
-          <div className="h-[320px] bg-coal relative overflow-hidden">
-            {/* Scanlines */}
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage:
-                  'linear-gradient(0deg, transparent 49%, rgba(255,255,255,0.06) 50%, transparent 51%)',
-                backgroundSize: '100% 16px',
-              }}
+        {/* Listing card mockup with real photo */}
+        <div className="relative overflow-hidden rounded-[4px] border border-ink bg-paper">
+          <div className="relative h-[320px] overflow-hidden bg-coal">
+            <Image
+              src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1600&q=80"
+              alt="Costa del Este PH — penthouse Panamá"
+              fill
+              sizes="(max-width: 768px) 100vw, 600px"
+              className="object-cover"
+              priority
             />
-            <div className="absolute left-4 top-4 font-mono text-[9px] tracking-wider text-paper">
+            {/* Top gradient for chip legibility */}
+            <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-ink/70 to-transparent" />
+            {/* Bottom gradient for footer chip legibility */}
+            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-ink/70 to-transparent" />
+            <div className="absolute left-4 top-4 font-mono text-[10px] tracking-wider text-paper">
               [ ID 04829 ]
             </div>
             <div className="absolute right-4 top-4 rounded-[4px] bg-signal px-2 py-1 font-mono text-[10px] font-medium tracking-wider text-paper">
               FOR SALE
             </div>
-            <div className="absolute bottom-4 left-4 font-mono text-[9px] text-steel">
+            <div className="absolute bottom-4 left-4 font-mono text-[10px] tracking-wider text-paper/90">
               12.IMG · 1.MP4 · 3D
+            </div>
+            <div className="absolute bottom-4 right-4 rounded-[4px] bg-paper/90 px-2 py-0.5 font-mono text-[10px] font-medium tracking-wider text-signal backdrop-blur-sm">
+              SCORE 92
             </div>
           </div>
           <div className="border-t border-ink p-4">
@@ -65,7 +72,9 @@ export function Hero() {
             </div>
             <div className="mt-3 flex items-baseline justify-between border-t border-bone pt-3">
               <div className="text-[18px] font-medium text-ink">$485,000</div>
-              <div className="font-mono text-[10px] text-signal">SCORE 92</div>
+              <div className="font-mono text-[10px] uppercase tracking-wider text-steel">
+                Publicado en 8 portales
+              </div>
             </div>
           </div>
         </div>
