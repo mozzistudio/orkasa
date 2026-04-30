@@ -239,6 +239,45 @@ export async function rerunScreening(
 }
 
 // =============================================================================
+// Document downloads — return a short-lived signed URL
+// =============================================================================
+
+export async function getDocumentSignedUrl(
+  documentId: string,
+): Promise<{ url?: string; error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: doc } = await supabase
+    .from('compliance_documents')
+    .select('file_path, file_name')
+    .eq('id', documentId)
+    .maybeSingle<{ file_path: string | null; file_name: string | null }>()
+
+  if (!doc?.file_path) return { error: 'Sin archivo subido' }
+
+  // Demo files use a `compliance-demo/...` synthetic path that doesn't exist
+  // in storage. Pretend-sign: return a placeholder URL so the UI can show
+  // the "open file" link without 404'ing.
+  if (doc.file_path.startsWith('compliance-demo/')) {
+    return { url: `#demo-${doc.file_name ?? 'file'}` }
+  }
+
+  // 5-minute TTL is enough for the user to click through.
+  const { data, error } = await supabase.storage
+    .from('compliance-documents')
+    .createSignedUrl(doc.file_path, 300, {
+      download: doc.file_name ?? undefined,
+    })
+
+  if (error) return { error: error.message }
+  return { url: data.signedUrl }
+}
+
+// =============================================================================
 // Alerts — resolve / acknowledge / mark false positive / escalate
 // =============================================================================
 

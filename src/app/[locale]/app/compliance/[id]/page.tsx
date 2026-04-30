@@ -17,40 +17,14 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/database.types'
+import { categoryLabel, scenarioLabel, type DocCategory, type Scenario } from '@/lib/compliance-docs'
 import { ComplianceWorkflow } from './workflow'
+import { ComplianceDocUpload } from '@/components/app/compliance-doc-upload'
 
 type Check = Database['public']['Tables']['compliance_checks']['Row']
 type Document = Database['public']['Tables']['compliance_documents']['Row']
 type AuditEntry = Database['public']['Tables']['compliance_audit_log']['Row']
 type Lead = Database['public']['Tables']['leads']['Row']
-
-const DOC_LABEL: Record<Document['kind'], string> = {
-  identity: 'Identificación (cédula / pasaporte)',
-  address_proof: 'Comprobante de domicilio (<3 meses)',
-  income_proof: 'Comprobante de ingresos',
-  funds_origin: 'Declaración de origen de fondos',
-  company_existence: 'Certificado de existencia (PJ)',
-  company_ubo: 'Identificación de beneficiario final',
-  pep_declaration: 'Declaración PEP',
-  other: 'Otro',
-}
-
-const DOC_HINT: Record<Document['kind'], string> = {
-  identity: 'Cédula vigente o pasaporte. Frente y dorso, lectura clara.',
-  address_proof:
-    'Factura de servicios públicos o estado bancario, máximo 3 meses de antigüedad.',
-  income_proof:
-    'Estados bancarios últimos 6 meses, declaración de renta o nómina.',
-  funds_origin:
-    'Declaración firmada explicando el origen de los fondos para esta operación.',
-  company_existence:
-    'Certificado emitido por el Registro Público, vigencia máxima 30 días.',
-  company_ubo:
-    'Identificación de cada persona natural con ≥25% de participación.',
-  pep_declaration:
-    'Declaración firmada sobre exposición política propia y de familiares.',
-  other: '',
-}
 
 const TYPE_LABEL = {
   kyc: 'KYC',
@@ -191,27 +165,51 @@ export default async function ComplianceDetailPage({
             </section>
           )}
 
-          {/* Document checklist */}
-          <section className="rounded-[4px] border border-bone bg-paper p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
-                Documentos requeridos
-              </h2>
+          {/* Document checklist — grouped by category */}
+          <section className="rounded-[4px] border border-bone bg-paper">
+            <header className="flex items-center justify-between border-b border-bone px-5 py-3">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-ink" strokeWidth={1.5} />
+                <h2 className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
+                  Documentos requeridos
+                </h2>
+                <span className="font-mono text-[11px] uppercase tracking-wider text-steel">
+                  {scenarioLabel((check.scenario ?? 'sale_buyer') as Scenario)}
+                </span>
+              </div>
               <span className="font-mono text-[11px] tabular-nums text-steel">
                 {docVerified}/{docRequired} verificados
               </span>
-            </div>
+            </header>
 
             {documents.length === 0 ? (
-              <p className="text-[13px] text-steel">
+              <p className="px-5 py-8 text-center text-[13px] text-steel">
                 Sin checklist de documentos para este tipo de verificación.
               </p>
             ) : (
-              <ul className="space-y-3">
-                {documents.map((doc) => (
-                  <DocRow key={doc.id} doc={doc} />
+              <div className="divide-y divide-bone">
+                {groupDocsByCategory(documents).map((group) => (
+                  <div key={group.category} className="px-5 py-4">
+                    <h3 className="mb-3 font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
+                      {categoryLabel(group.category)}
+                      <span className="ml-2 tabular-nums text-steel">
+                        {group.items.filter((d) => d.status === 'verified').length}/
+                        {group.items.filter((d) => d.is_required ?? true).length}
+                      </span>
+                    </h3>
+                    <ul className="space-y-3">
+                      {group.items.map((doc) => (
+                        <DocRow
+                          key={doc.id}
+                          doc={doc}
+                          checkId={check.id}
+                          brokerageId={check.brokerage_id}
+                        />
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
           </section>
 
@@ -342,7 +340,36 @@ function Field({
   )
 }
 
-function DocRow({ doc }: { doc: Document }) {
+/**
+ * Group documents by category, preserving the order they appear in the
+ * data (which mirrors the taxonomy declaration order).
+ */
+function groupDocsByCategory(docs: Document[]): Array<{
+  category: DocCategory
+  items: Document[]
+}> {
+  const order: DocCategory[] = []
+  const map = new Map<DocCategory, Document[]>()
+  for (const d of docs) {
+    const cat = (d.category as DocCategory | null) ?? 'other'
+    if (!map.has(cat)) {
+      order.push(cat)
+      map.set(cat, [])
+    }
+    map.get(cat)!.push(d)
+  }
+  return order.map((cat) => ({ category: cat, items: map.get(cat) ?? [] }))
+}
+
+function DocRow({
+  doc,
+  checkId,
+  brokerageId,
+}: {
+  doc: Document
+  checkId: string
+  brokerageId: string
+}) {
   const isUploaded = doc.status !== 'pending'
   const isVerified = doc.status === 'verified'
   const isRejected = doc.status === 'rejected'
@@ -361,49 +388,55 @@ function DocRow({ doc }: { doc: Document }) {
         ? 'text-ink'
         : 'text-steel'
 
+  // Display name falls back to the legacy kind label when the new `name`
+  // column is null (old rows seeded before the schema migration)
+  const displayName = doc.name ?? doc.kind
+
   return (
-    <li className="flex items-start gap-3 rounded-[4px] border border-bone bg-paper p-3">
+    <li className="flex flex-col gap-2 rounded-[4px] border border-bone bg-paper p-3 md:flex-row md:items-start md:gap-3">
       <Icon
-        className={`mt-0.5 h-5 w-5 shrink-0 ${iconColor}`}
+        className={`mt-0.5 hidden h-5 w-5 shrink-0 md:block ${iconColor}`}
         strokeWidth={1.5}
       />
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-medium text-ink">
-          {DOC_LABEL[doc.kind]}
-        </p>
-        {DOC_HINT[doc.kind] && !isUploaded && (
-          <p className="mt-0.5 text-[12px] text-steel">{DOC_HINT[doc.kind]}</p>
-        )}
-        {doc.file_name && (
-          <p className="mt-1 truncate font-mono text-[11px] text-steel">
-            {doc.file_name}
+        <div className="flex items-start gap-2">
+          <Icon
+            className={`mt-0.5 h-4 w-4 shrink-0 md:hidden ${iconColor}`}
+            strokeWidth={1.5}
+          />
+          <p className="text-[13px] font-medium text-ink">
+            {displayName}
+            {doc.is_required === false && (
+              <span className="ml-2 rounded-[3px] bg-bone px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-steel">
+                Opcional
+              </span>
+            )}
+            {doc.is_corporate_only && (
+              <span className="ml-2 rounded-[3px] bg-bone px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-steel">
+                PJ
+              </span>
+            )}
           </p>
+        </div>
+        {doc.description && !isUploaded && (
+          <p className="mt-0.5 text-[12px] text-steel">{doc.description}</p>
         )}
         {doc.notes && (
           <p className="mt-1 text-[11px] text-signal">{doc.notes}</p>
         )}
       </div>
-      <span
-        className={`shrink-0 rounded-[4px] px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider ${
-          isVerified
-            ? 'bg-[#0A6B3D]/10 text-[#0A6B3D]'
-            : isRejected
-              ? 'bg-signal/10 text-signal'
-              : isUploaded
-                ? 'bg-bone text-ink'
-                : 'bg-bone/50 text-steel'
-        }`}
-      >
-        {doc.status === 'verified'
-          ? 'Verificado'
-          : doc.status === 'uploaded'
-            ? 'Subido'
-            : doc.status === 'rejected'
-              ? 'Rechazado'
-              : doc.status === 'expired'
-                ? 'Vencido'
-                : 'Pendiente'}
-      </span>
+
+      {/* Upload + review controls */}
+      <div className="shrink-0 md:w-[260px]">
+        <ComplianceDocUpload
+          documentId={doc.id}
+          brokerageId={brokerageId}
+          checkId={checkId}
+          initialStatus={doc.status}
+          initialFileName={doc.file_name}
+          initialFilePath={doc.file_path}
+        />
+      </div>
     </li>
   )
 }

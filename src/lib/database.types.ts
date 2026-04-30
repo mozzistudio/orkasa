@@ -102,6 +102,7 @@ export type Database = {
           reviewed_by: string | null
           risk_level: Database['public']['Enums']['compliance_risk'] | null
           sanctions_match: boolean | null
+          scenario: Database['public']['Enums']['compliance_check_scenario'] | null
           status: Database['public']['Enums']['compliance_status']
           type: Database['public']['Enums']['compliance_check_type']
           updated_at: string | null
@@ -121,6 +122,7 @@ export type Database = {
           reviewed_by?: string | null
           risk_level?: Database['public']['Enums']['compliance_risk'] | null
           sanctions_match?: boolean | null
+          scenario?: Database['public']['Enums']['compliance_check_scenario'] | null
           status?: Database['public']['Enums']['compliance_status']
           type: Database['public']['Enums']['compliance_check_type']
           updated_at?: string | null
@@ -140,6 +142,7 @@ export type Database = {
           reviewed_by?: string | null
           risk_level?: Database['public']['Enums']['compliance_risk'] | null
           sanctions_match?: boolean | null
+          scenario?: Database['public']['Enums']['compliance_check_scenario'] | null
           status?: Database['public']['Enums']['compliance_status']
           type?: Database['public']['Enums']['compliance_check_type']
           updated_at?: string | null
@@ -171,12 +174,18 @@ export type Database = {
       compliance_documents: {
         Row: {
           brokerage_id: string
+          category: string | null
           check_id: string
+          code: string | null
           created_at: string | null
+          description: string | null
           file_name: string | null
           file_path: string | null
           id: string
+          is_corporate_only: boolean | null
+          is_required: boolean | null
           kind: Database['public']['Enums']['compliance_doc_kind']
+          name: string | null
           notes: string | null
           status: Database['public']['Enums']['compliance_doc_status']
           updated_at: string | null
@@ -186,12 +195,18 @@ export type Database = {
         }
         Insert: {
           brokerage_id: string
+          category?: string | null
           check_id: string
+          code?: string | null
           created_at?: string | null
+          description?: string | null
           file_name?: string | null
           file_path?: string | null
           id?: string
+          is_corporate_only?: boolean | null
+          is_required?: boolean | null
           kind: Database['public']['Enums']['compliance_doc_kind']
+          name?: string | null
           notes?: string | null
           status?: Database['public']['Enums']['compliance_doc_status']
           updated_at?: string | null
@@ -201,12 +216,18 @@ export type Database = {
         }
         Update: {
           brokerage_id?: string
+          category?: string | null
           check_id?: string
+          code?: string | null
           created_at?: string | null
+          description?: string | null
           file_name?: string | null
           file_path?: string | null
           id?: string
+          is_corporate_only?: boolean | null
+          is_required?: boolean | null
           kind?: Database['public']['Enums']['compliance_doc_kind']
+          name?: string | null
           notes?: string | null
           status?: Database['public']['Enums']['compliance_doc_status']
           updated_at?: string | null
@@ -715,6 +736,13 @@ export type Database = {
     }
     Enums: {
       agent_role: 'owner' | 'admin' | 'agent'
+      compliance_check_scenario:
+        | 'sale_buyer'
+        | 'sale_seller'
+        | 'rental_tenant'
+        | 'rental_landlord'
+        | 'broker_sale'
+        | 'broker_rental'
       compliance_check_type: 'kyc' | 'aml' | 'sanctions' | 'pep'
       compliance_doc_kind:
         | 'identity'
