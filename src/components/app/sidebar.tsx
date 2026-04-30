@@ -47,9 +47,9 @@ export function Sidebar({
 
   return (
     <aside className="fixed left-0 top-0 flex h-full w-60 flex-col border-r border-bone bg-paper">
-      <div className="flex h-14 items-center px-5">
+      <div className="flex h-16 items-center px-5">
         <Link href="/">
-          <LogoLockup className="h-6" />
+          <LogoLockup className="h-9" />
         </Link>
       </div>
 

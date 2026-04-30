@@ -2,7 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
-import { ArrowLeft, Pencil } from 'lucide-react'
+import { ArrowLeft, Pencil, Send } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatPrice } from '@/lib/utils'
 import { DeletePropertyButton } from './delete-button'
@@ -66,6 +66,13 @@ export default async function PropertyDetailPage({
         </div>
 
         <div className="flex items-center gap-2">
+          <Link
+            href={`/app/properties/${property.id}/publish`}
+            className="inline-flex items-center gap-2 rounded-[4px] bg-signal px-3 py-2 text-[13px] font-medium text-paper hover:bg-signal/90 transition-colors"
+          >
+            <Send className="h-3.5 w-3.5" strokeWidth={1.5} />
+            Publicar en portales
+          </Link>
           <Link
             href={`/app/properties/${property.id}/edit`}
             className="inline-flex items-center gap-2 rounded-[4px] border border-ink px-3 py-2 text-[13px] text-ink hover:bg-bone/50 transition-colors"

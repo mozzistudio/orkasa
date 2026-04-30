@@ -438,6 +438,78 @@ export type Database = {
           },
         ]
       }
+      property_publications: {
+        Row: {
+          adapted_description: string | null
+          adapted_image_paths: Json | null
+          adapted_title: string | null
+          brokerage_id: string
+          created_at: string | null
+          external_id: string | null
+          external_url: string | null
+          failed_at: string | null
+          failure_reason: string | null
+          id: string
+          property_id: string
+          provider: Database['public']['Enums']['integration_provider']
+          published_at: string | null
+          status: Database['public']['Enums']['publication_status']
+          updated_at: string | null
+          validated_at: string | null
+        }
+        Insert: {
+          adapted_description?: string | null
+          adapted_image_paths?: Json | null
+          adapted_title?: string | null
+          brokerage_id: string
+          created_at?: string | null
+          external_id?: string | null
+          external_url?: string | null
+          failed_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          property_id: string
+          provider: Database['public']['Enums']['integration_provider']
+          published_at?: string | null
+          status?: Database['public']['Enums']['publication_status']
+          updated_at?: string | null
+          validated_at?: string | null
+        }
+        Update: {
+          adapted_description?: string | null
+          adapted_image_paths?: Json | null
+          adapted_title?: string | null
+          brokerage_id?: string
+          created_at?: string | null
+          external_id?: string | null
+          external_url?: string | null
+          failed_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          property_id?: string
+          provider?: Database['public']['Enums']['integration_provider']
+          published_at?: string | null
+          status?: Database['public']['Enums']['publication_status']
+          updated_at?: string | null
+          validated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'property_publications_brokerage_id_fkey'
+            columns: ['brokerage_id']
+            isOneToOne: false
+            referencedRelation: 'brokerages'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'property_publications_property_id_fkey'
+            columns: ['property_id']
+            isOneToOne: false
+            referencedRelation: 'properties'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       viewings: {
         Row: {
           agent_id: string | null
@@ -550,6 +622,15 @@ export type Database = {
         | 'rented'
         | 'archived'
       property_type: 'apartment' | 'house' | 'condo' | 'land' | 'commercial'
+      publication_status:
+        | 'draft'
+        | 'generating'
+        | 'validated'
+        | 'queued'
+        | 'publishing'
+        | 'published'
+        | 'failed'
+        | 'paused'
     }
     CompositeTypes: { [_ in never]: never }
   }
