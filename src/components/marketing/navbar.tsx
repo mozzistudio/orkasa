@@ -41,24 +41,30 @@ export function Navbar() {
 
           {/* Desktop nav */}
           <div className="hidden items-center gap-8 md:flex">
-            <a
-              href="#pillars"
+            <Link
+              href="/producto"
               className="text-[13px] text-steel hover:text-ink transition-colors"
             >
               {t('producto')}
-            </a>
-            <a
-              href="#pricing"
+            </Link>
+            <Link
+              href="/precios"
               className="text-[13px] text-steel hover:text-ink transition-colors"
             >
               {t('precios')}
-            </a>
-            <a
-              href="#stats"
+            </Link>
+            <Link
+              href="/integraciones"
+              className="text-[13px] text-steel hover:text-ink transition-colors"
+            >
+              Integraciones
+            </Link>
+            <Link
+              href="/recursos"
               className="text-[13px] text-steel hover:text-ink transition-colors"
             >
               {t('recursos')}
-            </a>
+            </Link>
           </div>
 
           {/* Desktop actions */}
@@ -125,27 +131,48 @@ export function Navbar() {
             </div>
 
             <nav className="flex flex-col gap-1 px-4 py-4">
-              <a
-                href="#pillars"
+              <Link
+                href="/producto"
                 onClick={() => setOpen(false)}
                 className="rounded-[4px] px-3 py-3 text-[15px] text-ink active:bg-bone/50"
               >
                 {t('producto')}
-              </a>
-              <a
-                href="#pricing"
+              </Link>
+              <Link
+                href="/precios"
                 onClick={() => setOpen(false)}
                 className="rounded-[4px] px-3 py-3 text-[15px] text-ink active:bg-bone/50"
               >
                 {t('precios')}
-              </a>
-              <a
-                href="#stats"
+              </Link>
+              <Link
+                href="/integraciones"
+                onClick={() => setOpen(false)}
+                className="rounded-[4px] px-3 py-3 text-[15px] text-ink active:bg-bone/50"
+              >
+                Integraciones
+              </Link>
+              <Link
+                href="/recursos"
                 onClick={() => setOpen(false)}
                 className="rounded-[4px] px-3 py-3 text-[15px] text-ink active:bg-bone/50"
               >
                 {t('recursos')}
-              </a>
+              </Link>
+              <Link
+                href="/sobre-nosotros"
+                onClick={() => setOpen(false)}
+                className="rounded-[4px] px-3 py-3 text-[15px] text-ink active:bg-bone/50"
+              >
+                Sobre nosotros
+              </Link>
+              <Link
+                href="/contacto"
+                onClick={() => setOpen(false)}
+                className="rounded-[4px] px-3 py-3 text-[15px] text-ink active:bg-bone/50"
+              >
+                Contacto
+              </Link>
             </nav>
 
             <div className="mt-auto border-t border-bone px-4 py-4">

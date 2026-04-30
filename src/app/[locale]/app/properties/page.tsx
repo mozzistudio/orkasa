@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import { Plus } from 'lucide-react'
@@ -27,7 +28,16 @@ type PropertyRow = Pick<
   | 'updated_at'
   | 'neighborhood'
   | 'city'
+  | 'images'
 >
+
+type StoredImage = { path: string; url: string }
+
+function coverUrl(images: unknown): string | null {
+  if (!Array.isArray(images)) return null
+  const first = images[0] as StoredImage | undefined
+  return first?.url ?? null
+}
 
 const STATUS_COLOR: Record<string, string> = {
   active: 'text-[#0A6B3D]',
@@ -97,7 +107,7 @@ export default async function PropertiesListPage({
   let query = supabase
     .from('properties')
     .select(
-      'id, title, property_type, listing_type, status, price, currency, ai_score, updated_at, neighborhood, city',
+      'id, title, property_type, listing_type, status, price, currency, ai_score, updated_at, neighborhood, city, images',
       { count: 'exact' },
     )
     .order('updated_at', { ascending: false })
@@ -176,51 +186,74 @@ export default async function PropertiesListPage({
         <>
           {/* Mobile: card layout */}
           <div className="space-y-3 md:hidden">
-            {rows.map((p) => (
-              <Link
-                key={p.id}
-                href={`/app/properties/${p.id}`}
-                className="block rounded-[4px] border border-bone bg-paper p-4 active:bg-bone/30"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
+            {rows.map((p) => {
+              const cover = coverUrl(p.images)
+              return (
+                <Link
+                  key={p.id}
+                  href={`/app/properties/${p.id}`}
+                  className="block overflow-hidden rounded-[4px] border border-bone bg-paper active:bg-bone/30"
+                >
+                  {/* Cover image (if present) */}
+                  <div className="relative h-40 bg-coal">
+                    {cover ? (
+                      <Image
+                        src={cover}
+                        alt={p.title}
+                        fill
+                        sizes="100vw"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          backgroundImage:
+                            'linear-gradient(0deg, transparent 49%, rgba(255,255,255,0.06) 50%, transparent 51%)',
+                          backgroundSize: '100% 16px',
+                        }}
+                      />
+                    )}
+                    <div
+                      className={`absolute right-3 top-3 rounded-[4px] px-2 py-0.5 font-mono text-[10px] font-medium tracking-wider ${
+                        p.status === 'active'
+                          ? 'bg-signal text-paper'
+                          : 'bg-paper/90 text-ink'
+                      }`}
+                    >
+                      {t(`status.${p.status ?? 'draft'}`).toUpperCase()}
+                    </div>
+                    {p.ai_score && (
+                      <div className="absolute bottom-3 right-3 rounded-[4px] bg-paper/90 px-2 py-0.5 font-mono text-[11px] font-medium text-signal">
+                        SCORE {p.ai_score}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4">
                     <p className="text-[15px] font-medium text-ink line-clamp-1">
                       {p.title}
                     </p>
                     <p className="mt-0.5 font-mono text-[11px] text-steel line-clamp-1">
                       {[p.neighborhood, p.city].filter(Boolean).join(' · ') || '—'}
                     </p>
+                    <div className="mt-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12px] text-steel">
+                          {t(`type.${p.property_type}`)}
+                        </span>
+                        <span className="font-mono text-[10px] text-steel">·</span>
+                        <span className="text-[12px] text-steel">
+                          {t(`listingType.${p.listing_type}`)}
+                        </span>
+                      </div>
+                      <span className="font-mono text-[14px] tabular-nums font-medium text-ink">
+                        {p.price ? formatPrice(Number(p.price)) : '—'}
+                      </span>
+                    </div>
                   </div>
-                  {p.ai_score && (
-                    <span className="font-mono text-[15px] tabular-nums text-signal">
-                      {p.ai_score}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`font-mono text-[10px] uppercase tracking-wider ${
-                        STATUS_COLOR[p.status ?? 'draft'] ?? 'text-steel'
-                      }`}
-                    >
-                      {t(`status.${p.status ?? 'draft'}`)}
-                    </span>
-                    <span className="font-mono text-[10px] text-steel">·</span>
-                    <span className="text-[12px] text-steel">
-                      {t(`type.${p.property_type}`)}
-                    </span>
-                    <span className="font-mono text-[10px] text-steel">·</span>
-                    <span className="text-[12px] text-steel">
-                      {t(`listingType.${p.listing_type}`)}
-                    </span>
-                  </div>
-                  <span className="font-mono text-[14px] tabular-nums font-medium text-ink">
-                    {p.price ? formatPrice(Number(p.price)) : '—'}
-                  </span>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              )
+            })}
           </div>
 
           {/* Desktop: table layout */}
@@ -252,20 +285,39 @@ export default async function PropertiesListPage({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((p) => (
+                {rows.map((p) => {
+                  const cover = coverUrl(p.images)
+                  return (
                   <TableRow
                     key={p.id}
                     className="border-bone hover:bg-bone/30 cursor-pointer"
                   >
                     <TableCell>
-                      <Link href={`/app/properties/${p.id}`} className="block">
-                        <span className="text-[13px] font-medium text-ink">
-                          {p.title}
-                        </span>
-                        <span className="ml-2 font-mono text-[11px] text-steel">
-                          {[p.neighborhood, p.city].filter(Boolean).join(' · ') ||
-                            '—'}
-                        </span>
+                      <Link
+                        href={`/app/properties/${p.id}`}
+                        className="flex items-center gap-3"
+                      >
+                        <div className="relative h-10 w-14 shrink-0 overflow-hidden rounded-[4px] border border-bone bg-coal">
+                          {cover ? (
+                            <Image
+                              src={cover}
+                              alt=""
+                              fill
+                              sizes="56px"
+                              className="object-cover"
+                            />
+                          ) : null}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="block truncate text-[13px] font-medium text-ink">
+                            {p.title}
+                          </span>
+                          <span className="block truncate font-mono text-[11px] text-steel">
+                            {[p.neighborhood, p.city]
+                              .filter(Boolean)
+                              .join(' · ') || '—'}
+                          </span>
+                        </div>
                       </Link>
                     </TableCell>
                     <TableCell className="text-[13px] text-steel">
@@ -293,7 +345,8 @@ export default async function PropertiesListPage({
                       {shortDate(p.updated_at)}
                     </TableCell>
                   </TableRow>
-                ))}
+                  )
+                })}
               </TableBody>
             </Table>
           </div>

@@ -23,7 +23,10 @@ type FeaturedProperty = {
   city: string | null
   price: number | null
   ai_score: number | null
+  images: unknown
 }
+
+type StoredImage = { path: string; url: string }
 
 function dateToShortEs(iso: string | null): string {
   if (!iso) return '—'
@@ -74,7 +77,7 @@ export default async function DashboardPage() {
       .returns<LeadRow[]>(),
     supabase
       .from('properties')
-      .select('id, title, neighborhood, city, price, ai_score')
+      .select('id, title, neighborhood, city, price, ai_score, images')
       .eq('status', 'active')
       .order('ai_score', { ascending: false, nullsFirst: false })
       .limit(3)
@@ -126,14 +129,19 @@ export default async function DashboardPage() {
     date: dateToShortEs(lead.created_at),
   }))
 
-  const propertyCards = (featured.data ?? []).map((p) => ({
-    id: p.id.slice(0, 5),
-    title: p.title,
-    location: [p.neighborhood, p.city].filter(Boolean).join(' · '),
-    price: Number(p.price ?? 0),
-    leads: 0,
-    score: p.ai_score ?? 0,
-  }))
+  const propertyCards = (featured.data ?? []).map((p) => {
+    const imgs = Array.isArray(p.images) ? (p.images as StoredImage[]) : []
+    return {
+      id: p.id.slice(0, 5),
+      fullId: p.id,
+      title: p.title,
+      location: [p.neighborhood, p.city].filter(Boolean).join(' · '),
+      price: Number(p.price ?? 0),
+      leads: 0,
+      score: p.ai_score ?? 0,
+      imageUrl: imgs[0]?.url ?? null,
+    }
+  })
 
   return (
     <div>

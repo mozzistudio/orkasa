@@ -1,7 +1,6 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
-import { Bell, Plus } from 'lucide-react'
+import { Bell } from 'lucide-react'
 import { Link, usePathname } from '@/i18n/navigation'
 import { CommandPaletteTrigger } from './command-palette'
 import { LogoMark } from '@/components/ui/logo'
@@ -45,9 +44,7 @@ function mobileTitleForPath(pathname: string): string {
 }
 
 export function Topbar() {
-  const t = useTranslations('dashboard')
   const pathname = usePathname()
-  const isApp = pathname === '/app' || pathname === '/app/'
 
   return (
     <header
@@ -83,20 +80,6 @@ export function Topbar() {
           <Bell className="h-5 w-5" strokeWidth={1.5} />
           <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-signal" />
         </button>
-
-        {/* CTA: full button on desktop, icon-only on mobile.
-            Only show on Dashboard / Inventario screens — elsewhere the page
-            has its own primary action. */}
-        {isApp && (
-          <Link
-            href="/app/properties/new"
-            className="inline-flex items-center gap-1.5 rounded-[4px] bg-ink px-3 py-2 text-[13px] font-medium text-paper hover:bg-coal transition-colors md:px-4"
-            aria-label={t('uploadProperty')}
-          >
-            <Plus className="h-4 w-4 md:h-3.5 md:w-3.5" strokeWidth={1.5} />
-            <span className="hidden md:inline">{t('uploadProperty')}</span>
-          </Link>
-        )}
       </div>
     </header>
   )

@@ -2,26 +2,48 @@
 
 import { useTranslations } from 'next-intl'
 import { LogoMark } from '@/components/ui/logo'
+import { Link } from '@/i18n/navigation'
 
 export function Footer() {
   const t = useTranslations('footer')
 
-  const columns = [
+  const columns: Array<{
+    title: string
+    links: Array<{ label: string; href: string; external?: boolean }>
+  }> = [
     {
       title: t('producto'),
-      links: [t('listings'), t('leads'), t('analytics'), t('pricing')],
+      links: [
+        { label: t('listings'), href: '/producto' },
+        { label: t('leads'), href: '/producto' },
+        { label: t('analytics'), href: '/producto' },
+        { label: t('pricing'), href: '/precios' },
+        { label: 'Integraciones', href: '/integraciones' },
+      ],
     },
     {
       title: t('empresa'),
-      links: [t('about'), t('blog'), t('careers'), t('contact')],
+      links: [
+        { label: t('about'), href: '/sobre-nosotros' },
+        { label: t('blog'), href: '/blog' },
+        { label: t('careers'), href: '/contacto' },
+        { label: t('contact'), href: '/contacto' },
+      ],
     },
     {
       title: t('legal'),
-      links: [t('privacy'), t('terms')],
+      links: [
+        { label: t('privacy'), href: '/privacidad' },
+        { label: t('terms'), href: '/terminos' },
+      ],
     },
     {
       title: t('soporte'),
-      links: [t('docs'), t('api'), t('status')],
+      links: [
+        { label: t('docs'), href: '/recursos' },
+        { label: t('api'), href: '/recursos' },
+        { label: t('status'), href: 'https://status.orkasa.io', external: true },
+      ],
     },
   ]
 
@@ -41,13 +63,24 @@ export function Footer() {
               </h4>
               <ul className="space-y-2.5">
                 {col.links.map((link) => (
-                  <li key={link}>
-                    <a
-                      href="#"
-                      className="text-[13px] text-bone hover:text-paper transition-colors"
-                    >
-                      {link}
-                    </a>
+                  <li key={link.label}>
+                    {link.external ? (
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[13px] text-bone hover:text-paper transition-colors"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className="text-[13px] text-bone hover:text-paper transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -55,7 +88,9 @@ export function Footer() {
           ))}
         </div>
         <div className="mt-10 flex flex-col items-start gap-4 border-t border-bone/20 pt-6 md:mt-12 md:flex-row md:items-center md:justify-between md:pt-8">
-          <LogoMark size={24} className="text-paper" />
+          <Link href="/" aria-label="Inicio">
+            <LogoMark size={24} className="text-paper" />
+          </Link>
           <p className="font-mono text-[11px] text-steel">{t('copyright')}</p>
         </div>
       </div>
