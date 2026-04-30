@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
-import { Sidebar } from '@/components/app/sidebar'
-import { Topbar } from '@/components/app/topbar'
+import { AppShell } from '@/components/app/app-shell'
 import { CommandPalette } from '@/components/app/command-palette'
 import { createClient } from '@/lib/supabase/server'
 
@@ -29,16 +28,13 @@ export default async function AppLayout({
   const sidebarUser = {
     fullName: agent?.full_name ?? user.email ?? 'Agent',
     role: agent?.role ?? 'agent',
+    email: user.email ?? '',
   }
 
   return (
-    <div className="flex min-h-screen bg-paper">
-      <Sidebar user={sidebarUser} />
-      <div className="ml-60 flex flex-1 flex-col">
-        <Topbar />
-        <main className="flex-1 p-6">{children}</main>
-      </div>
+    <>
+      <AppShell user={sidebarUser}>{children}</AppShell>
       <CommandPalette />
-    </div>
+    </>
   )
 }

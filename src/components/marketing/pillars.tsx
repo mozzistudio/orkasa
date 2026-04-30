@@ -10,8 +10,8 @@ export function Pillars() {
   const t = useTranslations('pillars')
 
   return (
-    <section id="pillars" className="px-6 py-20">
-      <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-3">
+    <section id="pillars" className="px-4 py-16 md:px-6 md:py-20">
+      <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-3 md:gap-12">
         {keys.map((key, i) => {
           const Icon = icons[i]
           return (

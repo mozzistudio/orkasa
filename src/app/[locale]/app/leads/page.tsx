@@ -150,8 +150,60 @@ export default async function LeadsPage({
           }
         />
       ) : (
-        <div className="rounded-[4px] border border-bone bg-paper">
-          <Table>
+        <>
+          {/* Mobile: card layout */}
+          <div className="space-y-3 md:hidden">
+            {leads.map((lead) => (
+              <Link
+                key={lead.id}
+                href={`/app/leads/${lead.id}`}
+                className="block rounded-[4px] border border-bone bg-paper p-4 active:bg-bone/30"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[15px] font-medium text-ink line-clamp-1">
+                      {lead.full_name}
+                    </p>
+                    {lead.email && (
+                      <p className="mt-0.5 font-mono text-[11px] text-steel line-clamp-1">
+                        {lead.email}
+                      </p>
+                    )}
+                  </div>
+                  {lead.ai_score && (
+                    <span className="font-mono text-[15px] tabular-nums text-signal">
+                      {lead.ai_score}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span
+                    className={`font-mono text-[10px] uppercase tracking-wider ${
+                      STATUS_COLOR[lead.status] ?? 'text-steel'
+                    }`}
+                  >
+                    {t(`status.${lead.status}`)}
+                  </span>
+                  <span className="font-mono text-[10px] text-steel">·</span>
+                  <span className="font-mono text-[11px] text-steel">
+                    {t(`origin.${lead.origin}`)}
+                  </span>
+                  {lead.property_id && propsById.get(lead.property_id) && (
+                    <>
+                      <span className="font-mono text-[10px] text-steel">·</span>
+                      <span className="text-[11px] text-ink line-clamp-1">
+                        {propsById.get(lead.property_id)}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* Desktop: table layout */}
+          <div className="hidden md:block rounded-[4px] border border-bone bg-paper">
+            <Table>
             <TableHeader>
               <TableRow className="border-bone hover:bg-transparent">
                 <TableHead className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
@@ -226,8 +278,9 @@ export default async function LeadsPage({
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
-        </div>
+            </Table>
+          </div>
+        </>
       )}
     </div>
   )

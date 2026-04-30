@@ -10,16 +10,16 @@ export function Pricing() {
   const t = useTranslations('pricing')
 
   return (
-    <section id="pricing" className="px-6 py-20">
+    <section id="pricing" className="px-4 py-16 md:px-6 md:py-20">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-12 text-center">
+        <div className="mb-10 text-center md:mb-12">
           <h2 className="text-[22px] font-medium tracking-[-0.5px] text-ink">
             {t('title')}
           </h2>
           <p className="mt-2 text-[13px] text-steel">{t('subtitle')}</p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-3 md:gap-6">
           {plans.map((plan) => {
             const isPopular = plan === 'team'
             const features = t.raw(`${plan}.features`) as string[]

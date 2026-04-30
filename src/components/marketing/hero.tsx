@@ -7,27 +7,27 @@ export function Hero() {
   const t = useTranslations('hero')
 
   return (
-    <section className="px-6 py-24 md:py-32">
-      <div className="mx-auto grid max-w-6xl items-center gap-16 md:grid-cols-2">
+    <section className="px-4 py-16 md:px-6 md:py-32">
+      <div className="mx-auto grid max-w-6xl items-center gap-10 md:grid-cols-2 md:gap-16">
         <div>
-          <h1 className="text-[48px] font-medium leading-[1.05] tracking-[-1.5px] text-ink md:text-[56px]">
+          <h1 className="text-[36px] font-medium leading-[1.05] tracking-[-1px] text-ink sm:text-[44px] md:text-[56px] md:tracking-[-1.5px]">
             {t('line1')}
             <br />
             {t('line2')}
           </h1>
-          <p className="mt-6 max-w-[520px] text-[17px] leading-relaxed text-steel">
+          <p className="mt-5 max-w-[520px] text-[15px] leading-relaxed text-steel md:mt-6 md:text-[17px]">
             {t('subtitle')}
           </p>
-          <div className="mt-10 flex items-center gap-3">
+          <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center md:mt-10">
             <Link
               href="/login"
-              className="rounded-[4px] bg-ink px-5 py-3 text-[13px] font-medium text-paper hover:bg-coal transition-colors"
+              className="rounded-[4px] bg-ink px-5 py-3 text-center text-[14px] font-medium text-paper hover:bg-coal transition-colors md:text-[13px]"
             >
               {t('cta1')}
             </Link>
             <a
               href="#"
-              className="rounded-[4px] border border-ink px-5 py-3 text-[13px] text-ink hover:bg-bone/50 transition-colors"
+              className="rounded-[4px] border border-ink px-5 py-3 text-center text-[14px] text-ink hover:bg-bone/50 transition-colors md:text-[13px]"
             >
               {t('cta2')} →
             </a>

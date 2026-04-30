@@ -52,36 +52,68 @@ export default async function PropertyDetailPage({
       </Link>
 
       {/* Header */}
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <p className="font-mono text-[11px] uppercase tracking-[1.5px] text-steel">
-            [ ID {property.id.slice(0, 8)} ]
-          </p>
-          <h1 className="mt-1 text-[24px] font-medium tracking-[-0.5px] text-ink">
-            {property.title}
-          </h1>
-          <p className="mt-1 font-mono text-[12px] text-steel">
-            {[property.neighborhood, property.city].filter(Boolean).join(' · ')}
-          </p>
+      <div className="mb-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[1.5px] text-steel">
+              [ ID {property.id.slice(0, 8)} ]
+            </p>
+            <h1 className="mt-1 text-[22px] font-medium tracking-[-0.5px] text-ink md:text-[24px]">
+              {property.title}
+            </h1>
+            <p className="mt-1 font-mono text-[12px] text-steel">
+              {[property.neighborhood, property.city].filter(Boolean).join(' · ')}
+            </p>
+          </div>
+
+          {/* Desktop: inline actions */}
+          <div className="hidden items-center gap-2 md:flex">
+            <Link
+              href={`/app/properties/${property.id}/publish`}
+              className="inline-flex items-center gap-2 rounded-[4px] bg-signal px-3 py-2 text-[13px] font-medium text-paper hover:bg-signal/90 transition-colors"
+            >
+              <Send className="h-3.5 w-3.5" strokeWidth={1.5} />
+              Publicar en portales
+            </Link>
+            <Link
+              href={`/app/properties/${property.id}/edit`}
+              className="inline-flex items-center gap-2 rounded-[4px] border border-ink px-3 py-2 text-[13px] text-ink hover:bg-bone/50 transition-colors"
+            >
+              <Pencil className="h-3.5 w-3.5" strokeWidth={1.5} />
+              {t('edit')}
+            </Link>
+            <DeletePropertyButton id={property.id} />
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Link
-            href={`/app/properties/${property.id}/publish`}
-            className="inline-flex items-center gap-2 rounded-[4px] bg-signal px-3 py-2 text-[13px] font-medium text-paper hover:bg-signal/90 transition-colors"
-          >
-            <Send className="h-3.5 w-3.5" strokeWidth={1.5} />
-            Publicar en portales
-          </Link>
+        {/* Mobile: secondary actions row (Edit + Delete) — Publicar is sticky at bottom */}
+        <div className="mt-4 flex items-center gap-2 md:hidden">
           <Link
             href={`/app/properties/${property.id}/edit`}
-            className="inline-flex items-center gap-2 rounded-[4px] border border-ink px-3 py-2 text-[13px] text-ink hover:bg-bone/50 transition-colors"
+            className="flex flex-1 items-center justify-center gap-2 rounded-[4px] border border-ink px-3 py-2.5 text-[13px] text-ink"
           >
             <Pencil className="h-3.5 w-3.5" strokeWidth={1.5} />
             {t('edit')}
           </Link>
           <DeletePropertyButton id={property.id} />
         </div>
+      </div>
+
+      {/* Mobile sticky CTA — Publicar en portales (bottom of viewport, above tab bar) */}
+      <div
+        className="fixed inset-x-0 z-20 border-t border-bone bg-paper p-3 md:hidden"
+        style={{
+          // Sit above the bottom tab bar (h-14 = 56px) + safe area
+          bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+        }}
+      >
+        <Link
+          href={`/app/properties/${property.id}/publish`}
+          className="flex items-center justify-center gap-2 rounded-[4px] bg-signal px-4 py-3 text-[14px] font-medium text-paper"
+        >
+          <Send className="h-4 w-4" strokeWidth={1.5} />
+          Publicar en portales
+        </Link>
       </div>
 
       {/* Hero band — first image if present, else dark scanlines */}

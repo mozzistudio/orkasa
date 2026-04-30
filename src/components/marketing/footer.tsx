@@ -26,12 +26,17 @@ export function Footer() {
   ]
 
   return (
-    <footer className="bg-coal px-6 py-16">
+    <footer
+      className="bg-coal px-4 py-12 md:px-6 md:py-16"
+      style={{
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 3rem)',
+      }}
+    >
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           {columns.map((col) => (
             <div key={col.title}>
-              <h4 className="mb-4 font-mono text-[10px] uppercase tracking-[2px] text-steel">
+              <h4 className="mb-3 font-mono text-[10px] uppercase tracking-[2px] text-steel md:mb-4">
                 {col.title}
               </h4>
               <ul className="space-y-2.5">
@@ -49,7 +54,7 @@ export function Footer() {
             </div>
           ))}
         </div>
-        <div className="mt-12 flex items-center justify-between border-t border-bone/20 pt-8">
+        <div className="mt-10 flex flex-col items-start gap-4 border-t border-bone/20 pt-6 md:mt-12 md:flex-row md:items-center md:justify-between md:pt-8">
           <LogoMark size={24} className="text-paper" />
           <p className="font-mono text-[11px] text-steel">{t('copyright')}</p>
         </div>

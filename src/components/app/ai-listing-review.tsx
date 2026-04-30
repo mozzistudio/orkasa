@@ -215,21 +215,24 @@ export function AIListingReview({
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-ink/50 p-4 overflow-y-auto"
+          className="fixed inset-0 z-50 flex bg-paper md:items-start md:justify-center md:bg-ink/50 md:p-4 md:overflow-y-auto"
           onClick={() => !pending && setOpen(false)}
         >
           <div
-            className="my-8 w-full max-w-4xl rounded-[4px] border border-bone bg-paper shadow-xl"
+            className="flex h-full w-full flex-col bg-paper md:my-8 md:h-auto md:max-w-4xl md:rounded-[4px] md:border md:border-bone md:shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-bone px-6 py-4">
-              <div className="flex items-center gap-3">
+            <div
+              className="flex shrink-0 items-center justify-between border-b border-bone bg-paper px-4 py-3 md:px-6 md:py-4"
+              style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))' }}
+            >
+              <div className="flex items-center gap-2 md:gap-3">
                 <Sparkles className="h-4 w-4 text-signal" strokeWidth={1.5} />
-                <h3 className="text-[16px] font-medium text-ink">
+                <h3 className="text-[15px] font-medium text-ink md:text-[16px]">
                   Revisión con IA
                 </h3>
-                <span className="font-mono text-[10px] uppercase tracking-wider text-steel">
+                <span className="hidden font-mono text-[10px] uppercase tracking-wider text-steel md:inline">
                   claude-opus-4-7
                 </span>
               </div>
@@ -239,12 +242,12 @@ export function AIListingReview({
                 className="text-steel hover:text-ink transition-colors"
                 aria-label="Cerrar"
               >
-                <X className="h-4 w-4" strokeWidth={1.5} />
+                <X className="h-5 w-5 md:h-4 md:w-4" strokeWidth={1.5} />
               </button>
             </div>
 
             {/* Body */}
-            <div className="px-6 py-6">
+            <div className="flex-1 overflow-y-auto px-4 py-4 md:overflow-visible md:px-6 md:py-6">
               {state.stage === 'loading' && (
                 <div className="space-y-6">
                   <div>
@@ -444,14 +447,19 @@ export function AIListingReview({
 
             {/* Footer */}
             {state.stage === 'ready' && (
-              <div className="flex items-center justify-between border-t border-bone px-6 py-3">
-                <p className="font-mono text-[11px] text-steel">
+              <div
+                className="flex shrink-0 items-center justify-between gap-3 border-t border-bone bg-paper px-4 py-3 md:px-6"
+                style={{
+                  paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))',
+                }}
+              >
+                <p className="hidden font-mono text-[11px] text-steel md:block">
                   Validá las sugerencias que querés aplicar al formulario.
                 </p>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-[4px] bg-ink px-4 py-2 text-[13px] font-medium text-paper hover:bg-coal transition-colors"
+                  className="ml-auto rounded-[4px] bg-ink px-4 py-2 text-[13px] font-medium text-paper hover:bg-coal transition-colors"
                 >
                   Cerrar
                 </button>
@@ -464,23 +472,26 @@ export function AIListingReview({
       {/* Per-photo enhancement sub-modal (Gemini Flash Image) */}
       {enhanceModal.stage !== 'closed' && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/60 p-4"
+          className="fixed inset-0 z-[60] flex bg-paper md:items-center md:justify-center md:bg-ink/60 md:p-4"
           onClick={() =>
             enhanceModal.stage !== 'loading' &&
             setEnhanceModal({ stage: 'closed' })
           }
         >
           <div
-            className="w-full max-w-3xl rounded-[4px] border border-bone bg-paper shadow-xl"
+            className="flex h-full w-full flex-col bg-paper md:h-auto md:max-w-3xl md:rounded-[4px] md:border md:border-bone md:shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-bone px-5 py-3">
+            <div
+              className="flex shrink-0 items-center justify-between border-b border-bone bg-paper px-4 py-3 md:px-5"
+              style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))' }}
+            >
               <div className="flex items-center gap-2">
                 <Wand2 className="h-4 w-4 text-signal" strokeWidth={1.5} />
                 <h3 className="text-[15px] font-medium text-ink">
                   Mejorar foto con IA
                 </h3>
-                <span className="font-mono text-[10px] uppercase tracking-wider text-steel">
+                <span className="hidden font-mono text-[10px] uppercase tracking-wider text-steel md:inline">
                   gemini-2.5-flash-image
                 </span>
               </div>
@@ -493,11 +504,11 @@ export function AIListingReview({
                 className="text-steel hover:text-ink transition-colors"
                 aria-label="Cerrar"
               >
-                <X className="h-4 w-4" strokeWidth={1.5} />
+                <X className="h-5 w-5 md:h-4 md:w-4" strokeWidth={1.5} />
               </button>
             </div>
 
-            <div className="px-5 py-5">
+            <div className="flex-1 overflow-y-auto px-4 py-4 md:overflow-visible md:px-5 md:py-5">
               {/* Stage: choose enhancement type */}
               {enhanceModal.stage === 'choose' && (
                 <>
@@ -652,7 +663,12 @@ export function AIListingReview({
 
             {/* Footer actions */}
             {enhanceModal.stage === 'comparing' && (
-              <div className="flex items-center justify-between border-t border-bone bg-paper px-5 py-3">
+              <div
+                className="flex shrink-0 items-center justify-between gap-2 border-t border-bone bg-paper px-4 py-3 md:px-5"
+                style={{
+                  paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))',
+                }}
+              >
                 <button
                   type="button"
                   onClick={() => setEnhanceModal({ stage: 'closed' })}

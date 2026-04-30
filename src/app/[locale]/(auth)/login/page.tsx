@@ -59,13 +59,19 @@ export default function LoginPage() {
       </div>
 
       {/* Right — form */}
-      <div className="flex w-full items-center justify-center bg-paper px-6 lg:w-1/2">
-        <div className="w-full max-w-[360px]">
+      <div
+        className="flex w-full items-center justify-center bg-paper px-4 md:px-6 lg:w-1/2"
+        style={{
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
+      >
+        <div className="w-full max-w-[360px] py-8">
           <div className="mb-8 lg:hidden">
             <LogoLockup className="h-7 text-ink" />
           </div>
 
-          <h1 className="text-[22px] font-medium tracking-[-0.5px] text-ink">
+          <h1 className="text-[24px] font-medium tracking-[-0.5px] text-ink md:text-[22px]">
             {t('title')}
           </h1>
 

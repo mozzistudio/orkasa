@@ -11,7 +11,6 @@ import {
   AlertCircle,
   ChevronRight,
   ChevronLeft,
-  ExternalLink,
 } from 'lucide-react'
 import {
   adaptPropertyForPortal,
@@ -217,20 +216,20 @@ export function PublishWizard({
 
   return (
     <div>
-      {/* Stage indicator */}
-      <div className="mb-8 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[1.5px]">
+      {/* Stage indicator — horizontal scroll on mobile, wraps on desktop */}
+      <div className="mb-6 flex items-center gap-2 overflow-x-auto whitespace-nowrap font-mono text-[10px] uppercase tracking-[1.5px] scrollbar-hide md:mb-8">
         <StageStep
           label="01 · Seleccionar"
           active={stage === 'select'}
           done={stage !== 'select'}
         />
-        <ChevronRight className="h-3 w-3 text-steel" strokeWidth={1.5} />
+        <ChevronRight className="h-3 w-3 shrink-0 text-steel" strokeWidth={1.5} />
         <StageStep
           label="02 · Revisar"
           active={stage === 'review'}
           done={stage === 'publish'}
         />
-        <ChevronRight className="h-3 w-3 text-steel" strokeWidth={1.5} />
+        <ChevronRight className="h-3 w-3 shrink-0 text-steel" strokeWidth={1.5} />
         <StageStep label="03 · Publicar" active={stage === 'publish'} done={false} />
       </div>
 
@@ -300,7 +299,7 @@ export function PublishWizard({
             })}
           </div>
 
-          <div className="mt-8 flex items-center justify-between border-t border-bone pt-4">
+          <div className="mt-6 flex flex-col gap-3 border-t border-bone pt-4 md:mt-8 md:flex-row md:items-center md:justify-between">
             <p className="font-mono text-[11px] text-steel">
               {selected.size} plataforma{selected.size !== 1 ? 's' : ''}{' '}
               seleccionada{selected.size !== 1 ? 's' : ''}
@@ -309,7 +308,7 @@ export function PublishWizard({
               type="button"
               onClick={() => setStage('review')}
               disabled={selected.size === 0}
-              className="inline-flex items-center gap-1.5 rounded-[4px] bg-ink px-4 py-2 text-[13px] font-medium text-paper hover:bg-coal transition-colors disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-[4px] bg-ink px-4 py-2.5 text-[13px] font-medium text-paper hover:bg-coal transition-colors disabled:opacity-60 md:w-auto md:py-2"
             >
               <Sparkles className="h-3.5 w-3.5" strokeWidth={1.5} />
               Generar adaptaciones IA
@@ -321,7 +320,8 @@ export function PublishWizard({
       {/* Stage 2: review per platform */}
       {stage === 'review' && (
         <div>
-          <div className="mb-6 flex items-center gap-2">
+          {/* Provider tabs — horizontal scroll on mobile */}
+          <div className="-mx-4 mb-6 flex items-center gap-2 overflow-x-auto px-4 scrollbar-hide md:mx-0 md:flex-wrap md:overflow-visible md:px-0">
             {Array.from(selected).map((id) => {
               const meta = providers.find((p) => p.id === id)
               if (!meta) return null
@@ -331,7 +331,7 @@ export function PublishWizard({
                   key={id}
                   type="button"
                   onClick={() => setFocusedProvider(id)}
-                  className={`relative inline-flex items-center gap-2 rounded-[4px] border px-3 py-2 transition-colors ${
+                  className={`relative inline-flex shrink-0 items-center gap-2 rounded-[4px] border px-3 py-2 transition-colors ${
                     focusedProvider === id
                       ? 'border-ink bg-bone/30'
                       : 'border-bone hover:border-ink'
@@ -416,7 +416,7 @@ export function PublishWizard({
               )
             })()}
 
-          <div className="mt-8 flex items-center justify-between border-t border-bone pt-4">
+          <div className="mt-6 flex flex-col gap-3 border-t border-bone pt-4 md:mt-8 md:flex-row md:items-center md:justify-between">
             <button
               type="button"
               onClick={() => setStage('select')}
@@ -425,15 +425,15 @@ export function PublishWizard({
               <ChevronLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
               Volver
             </button>
-            <div className="flex items-center gap-3">
-              <p className="font-mono text-[11px] text-steel">
+            <div className="flex flex-col items-stretch gap-2 md:flex-row md:items-center md:gap-3">
+              <p className="text-center font-mono text-[11px] text-steel md:text-left">
                 {validatedCount}/{selected.size} validadas
               </p>
               <button
                 type="button"
                 onClick={handlePublish}
                 disabled={validatedCount === 0 || pending}
-                className="inline-flex items-center gap-1.5 rounded-[4px] bg-signal px-4 py-2 text-[13px] font-medium text-paper hover:bg-signal/90 transition-colors disabled:opacity-60"
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-[4px] bg-signal px-4 py-2.5 text-[13px] font-medium text-paper hover:bg-signal/90 transition-colors disabled:opacity-60 md:w-auto md:py-2"
               >
                 <Send className="h-3.5 w-3.5" strokeWidth={1.5} />
                 Publicar {validatedCount > 0 ? `(${validatedCount})` : ''}
@@ -595,15 +595,15 @@ function ProviderReviewCard({
     meta.adapter && adapted.description.length > meta.adapter.descriptionMax
 
   return (
-    <div className="rounded-[4px] border border-bone bg-paper p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-[4px] bg-bone font-mono text-[13px] font-medium text-ink">
+    <div className="rounded-[4px] border border-bone bg-paper p-4 md:p-6">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="flex flex-1 items-center gap-3 min-w-0">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] bg-bone font-mono text-[13px] font-medium text-ink">
             {meta.shortLabel}
           </div>
-          <div>
-            <h3 className="text-[15px] font-medium text-ink">{meta.label}</h3>
-            <p className="font-mono text-[10px] uppercase tracking-wider text-steel">
+          <div className="min-w-0">
+            <h3 className="truncate text-[15px] font-medium text-ink">{meta.label}</h3>
+            <p className="truncate font-mono text-[10px] uppercase tracking-wider text-steel">
               tono {meta.adapter?.tone} · {meta.adapter?.appendsCta ? 'con CTA' : 'sin CTA'}
             </p>
           </div>
@@ -611,10 +611,11 @@ function ProviderReviewCard({
         <button
           type="button"
           onClick={onRegenerate}
-          className="inline-flex items-center gap-1.5 rounded-[4px] border border-bone px-3 py-1.5 text-[12px] text-steel hover:border-ink hover:text-ink transition-colors"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-[4px] border border-bone px-2 py-1.5 text-[12px] text-steel hover:border-ink hover:text-ink transition-colors md:px-3"
+          aria-label="Regenerar"
         >
           <RefreshCw className="h-3 w-3" strokeWidth={1.5} />
-          Regenerar
+          <span className="hidden md:inline">Regenerar</span>
         </button>
       </div>
 
@@ -714,7 +715,7 @@ function ProviderReviewCard({
             type="button"
             onClick={onValidate}
             disabled={titleOver || descOver}
-            className="inline-flex items-center gap-1.5 rounded-[4px] bg-ink px-3 py-1.5 text-[13px] font-medium text-paper hover:bg-coal transition-colors disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center gap-1.5 rounded-[4px] bg-ink px-3 py-2.5 text-[13px] font-medium text-paper hover:bg-coal transition-colors disabled:opacity-60 md:w-auto md:py-1.5"
           >
             <Check className="h-3 w-3" strokeWidth={1.5} />
             Validar para esta plataforma

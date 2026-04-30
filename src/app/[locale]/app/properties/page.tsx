@@ -174,7 +174,57 @@ export default async function PropertiesListPage({
         </div>
       ) : (
         <>
-          <div className="rounded-[4px] border border-bone bg-paper">
+          {/* Mobile: card layout */}
+          <div className="space-y-3 md:hidden">
+            {rows.map((p) => (
+              <Link
+                key={p.id}
+                href={`/app/properties/${p.id}`}
+                className="block rounded-[4px] border border-bone bg-paper p-4 active:bg-bone/30"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[15px] font-medium text-ink line-clamp-1">
+                      {p.title}
+                    </p>
+                    <p className="mt-0.5 font-mono text-[11px] text-steel line-clamp-1">
+                      {[p.neighborhood, p.city].filter(Boolean).join(' · ') || '—'}
+                    </p>
+                  </div>
+                  {p.ai_score && (
+                    <span className="font-mono text-[15px] tabular-nums text-signal">
+                      {p.ai_score}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`font-mono text-[10px] uppercase tracking-wider ${
+                        STATUS_COLOR[p.status ?? 'draft'] ?? 'text-steel'
+                      }`}
+                    >
+                      {t(`status.${p.status ?? 'draft'}`)}
+                    </span>
+                    <span className="font-mono text-[10px] text-steel">·</span>
+                    <span className="text-[12px] text-steel">
+                      {t(`type.${p.property_type}`)}
+                    </span>
+                    <span className="font-mono text-[10px] text-steel">·</span>
+                    <span className="text-[12px] text-steel">
+                      {t(`listingType.${p.listing_type}`)}
+                    </span>
+                  </div>
+                  <span className="font-mono text-[14px] tabular-nums font-medium text-ink">
+                    {p.price ? formatPrice(Number(p.price)) : '—'}
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* Desktop: table layout */}
+          <div className="hidden md:block rounded-[4px] border border-bone bg-paper">
             <Table>
               <TableHeader>
                 <TableRow className="border-bone hover:bg-transparent">

@@ -136,5 +136,23 @@
     font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    /* Prevent iOS rubber-band scrolling beyond bounds; use safe-area inset */
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* iOS Safari zooms inputs <16px on focus. Force ≥16px on mobile inputs. */
+  @media (max-width: 767px) {
+    input,
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
+  }
+  /* Hide scrollbars on horizontal-scroll containers (kanban, mobile tables) */
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }

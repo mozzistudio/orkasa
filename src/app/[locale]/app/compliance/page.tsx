@@ -97,7 +97,69 @@ export default async function CompliancePage() {
           </p>
         </div>
       ) : (
-        <div className="rounded-[4px] border border-bone bg-paper">
+        <>
+          {/* Mobile: card list */}
+          <ul className="space-y-3 md:hidden">
+            {checks.map((check) => (
+              <li
+                key={check.id}
+                className="rounded-[4px] border border-bone bg-paper p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    {check.lead_id && leadsById.has(check.lead_id) ? (
+                      <Link
+                        href={`/app/leads/${check.lead_id}`}
+                        className="block truncate text-[14px] font-medium text-ink"
+                      >
+                        {leadsById.get(check.lead_id)}
+                      </Link>
+                    ) : (
+                      <span className="text-[14px] text-steel">—</span>
+                    )}
+                    <p className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-ink">
+                      {t(`type.${check.type}`)}
+                    </p>
+                  </div>
+                  <ComplianceStatusButton
+                    id={check.id}
+                    currentStatus={check.status}
+                  />
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span
+                    className={`font-mono text-[10px] uppercase tracking-wider ${
+                      STATUS_COLOR[check.status] ?? 'text-steel'
+                    }`}
+                  >
+                    {t(`status.${check.status}`)}
+                  </span>
+                  {check.risk_level && (
+                    <>
+                      <span className="font-mono text-[10px] text-steel">·</span>
+                      <span
+                        className={`font-mono text-[10px] uppercase tracking-wider ${
+                          RISK_COLOR[check.risk_level] ?? 'text-steel'
+                        }`}
+                      >
+                        {t(`risk.${check.risk_level}`)}
+                      </span>
+                    </>
+                  )}
+                  {check.due_at && (
+                    <>
+                      <span className="font-mono text-[10px] text-steel">·</span>
+                      <span className="font-mono text-[10px] text-steel">
+                        Vence {formatDate(check.due_at)}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="hidden rounded-[4px] border border-bone bg-paper md:block">
           <Table>
             <TableHeader>
               <TableRow className="border-bone hover:bg-transparent">
@@ -184,7 +246,8 @@ export default async function CompliancePage() {
               ))}
             </TableBody>
           </Table>
-        </div>
+          </div>
+        </>
       )}
     </div>
   )

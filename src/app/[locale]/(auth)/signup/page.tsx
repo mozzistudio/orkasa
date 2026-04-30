@@ -49,8 +49,14 @@ export default function SignupPage() {
       </div>
 
       {/* Right — form or success */}
-      <div className="flex w-full items-center justify-center bg-paper px-6 lg:w-1/2">
-        <div className="w-full max-w-[400px]">
+      <div
+        className="flex w-full items-center justify-center bg-paper px-4 md:px-6 lg:w-1/2"
+        style={{
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
+      >
+        <div className="w-full max-w-[400px] py-8">
           <div className="mb-8 lg:hidden">
             <LogoLockup className="h-7 text-ink" />
           </div>
