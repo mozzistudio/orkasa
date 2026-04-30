@@ -598,6 +598,10 @@ export type Database = {
         | 'instagram_business'
         | 'whatsapp_business'
         | 'webhook_custom'
+        | 'acobir_mls'
+        | 'whatsapp_status'
+        | 'agency_website'
+        | 'email_matches'
       integration_status:
         | 'disconnected'
         | 'connecting'

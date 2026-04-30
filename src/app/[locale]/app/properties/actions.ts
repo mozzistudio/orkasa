@@ -113,6 +113,14 @@ export async function createProperty(
 
   revalidatePath('/app/properties')
   revalidatePath('/app')
+
+  // Optional `next` field steers post-save redirect:
+  // - 'publish' → go straight to the publication wizard (Phase 2 of the flow)
+  // - default   → go to property detail page
+  const next = formData.get('next')
+  if (next === 'publish') {
+    redirect(`/app/properties/${created.id}/publish`)
+  }
   redirect(`/app/properties/${created.id}`)
 }
 

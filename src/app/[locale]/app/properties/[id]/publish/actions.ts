@@ -221,6 +221,71 @@ export async function savePublicationDraft(
 }
 
 // =============================================================================
+// publishOnePortal — publish to a single channel, returning the result.
+// Lets the wizard show per-channel real-time status by iterating client-side.
+// =============================================================================
+
+export type PublishOneResult =
+  | { ok: true; provider: IntegrationProvider; externalUrl: string }
+  | { ok: false; provider: IntegrationProvider; error: string }
+
+export async function publishOnePortal(
+  propertyId: string,
+  provider: IntegrationProvider,
+): Promise<PublishOneResult> {
+  const supabase = await createClient()
+
+  // Find the validated draft for this provider
+  const { data: pub, error: readErr } = await supabase
+    .from('property_publications')
+    .select('id, status')
+    .eq('property_id', propertyId)
+    .eq('provider', provider)
+    .maybeSingle<Pick<Publication, 'id' | 'status'>>()
+
+  if (readErr) return { ok: false, provider, error: readErr.message }
+  if (!pub) {
+    return {
+      ok: false,
+      provider,
+      error: 'No hay borrador validado para este canal.',
+    }
+  }
+  if (pub.status !== 'validated') {
+    return {
+      ok: false,
+      provider,
+      error: `Estado actual: ${pub.status}. Debe estar validado antes de publicar.`,
+    }
+  }
+
+  // Mock publish — real OAuth flows will replace this per-provider.
+  // Simulate varying latency so the UI doesn't feel synchronous.
+  const latency = 600 + Math.floor(Math.random() * 800)
+  await new Promise((resolve) => setTimeout(resolve, latency))
+
+  const now = new Date().toISOString()
+  const externalUrl = `https://orkasa.app/preview/${propertyId}/${provider}`
+  const { error: updateErr } = await supabase
+    .from('property_publications')
+    .update({
+      status: 'published',
+      published_at: now,
+      external_url: externalUrl,
+      external_id: `mock-${Date.now()}-${provider}`,
+    })
+    .eq('id', pub.id)
+
+  if (updateErr) {
+    return { ok: false, provider, error: updateErr.message }
+  }
+
+  revalidatePath(`/app/properties/${propertyId}`)
+  revalidatePath(`/app/properties/${propertyId}/publish`)
+  return { ok: true, provider, externalUrl }
+}
+
+// =============================================================================
 // publishToPortals — mock publish (no real OAuth yet, records intent in DB)
 // =============================================================================
 

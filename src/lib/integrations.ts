@@ -28,6 +28,19 @@ export type IntegrationProviderMeta = {
   adapter?: AdapterSpec
 }
 
+/**
+ * Photo aspect ratio the channel prefers / requires. Drives the per-channel
+ * preview crop in the publish wizard so the agent sees how the hero will be
+ * framed before publishing.
+ *
+ * - 'landscape' (4:3) — most real estate portals
+ * - 'wide'      (16:9) — agency website, email banner
+ * - 'square'    (1:1) — Instagram feed, Facebook
+ * - 'portrait'  (4:5) — Instagram portrait
+ * - 'vertical'  (9:16) — WhatsApp Status, Instagram stories
+ */
+export type ImageAspect = 'landscape' | 'wide' | 'square' | 'portrait' | 'vertical'
+
 export type AdapterSpec = {
   // Hard limits — Claude is prompted to respect these
   titleMax: number
@@ -40,8 +53,44 @@ export type AdapterSpec = {
   allowsHashtags: boolean
   // Force CTA at the end ("Contactanos al...") or not
   appendsCta: boolean
+  // Aspect ratio for the hero photo crop preview
+  imageAspect: ImageAspect
+  // Max number of images the channel accepts (cap on the gallery)
+  maxImages?: number
   // Free-form notes that go straight into the system prompt
   styleNotes: string
+}
+
+/** Tailwind aspect-ratio class for an ImageAspect — used by previews. */
+export function aspectClass(aspect: ImageAspect): string {
+  switch (aspect) {
+    case 'landscape':
+      return 'aspect-[4/3]'
+    case 'wide':
+      return 'aspect-[16/9]'
+    case 'square':
+      return 'aspect-square'
+    case 'portrait':
+      return 'aspect-[4/5]'
+    case 'vertical':
+      return 'aspect-[9/16]'
+  }
+}
+
+/** Human-readable aspect label for UI chips. */
+export function aspectLabel(aspect: ImageAspect): string {
+  switch (aspect) {
+    case 'landscape':
+      return '4:3'
+    case 'wide':
+      return '16:9'
+    case 'square':
+      return '1:1'
+    case 'portrait':
+      return '4:5'
+    case 'vertical':
+      return '9:16'
+  }
 }
 
 export const INTEGRATION_PROVIDERS: IntegrationProviderMeta[] = [
@@ -67,6 +116,7 @@ export const INTEGRATION_PROVIDERS: IntegrationProviderMeta[] = [
       tone: 'factual',
       allowsHashtags: false,
       appendsCta: true,
+      imageAspect: 'landscape',
       styleNotes:
         'E24 audience is broad — both end-buyers and brokers browse. Lead with the most differentiating spec (m², bedrooms, location), then amenities, then closing/contact line. Spanish only. No emojis. No "perfect/dream/luxury".',
     },
@@ -88,6 +138,7 @@ export const INTEGRATION_PROVIDERS: IntegrationProviderMeta[] = [
       tone: 'factual',
       allowsHashtags: false,
       appendsCta: true,
+      imageAspect: 'landscape',
       styleNotes:
         'CompreOAlquile is panameño-only — heavy mobile traffic. Keep paragraphs short (2-3 lines). Spanish, casual but professional. Mention barrio prominently. No emojis.',
     },
@@ -108,6 +159,7 @@ export const INTEGRATION_PROVIDERS: IntegrationProviderMeta[] = [
       tone: 'factual',
       allowsHashtags: false,
       appendsCta: false,
+      imageAspect: 'landscape',
       styleNotes:
         'Inmuebles24 (México) — title cap is hard at 60 chars. Use Mexican Spanish (recámaras NOT dormitorios, alberca for piscina, cochera for garaje, MN for currency). No CTA: portal injects its own contact form. Spec-first, then differentiators.',
     },
@@ -129,6 +181,7 @@ export const INTEGRATION_PROVIDERS: IntegrationProviderMeta[] = [
       tone: 'factual',
       allowsHashtags: false,
       appendsCta: false,
+      imageAspect: 'landscape',
       styleNotes:
         'MercadoLibre Inmuebles — multi-country. Use country-neutral Spanish ("habitaciones" not regional variants). MUST include neighborhood + city + country in first paragraph for SEO. No CTA: ML uses its own messaging system. Long descriptions reward — go deeper on amenities.',
     },
@@ -150,6 +203,7 @@ export const INTEGRATION_PROVIDERS: IntegrationProviderMeta[] = [
       tone: 'factual',
       allowsHashtags: false,
       appendsCta: false,
+      imageAspect: 'landscape',
       styleNotes:
         'Properati — data-driven portal, audience is investors and serious buyers. Lead with quantitative facts (m², price/m² if relevant, year built). Avoid lifestyle copy. Bilingual ES/EN may be acceptable for high-end. No CTA.',
     },
@@ -170,6 +224,7 @@ export const INTEGRATION_PROVIDERS: IntegrationProviderMeta[] = [
       tone: 'factual',
       allowsHashtags: false,
       appendsCta: false,
+      imageAspect: 'landscape',
       styleNotes:
         'Idealista (España) — use Iberian Spanish ("piso" for apartamento, "vosotros" not ustedes). Mention metro/transport access if applicable. SEO-conscious: first 200 chars matter for search snippets.',
     },
@@ -190,6 +245,7 @@ export const INTEGRATION_PROVIDERS: IntegrationProviderMeta[] = [
       tone: 'factual',
       allowsHashtags: false,
       appendsCta: false,
+      imageAspect: 'landscape',
       styleNotes:
         'ZonaProp (Argentina) — use Argentinian Spanish ("departamento" not apartamento, "ambientes" for room count, voseo: "tenés/podés"). Highlight USD pricing if applicable. Mention barrio + neighborhood character.',
     },
@@ -211,6 +267,7 @@ export const INTEGRATION_PROVIDERS: IntegrationProviderMeta[] = [
       tone: 'factual',
       allowsHashtags: false,
       appendsCta: true,
+      imageAspect: 'landscape',
       styleNotes:
         'Casas.com — Centroamerican audience (CR, NI, GT, HN, SV). Spanish, professional. CTA at end with phone or WhatsApp. Mention barrio + city.',
     },
@@ -234,6 +291,7 @@ export const INTEGRATION_PROVIDERS: IntegrationProviderMeta[] = [
       tone: 'social',
       allowsHashtags: false,
       appendsCta: true,
+      imageAspect: 'landscape',
       styleNotes:
         'Facebook Marketplace — buyer is scrolling on mobile, decision time = 3 seconds. Open with the hook (price + ONE differentiator). Use line breaks every 2-3 sentences. Mid-formal Spanish, ok to use "vos/tú" depending on country. End with explicit CTA: "Escribime" or "Llamá al ___". No hashtags (Marketplace strips them).',
     },
@@ -255,6 +313,8 @@ export const INTEGRATION_PROVIDERS: IntegrationProviderMeta[] = [
       tone: 'social',
       allowsHashtags: true,
       appendsCta: true,
+      imageAspect: 'square',
+      maxImages: 10,
       styleNotes:
         'Instagram caption — feed scrollers, 1.5 sec attention. First line is THE hook (under 125 chars, no caps cut-off). Then aerated body with line breaks. End with 5-10 hashtags relevant to LATAM real estate (#bienesraices, #inmuebles, #city_name, etc.). CTA: "Link en bio" or "Escribime al DM". No title (Instagram has no title field).',
     },
@@ -276,6 +336,112 @@ export const INTEGRATION_PROVIDERS: IntegrationProviderMeta[] = [
     available: false,
     shortLabel: 'WA',
     website: 'https://business.whatsapp.com',
+  },
+
+  // === ACOBIR MLS — Panama broker association MLS ===
+  {
+    id: 'acobir_mls',
+    label: 'ACOBIR MLS',
+    description:
+      'MLS oficial de la Asociación Panameña de Corredores y Promotores de Bienes Raíces. Distribuye a toda la red de miembros.',
+    category: 'portal',
+    regions: ['PA'],
+    authMethod: 'api_key',
+    credentialFields: [
+      { key: 'broker_id', label: 'Broker ID ACOBIR', type: 'text' },
+      { key: 'api_key', label: 'API Key', type: 'password' },
+    ],
+    available: false,
+    shortLabel: 'AC',
+    website: 'https://www.acobir.com',
+    adapter: {
+      titleMax: 100,
+      descriptionMax: 2500,
+      tone: 'factual',
+      allowsHashtags: false,
+      appendsCta: false,
+      imageAspect: 'landscape',
+      maxImages: 25,
+      styleNotes:
+        'ACOBIR MLS — audience is fellow brokers (B2B). Strict factual tone. Lead with cadastral / RUC + barrio + tipo + m². No marketing copy, no superlatives. Mention zonificación if known. Spanish (Panama). The MLS auto-distributes to member sites.',
+    },
+  },
+
+  // === WhatsApp Status — story-format vertical ===
+  {
+    id: 'whatsapp_status',
+    label: 'WhatsApp Status',
+    description:
+      'Publica historias verticales en tu Status de WhatsApp Business para visibilidad orgánica con tu lista de contactos.',
+    category: 'messaging',
+    regions: ['PA', 'DO', 'CR', 'CO', 'MX'],
+    authMethod: 'oauth',
+    available: false,
+    shortLabel: 'WS',
+    website: 'https://business.whatsapp.com',
+    adapter: {
+      titleMax: 0,
+      descriptionMax: 280,
+      tone: 'concise',
+      allowsHashtags: false,
+      appendsCta: true,
+      imageAspect: 'vertical',
+      maxImages: 1,
+      styleNotes:
+        'WhatsApp Status — single vertical image overlay, max 24h visibility. Caption is overlaid TEXT on the image, so brutal economy: precio + barrio + bedroom count + ONE differentiator. CTA at end: "Escribime para ver". Single image only (the cover).',
+    },
+  },
+
+  // === Sitio web propio de la agencia ===
+  {
+    id: 'agency_website',
+    label: 'Sitio web de la agencia',
+    description:
+      'Publica el listing en tu sitio web vía export estática o sync con tu CMS (WordPress, Webflow, custom).',
+    category: 'custom',
+    regions: [],
+    authMethod: 'webhook',
+    credentialFields: [
+      { key: 'site_url', label: 'URL del sitio', type: 'url' },
+      { key: 'webhook_url', label: 'Webhook (POST nuevo listing)', type: 'url' },
+    ],
+    available: false,
+    shortLabel: 'WEB',
+    adapter: {
+      titleMax: 120,
+      descriptionMax: 6000,
+      tone: 'factual',
+      allowsHashtags: false,
+      appendsCta: true,
+      imageAspect: 'wide',
+      maxImages: 50,
+      styleNotes:
+        'Sitio propio — controlás el formato, podés ser largo y narrativo. SEO-friendly: usa el barrio + ciudad + país en los primeros 200 chars, rotá keywords como "venta", "departamento", "panamá". CTA con tu form propio o WhatsApp. Sin restricciones de plataforma.',
+    },
+  },
+
+  // === Email a leads matchados ===
+  {
+    id: 'email_matches',
+    label: 'Email a matches',
+    description:
+      'Envía un email curado a los leads del CRM cuyas preferencias matchean con esta propiedad (barrio, presupuesto, tipo).',
+    category: 'messaging',
+    regions: [],
+    authMethod: 'manual',
+    available: false,
+    shortLabel: 'EM',
+    adapter: {
+      titleMax: 80,
+      descriptionMax: 1500,
+      tone: 'concise',
+      allowsHashtags: false,
+      appendsCta: true,
+      imageAspect: 'wide',
+      maxImages: 4,
+      styleNotes:
+        'Email a leads — destinatario YA está interesado en este tipo de inmueble. Personalizado: arrancá con "Tengo algo que puede interesarte" + spec match. Cuerpo: 3-5 bullets de specs + 1-2 fotos hero. CTA fuerte: "Agendá visita" con link a Calendly. Subject line en el title.',
+    },
   },
 
   // === CUSTOM ===

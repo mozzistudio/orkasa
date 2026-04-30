@@ -11,15 +11,19 @@ import {
   AlertCircle,
   ChevronRight,
   ChevronLeft,
+  ExternalLink,
+  Loader2,
 } from 'lucide-react'
 import {
   adaptPropertyForPortal,
   savePublicationDraft,
-  publishToPortals,
+  publishOnePortal,
 } from './actions'
-import type {
-  IntegrationProvider,
-  IntegrationProviderMeta,
+import {
+  aspectClass,
+  aspectLabel,
+  type IntegrationProvider,
+  type IntegrationProviderMeta,
 } from '@/lib/integrations'
 import type { StoredImage } from '@/components/app/image-upload'
 import type { Database } from '@/lib/database.types'
@@ -95,10 +99,21 @@ export function PublishWizard({
   const [focusedProvider, setFocusedProvider] =
     useState<IntegrationProvider | null>(null)
 
+  // Per-channel publish status during stage 'publish'. Updates in real-time
+  // as the wizard iterates over each validated provider sequentially.
+  type PerChannelStatus =
+    | { stage: 'idle' }
+    | { stage: 'publishing' }
+    | { stage: 'published'; externalUrl: string }
+    | { stage: 'failed'; error: string }
+  const [channelStatus, setChannelStatus] = useState<
+    Record<string, PerChannelStatus>
+  >({})
+
   // Final publication summary
   const [publishResult, setPublishResult] = useState<{
     published: number
-    error: string | null
+    failed: number
   } | null>(null)
 
   function toggleProvider(id: IntegrationProvider) {
@@ -198,14 +213,47 @@ export function PublishWizard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage])
 
+  /**
+   * Publish to each validated channel sequentially, updating per-channel
+   * status as we go. This drives the live progress bar in stage 3 — the user
+   * sees each chip flip from publishing→published in real time instead of
+   * a single spinner-then-done.
+   */
   function handlePublish() {
     setStage('publish')
+    const queue = Array.from(selected).filter(
+      (id) => adapted[id]?.validated,
+    )
+
+    // Initialize all to idle
+    const initial: Record<string, PerChannelStatus> = {}
+    for (const id of queue) initial[id] = { stage: 'idle' }
+    setChannelStatus(initial)
+
     startTransition(async () => {
-      const result = await publishToPortals(property.id)
-      setPublishResult({
-        published: result.published,
-        error: result.error ?? null,
-      })
+      let published = 0
+      let failed = 0
+      for (const provider of queue) {
+        setChannelStatus((prev) => ({
+          ...prev,
+          [provider]: { stage: 'publishing' },
+        }))
+        const result = await publishOnePortal(property.id, provider)
+        if (result.ok) {
+          published++
+          setChannelStatus((prev) => ({
+            ...prev,
+            [provider]: { stage: 'published', externalUrl: result.externalUrl },
+          }))
+        } else {
+          failed++
+          setChannelStatus((prev) => ({
+            ...prev,
+            [provider]: { stage: 'failed', error: result.error },
+          }))
+        }
+      }
+      setPublishResult({ published, failed })
       router.refresh()
     })
   }
@@ -443,69 +491,116 @@ export function PublishWizard({
         </div>
       )}
 
-      {/* Stage 3: publish result */}
+      {/* Stage 3: live per-channel publishing feed */}
       {stage === 'publish' && (
-        <div className="rounded-[4px] border border-bone bg-paper p-8 text-center">
-          {pending ? (
-            <div className="space-y-3">
-              <Sparkles
-                className="mx-auto h-6 w-6 animate-pulse text-signal"
+        <div>
+          <div className="mb-6 flex items-center gap-3">
+            {pending ? (
+              <Loader2
+                className="h-5 w-5 animate-spin text-signal"
                 strokeWidth={1.5}
               />
-              <p className="font-mono text-[11px] uppercase tracking-wider text-steel">
-                Publicando…
-              </p>
-            </div>
-          ) : publishResult?.error ? (
-            <div className="space-y-3">
-              <AlertCircle
-                className="mx-auto h-6 w-6 text-signal"
-                strokeWidth={1.5}
-              />
-              <p className="text-[14px] font-medium text-ink">Error</p>
-              <p className="text-[13px] text-signal">{publishResult.error}</p>
-              <button
-                type="button"
-                onClick={() => setStage('review')}
-                className="mt-2 inline-flex items-center gap-1.5 rounded-[4px] border border-ink px-3 py-1.5 text-[13px] text-ink hover:bg-bone/50 transition-colors"
-              >
-                Volver
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[4px] bg-[#0A6B3D]/10">
+            ) : publishResult && publishResult.failed === 0 ? (
+              <div className="flex h-7 w-7 items-center justify-center rounded-[4px] bg-[#0A6B3D]/10">
                 <Check
-                  className="h-6 w-6 text-[#0A6B3D]"
-                  strokeWidth={1.5}
+                  className="h-4 w-4 text-[#0A6B3D]"
+                  strokeWidth={2}
                 />
               </div>
-              <div>
-                <p className="text-[16px] font-medium text-ink">
-                  Publicación enviada
-                </p>
-                <p className="mt-1 text-[13px] text-steel">
-                  {publishResult?.published} plataforma
-                  {publishResult?.published !== 1 ? 's' : ''} marcada
-                  {publishResult?.published !== 1 ? 's' : ''} como publicada
-                  {publishResult?.published !== 1 ? 's' : ''}.
-                </p>
-                <p className="mx-auto mt-3 max-w-md font-mono text-[11px] text-steel">
-                  Nota: las integraciones reales (OAuth + sync engine por
-                  portal) están en roadmap. Por ahora se registra el intento
-                  de publicación con preview URL en Orkasa.
-                </p>
-              </div>
-              <div className="flex items-center justify-center gap-2 pt-3">
+            ) : publishResult ? (
+              <AlertCircle
+                className="h-5 w-5 text-signal"
+                strokeWidth={1.5}
+              />
+            ) : null}
+            <h2 className="text-[18px] font-medium tracking-[-0.3px] text-ink md:text-[20px]">
+              {pending
+                ? 'Publicando en paralelo…'
+                : publishResult
+                  ? publishResult.failed === 0
+                    ? `${publishResult.published} canal${publishResult.published !== 1 ? 'es' : ''} publicado${publishResult.published !== 1 ? 's' : ''}`
+                    : `${publishResult.published} OK · ${publishResult.failed} con error`
+                  : 'Listo para publicar'}
+            </h2>
+          </div>
+
+          <ul className="divide-y divide-bone overflow-hidden rounded-[4px] border border-bone bg-paper">
+            {Object.entries(channelStatus).map(([providerId, st]) => {
+              const meta = providers.find((p) => p.id === providerId)
+              if (!meta) return null
+              return (
+                <li
+                  key={providerId}
+                  className="flex items-center gap-3 px-4 py-3"
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] bg-bone font-mono text-[11px] font-medium text-ink">
+                    {meta.shortLabel}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate text-[13px] font-medium text-ink">
+                      {meta.label}
+                    </p>
+                    {st.stage === 'failed' && (
+                      <p className="truncate font-mono text-[11px] text-signal">
+                        {st.error}
+                      </p>
+                    )}
+                    {st.stage === 'published' && (
+                      <a
+                        href={st.externalUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 truncate font-mono text-[11px] text-steel transition-colors hover:text-signal"
+                      >
+                        Ver preview <ExternalLink className="h-2.5 w-2.5" strokeWidth={1.5} />
+                      </a>
+                    )}
+                    {st.stage === 'idle' && (
+                      <p className="font-mono text-[11px] text-steel">
+                        En cola…
+                      </p>
+                    )}
+                    {st.stage === 'publishing' && (
+                      <p className="font-mono text-[11px] text-signal">
+                        Publicando…
+                      </p>
+                    )}
+                  </div>
+                  <div className="shrink-0">
+                    <ChannelStatusChip status={st.stage} />
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+
+          {!pending && publishResult && (
+            <>
+              <p className="mt-6 max-w-2xl font-mono text-[11px] text-steel">
+                Nota: las integraciones reales (OAuth + sync engine por portal)
+                están en roadmap. Por ahora cada canal queda registrado con
+                preview URL en Orkasa.
+              </p>
+              <div className="mt-6 flex flex-col gap-3 border-t border-bone pt-4 md:flex-row md:items-center md:justify-between">
                 <button
                   type="button"
-                  onClick={() => router.push(`/app/properties/${property.id}`)}
-                  className="rounded-[4px] border border-ink px-4 py-2 text-[13px] text-ink hover:bg-bone/50 transition-colors"
+                  onClick={() => setStage('review')}
+                  className="inline-flex items-center gap-1.5 text-[13px] text-steel transition-colors hover:text-ink"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  Volver al review
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(`/app/properties/${property.id}`)
+                  }
+                  className="rounded-[4px] bg-ink px-5 py-2.5 text-[13px] font-medium text-paper transition-colors hover:bg-coal md:py-2"
                 >
                   Volver a la propiedad
                 </button>
               </div>
-            </div>
+            </>
           )}
         </div>
       )}
@@ -533,6 +628,42 @@ function StageStep({
       }`}
     >
       {label}
+    </span>
+  )
+}
+
+function ChannelStatusChip({
+  status,
+}: {
+  status: 'idle' | 'publishing' | 'published' | 'failed'
+}) {
+  if (status === 'idle') {
+    return (
+      <span className="rounded-[4px] bg-bone px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-steel">
+        En cola
+      </span>
+    )
+  }
+  if (status === 'publishing') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-[4px] bg-signal/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-signal">
+        <Loader2 className="h-3 w-3 animate-spin" strokeWidth={1.5} />
+        Pub.
+      </span>
+    )
+  }
+  if (status === 'published') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-[4px] bg-[#0A6B3D]/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-[#0A6B3D]">
+        <Check className="h-3 w-3" strokeWidth={2} />
+        OK
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-[4px] bg-signal/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-signal">
+      <AlertCircle className="h-3 w-3" strokeWidth={1.5} />
+      Error
     </span>
   )
 }
@@ -604,7 +735,10 @@ function ProviderReviewCard({
           <div className="min-w-0">
             <h3 className="truncate text-[15px] font-medium text-ink">{meta.label}</h3>
             <p className="truncate font-mono text-[10px] uppercase tracking-wider text-steel">
-              tono {meta.adapter?.tone} · {meta.adapter?.appendsCta ? 'con CTA' : 'sin CTA'}
+              tono {meta.adapter?.tone}
+              {meta.adapter ? ` · foto ${aspectLabel(meta.adapter.imageAspect)}` : ''}
+              {meta.adapter?.allowsHashtags ? ' · #hashtags' : ''}
+              {meta.adapter?.appendsCta ? ' · con CTA' : ''}
             </p>
           </div>
         </div>
@@ -673,33 +807,57 @@ function ProviderReviewCard({
         />
       </div>
 
-      {/* Image preview (first 4) */}
-      {images.length > 0 && (
+      {/* Per-channel image preview — each canvas uses the aspect ratio the
+          channel actually publishes at, so the agent sees how the hero
+          will be cropped before it ships. */}
+      {images.length > 0 && meta.adapter && (
         <div className="mb-4">
-          <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-steel">
-            Fotos a publicar ({images.length})
-          </p>
-          <div className="grid grid-cols-4 gap-2">
-            {images.slice(0, 4).map((img, i) => (
-              <div
-                key={img.path}
-                className="relative aspect-square overflow-hidden rounded-[4px] border border-bone bg-coal"
-              >
-                <Image
-                  src={img.url}
-                  alt=""
-                  fill
-                  sizes="120px"
-                  className="object-cover"
-                />
-                {i === 0 && (
-                  <span className="absolute left-1 top-1 rounded-[3px] bg-signal px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-paper">
-                    Hero
-                  </span>
-                )}
-              </div>
-            ))}
+          <div className="mb-2 flex items-center justify-between">
+            <p className="font-mono text-[10px] uppercase tracking-wider text-steel">
+              Fotos · cropeadas a {aspectLabel(meta.adapter.imageAspect)}
+              {meta.adapter.maxImages
+                ? ` · max ${meta.adapter.maxImages}`
+                : ''}
+            </p>
+            <p className="font-mono text-[10px] tabular-nums text-steel">
+              {Math.min(images.length, meta.adapter.maxImages ?? images.length)}
+              {' '}/ {images.length}
+            </p>
           </div>
+          {(() => {
+            const cap = meta.adapter.maxImages ?? images.length
+            const visible = images.slice(0, Math.min(cap, 4))
+            const aspect = aspectClass(meta.adapter.imageAspect)
+            // Vertical/portrait: side-by-side in 2 cols. Wide/landscape: stack hero on top.
+            const isVertical =
+              meta.adapter.imageAspect === 'vertical' ||
+              meta.adapter.imageAspect === 'portrait'
+            return (
+              <div
+                className={`grid gap-2 ${isVertical ? 'grid-cols-3 sm:grid-cols-4' : 'grid-cols-2 md:grid-cols-4'}`}
+              >
+                {visible.map((img, i) => (
+                  <div
+                    key={img.path}
+                    className={`relative overflow-hidden rounded-[4px] border border-bone bg-coal ${aspect}`}
+                  >
+                    <Image
+                      src={img.url}
+                      alt=""
+                      fill
+                      sizes="(max-width: 768px) 50vw, 200px"
+                      className="object-cover"
+                    />
+                    {i === 0 && (
+                      <span className="absolute left-1 top-1 rounded-[3px] bg-signal px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-paper">
+                        Hero
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
         </div>
       )}
 
