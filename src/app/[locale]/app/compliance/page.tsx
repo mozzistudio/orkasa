@@ -13,14 +13,12 @@ import {
   Settings as SettingsIcon,
   History,
   Sparkles,
-  ScrollText,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatPrice } from '@/lib/utils'
 import type { Database } from '@/lib/database.types'
 
 type Check = Database['public']['Tables']['compliance_checks']['Row']
-type Document = Database['public']['Tables']['compliance_documents']['Row']
 type Alert = Database['public']['Tables']['compliance_alerts']['Row']
 type AuditEntry = Database['public']['Tables']['compliance_audit_log']['Row']
 type Lead = Database['public']['Tables']['leads']['Row']
@@ -167,7 +165,7 @@ export default async function CompliancePage({
 
   const supabase = await createClient()
 
-  const [checksRes, leadsRes, propsRes, alertsRes, auditRes, agentsRes, docsRes] =
+  const [checksRes, leadsRes, propsRes, alertsRes, auditRes, agentsRes] =
     await Promise.all([
       supabase
         .from('compliance_checks')
@@ -222,10 +220,6 @@ export default async function CompliancePage({
         .from('agents')
         .select('id, full_name')
         .returns<Pick<Agent, 'id' | 'full_name'>[]>(),
-      supabase
-        .from('compliance_documents')
-        .select('id, check_id, status')
-        .returns<Pick<Document, 'id' | 'check_id' | 'status'>[]>(),
     ])
 
   const checks = checksRes.data ?? []
@@ -234,7 +228,6 @@ export default async function CompliancePage({
   const alerts = alertsRes.data ?? []
   const audit = auditRes.data ?? []
   const agents = agentsRes.data ?? []
-  const documents = docsRes.data ?? []
 
   const leadsById = new Map(leads.map((l) => [l.id, l]))
   const propsById = new Map(properties.map((p) => [p.id, p]))
@@ -272,110 +265,6 @@ export default async function CompliancePage({
   const criticalAlerts = openAlerts.filter(
     (a) => a.severity === 'critical' || a.severity === 'high',
   )
-
-  // ============================================================
-  // Coverage by domain (% complete)
-  // ============================================================
-  // For each domain, compute "covered" leads / total leads.
-  // Pure data domains (KYC, sanctions, PEP, source of funds) are computed
-  // from existing checks/docs. Mandates / GDPR / UBO have no schema yet —
-  // we mock with realistic-looking numbers and flag them.
-
-  const totalLeads = leads.length || 1
-  const leadsWithKYC = new Set(
-    checks
-      .filter((c) => c.type === 'kyc' && c.status === 'approved')
-      .map((c) => c.lead_id)
-      .filter(Boolean) as string[],
-  )
-  const leadsWithSanctions = new Set(
-    checks
-      .filter(
-        (c) =>
-          (c.type === 'sanctions' || c.type === 'aml') &&
-          c.status === 'approved',
-      )
-      .map((c) => c.lead_id)
-      .filter(Boolean) as string[],
-  )
-  const leadsWithPEP = new Set(
-    checks
-      .filter((c) => c.type === 'pep' && c.status !== 'pending')
-      .map((c) => c.lead_id)
-      .filter(Boolean) as string[],
-  )
-  const leadsWithFundsOrigin = new Set(
-    documents
-      .filter((d) => d.status === 'verified')
-      .map((d) => {
-        const check = checks.find((c) => c.id === d.check_id)
-        return check?.lead_id ?? null
-      })
-      .filter(Boolean) as string[],
-  )
-  const leadsWithRiskAssessed = new Set(
-    checks
-      .filter((c) => c.risk_level !== null)
-      .map((c) => c.lead_id)
-      .filter(Boolean) as string[],
-  )
-
-  const coverage = [
-    {
-      domain: 'KYC · identidad',
-      detail: 'Cédula + comprobante domicilio',
-      pct: Math.round((leadsWithKYC.size / totalLeads) * 100),
-      tracked: true,
-    },
-    {
-      domain: 'Origen de fondos',
-      detail: 'Source of funds — declaración + respaldo bancario',
-      pct: Math.round((leadsWithFundsOrigin.size / totalLeads) * 100),
-      tracked: true,
-    },
-    {
-      domain: 'Origen del patrimonio',
-      detail: 'Source of wealth — vista global del cliente',
-      pct: 30, // Mock — schema needed (separate from funds origin)
-      tracked: false,
-    },
-    {
-      domain: 'Sanctions screening',
-      detail: 'OFAC · ONU · UE · UAF nacional',
-      pct: Math.round((leadsWithSanctions.size / totalLeads) * 100),
-      tracked: true,
-    },
-    {
-      domain: 'PEP screening',
-      detail: 'Personas expuestas + familiares hasta 2° grado',
-      pct: Math.round((leadsWithPEP.size / totalLeads) * 100),
-      tracked: true,
-    },
-    {
-      domain: 'Beneficiarios efectivos (UBO)',
-      detail: 'Cadena societaria ≥25%',
-      pct: 10, // Mock — schema needed
-      tracked: false,
-    },
-    {
-      domain: 'Mandatos firmados',
-      detail: 'Versión vigente + avenants',
-      pct: 80, // Mock — schema needed
-      tracked: false,
-    },
-    {
-      domain: 'Consentimiento Ley 81 (RGPD)',
-      detail: 'Consentimiento explícito firmado',
-      pct: 95, // Mock — schema needed
-      tracked: false,
-    },
-    {
-      domain: 'Evaluación de riesgo',
-      detail: 'Clasificación low/medium/high con justificación',
-      pct: Math.round((leadsWithRiskAssessed.size / totalLeads) * 100),
-      tracked: true,
-    },
-  ]
 
   // ============================================================
   // Queue (filtered + sorted by urgency)
@@ -580,28 +469,6 @@ export default async function CompliancePage({
         </section>
       )}
 
-      {/* === COVERAGE BARS === */}
-      <section className="mb-6 rounded-[4px] border border-bone bg-paper p-5 md:mb-8 md:p-6">
-        <div className="mb-5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ScrollText className="h-4 w-4 text-ink" strokeWidth={1.5} />
-            <h2 className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
-              Cobertura por dominio
-            </h2>
-          </div>
-          <p className="hidden font-mono text-[10px] uppercase tracking-wider text-steel md:block">
-            % de dossiers con el dominio cubierto
-          </p>
-        </div>
-        <ul className="grid gap-4 md:grid-cols-2 md:gap-x-8 md:gap-y-5">
-          {coverage.map((c) => (
-            <li key={c.domain}>
-              <CoverageBar {...c} />
-            </li>
-          ))}
-        </ul>
-      </section>
-
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* === QUEUE === */}
         <section>
@@ -757,50 +624,6 @@ function Kpi({
       <p className="mt-2 truncate font-mono text-[11px] text-steel">
         {subValue}
       </p>
-    </div>
-  )
-}
-
-function CoverageBar({
-  domain,
-  detail,
-  pct,
-  tracked,
-}: {
-  domain: string
-  detail: string
-  pct: number
-  tracked: boolean
-}) {
-  const tone =
-    pct >= 80 ? 'bg-[#0A6B3D]' : pct >= 50 ? 'bg-ink' : 'bg-signal'
-  return (
-    <div>
-      <div className="mb-1.5 flex items-baseline justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-medium text-ink">
-            {domain}
-            {!tracked && (
-              <span
-                className="ml-2 rounded-[3px] bg-bone px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-steel"
-                title="Estimado — schema completo en próxima versión"
-              >
-                est.
-              </span>
-            )}
-          </p>
-          <p className="truncate font-mono text-[10px] text-steel">{detail}</p>
-        </div>
-        <span className="shrink-0 font-mono text-[14px] tabular-nums font-medium text-ink">
-          {pct}%
-        </span>
-      </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-bone">
-        <div
-          className={`h-full transition-all ${tone}`}
-          style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
-        />
-      </div>
     </div>
   )
 }
