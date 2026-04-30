@@ -237,3 +237,55 @@ export async function rerunScreening(
   revalidatePath(`/app/compliance/${checkId}`)
   return { sanctionsMatch, pepMatch }
 }
+
+// =============================================================================
+// Alerts — resolve / acknowledge / mark false positive / escalate
+// =============================================================================
+
+type AlertStatus = Database['public']['Enums']['compliance_alert_status']
+
+const VALID_ALERT_STATUSES: readonly AlertStatus[] = [
+  'open',
+  'acknowledged',
+  'resolved',
+  'false_positive',
+  'escalated',
+]
+
+export async function setAlertStatus(
+  alertId: string,
+  status: AlertStatus,
+  resolutionNote?: string,
+): Promise<{ error?: string }> {
+  if (!(VALID_ALERT_STATUSES as readonly string[]).includes(status)) {
+    return { error: 'Invalid alert status' }
+  }
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const update: Database['public']['Tables']['compliance_alerts']['Update'] = {
+    status,
+    updated_at: new Date().toISOString(),
+  }
+  if (
+    status === 'resolved' ||
+    status === 'false_positive' ||
+    status === 'escalated'
+  ) {
+    update.resolved_by = user.id
+    update.resolved_at = new Date().toISOString()
+    update.resolution_note = resolutionNote ?? null
+  }
+
+  const { error } = await supabase
+    .from('compliance_alerts')
+    .update(update)
+    .eq('id', alertId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/app/compliance')
+  return {}
+}

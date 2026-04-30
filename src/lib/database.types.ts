@@ -216,6 +216,66 @@ export type Database = {
         }
         Relationships: []
       }
+      compliance_alerts: {
+        Row: {
+          brokerage_id: string
+          check_id: string | null
+          created_at: string | null
+          description: string | null
+          details: Json | null
+          document_id: string | null
+          id: string
+          kind: Database['public']['Enums']['compliance_alert_kind']
+          lead_id: string | null
+          property_id: string | null
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: Database['public']['Enums']['compliance_alert_severity']
+          status: Database['public']['Enums']['compliance_alert_status']
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          brokerage_id: string
+          check_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          details?: Json | null
+          document_id?: string | null
+          id?: string
+          kind: Database['public']['Enums']['compliance_alert_kind']
+          lead_id?: string | null
+          property_id?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: Database['public']['Enums']['compliance_alert_severity']
+          status?: Database['public']['Enums']['compliance_alert_status']
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          brokerage_id?: string
+          check_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          details?: Json | null
+          document_id?: string | null
+          id?: string
+          kind?: Database['public']['Enums']['compliance_alert_kind']
+          lead_id?: string | null
+          property_id?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: Database['public']['Enums']['compliance_alert_severity']
+          status?: Database['public']['Enums']['compliance_alert_status']
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       compliance_audit_log: {
         Row: {
           action: string
@@ -671,6 +731,27 @@ export type Database = {
         | 'verified'
         | 'rejected'
         | 'expired'
+      compliance_alert_kind:
+        | 'sanctions_match'
+        | 'pep_match'
+        | 'doc_expiring'
+        | 'doc_expired'
+        | 'transaction_threshold'
+        | 'suspicious_activity'
+        | 'kyc_overdue'
+        | 'review_due'
+      compliance_alert_severity:
+        | 'info'
+        | 'low'
+        | 'medium'
+        | 'high'
+        | 'critical'
+      compliance_alert_status:
+        | 'open'
+        | 'acknowledged'
+        | 'resolved'
+        | 'false_positive'
+        | 'escalated'
       compliance_risk: 'low' | 'medium' | 'high' | 'critical'
       compliance_status:
         | 'pending'
