@@ -1,6 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { getGeminiClient, GEMINI_IMAGE_MODEL } from '@/lib/gemini'
+import { buildDocPrompt } from '@/lib/compliance-doc-prompts'
 import { createClient } from '@/lib/supabase/server'
 import type { Database, Json } from '@/lib/database.types'
 
@@ -236,6 +238,176 @@ export async function rerunScreening(
 
   revalidatePath(`/app/compliance/${checkId}`)
   return { sanctionsMatch, pepMatch }
+}
+
+// =============================================================================
+// generateDemoDocument — fabricate a realistic-looking demo file via Gemini
+// =============================================================================
+//
+// For seeded demo docs (path starting with `compliance-demo/...`) there's no
+// real file. This action calls Gemini 2.5 Flash Image with a prompt tailored
+// to the doc code (cédula, paz y salvo, payslip, etc.) injecting the lead's
+// real name + property data, uploads the result to the private bucket, and
+// updates the doc row to point at it.
+//
+// Every prompt mandates a "MUESTRA · DEMO · ORKASA" watermark to prevent any
+// possibility of misuse.
+
+export async function generateDemoDocument(
+  documentId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const client = getGeminiClient()
+  if (!client) {
+    return {
+      ok: false,
+      error: 'GEMINI_API_KEY no configurada en el servidor.',
+    }
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Not authenticated' }
+
+  // Fetch doc + check + lead + property in one shot
+  const { data: doc } = await supabase
+    .from('compliance_documents')
+    .select('id, code, name, check_id, brokerage_id')
+    .eq('id', documentId)
+    .maybeSingle<{
+      id: string
+      code: string | null
+      name: string | null
+      check_id: string
+      brokerage_id: string
+    }>()
+
+  if (!doc) return { ok: false, error: 'Documento no encontrado' }
+  if (!doc.code) {
+    return {
+      ok: false,
+      error: 'Este documento no tiene código asociado para generación demo.',
+    }
+  }
+
+  const { data: check } = await supabase
+    .from('compliance_checks')
+    .select('id, lead_id')
+    .eq('id', doc.check_id)
+    .maybeSingle<{ id: string; lead_id: string | null }>()
+
+  let leadName = 'Cliente Demo'
+  let leadEmail: string | null = null
+  let propertyTitle: string | null = null
+  let propertyAddress: string | null = null
+  let propertyCity: string | null = null
+  let propertyNeighborhood: string | null = null
+  let propertyPrice: number | null = null
+
+  if (check?.lead_id) {
+    const { data: lead } = await supabase
+      .from('leads')
+      .select('full_name, email, property_id')
+      .eq('id', check.lead_id)
+      .maybeSingle<{
+        full_name: string
+        email: string | null
+        property_id: string | null
+      }>()
+    if (lead) {
+      leadName = lead.full_name
+      leadEmail = lead.email
+      if (lead.property_id) {
+        const { data: prop } = await supabase
+          .from('properties')
+          .select('title, address, city, neighborhood, price')
+          .eq('id', lead.property_id)
+          .maybeSingle<{
+            title: string
+            address: string | null
+            city: string | null
+            neighborhood: string | null
+            price: number | null
+          }>()
+        if (prop) {
+          propertyTitle = prop.title
+          propertyAddress = prop.address
+          propertyCity = prop.city
+          propertyNeighborhood = prop.neighborhood
+          propertyPrice = prop.price ? Number(prop.price) : null
+        }
+      }
+    }
+  }
+
+  const prompt = buildDocPrompt(doc.code, {
+    leadName,
+    leadEmail,
+    propertyTitle,
+    propertyAddress,
+    propertyCity,
+    propertyNeighborhood,
+    propertyPrice,
+  })
+
+  try {
+    const response = await client.models.generateContent({
+      model: GEMINI_IMAGE_MODEL,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    })
+
+    const imagePart = response.candidates
+      ?.flatMap((c) => c.content?.parts ?? [])
+      .find((p) => p.inlineData?.data)
+
+    if (!imagePart?.inlineData?.data) {
+      return {
+        ok: false,
+        error: 'Gemini no devolvió una imagen. Reintentá en unos segundos.',
+      }
+    }
+
+    const buffer = Buffer.from(imagePart.inlineData.data, 'base64')
+    const mime = imagePart.inlineData.mimeType ?? 'image/png'
+    const ext = mime.split('/')[1]?.split('+')[0] ?? 'png'
+    const fileName = `${doc.code}-demo-${Date.now()}.${ext}`
+    const path = `${doc.brokerage_id}/${doc.check_id}/${fileName}`
+
+    const { error: uploadErr } = await supabase.storage
+      .from('compliance-documents')
+      .upload(path, buffer, { contentType: mime, upsert: false })
+
+    if (uploadErr) {
+      return { ok: false, error: `Upload error: ${uploadErr.message}` }
+    }
+
+    // Update doc row — keep status='uploaded' (still needs human review)
+    const { error: updateErr } = await supabase
+      .from('compliance_documents')
+      .update({
+        file_path: path,
+        file_name: fileName,
+        status: 'uploaded',
+        uploaded_at: new Date().toISOString(),
+      })
+      .eq('id', documentId)
+
+    if (updateErr) return { ok: false, error: updateErr.message }
+
+    await logAudit(doc.check_id, 'doc_uploaded', {
+      kind: doc.code,
+      fileName,
+      generatedBy: 'gemini-2.5-flash-image',
+    })
+
+    revalidatePath(`/app/compliance/${doc.check_id}`)
+    revalidatePath(`/app/compliance/${doc.check_id}/documents/${documentId}`)
+    return { ok: true }
+  } catch (err) {
+    if (err instanceof Error) return { ok: false, error: err.message }
+    return { ok: false, error: 'Error desconocido al generar.' }
+  }
 }
 
 // =============================================================================

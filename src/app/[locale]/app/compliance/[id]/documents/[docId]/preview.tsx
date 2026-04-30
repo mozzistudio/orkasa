@@ -19,6 +19,7 @@ export function DocumentPreview({
   isPdf,
   isDemo,
   hasFile,
+  generateSlot,
 }: {
   signedUrl: string | null
   fileName: string | null
@@ -26,6 +27,9 @@ export function DocumentPreview({
   isPdf: boolean
   isDemo: boolean
   hasFile: boolean
+  /** Optional CTA slot — typically the GenerateDemoButton, shown over the
+   *  empty / demo placeholder. */
+  generateSlot?: React.ReactNode
 }) {
   // Empty state — no file uploaded yet
   if (!hasFile) {
@@ -33,10 +37,13 @@ export function DocumentPreview({
       <div className="flex aspect-[4/5] flex-col items-center justify-center rounded-[4px] border border-dashed border-bone bg-bone/20 p-8 text-center md:aspect-[3/4]">
         <ImageOff className="mb-3 h-8 w-8 text-steel" strokeWidth={1.5} />
         <p className="text-[14px] font-medium text-ink">Sin archivo subido</p>
-        <p className="mt-1 max-w-xs text-[12px] text-steel">
-          Subí el documento desde el expediente principal para empezar la
-          revisión.
+        <p className="mt-1 mb-5 max-w-xs text-[12px] text-steel">
+          Subí el documento desde el expediente principal o generá una muestra
+          realista con IA usando los datos del cliente.
         </p>
+        {generateSlot && (
+          <div className="rounded-[4px] bg-ink p-4">{generateSlot}</div>
+        )}
       </div>
     )
   }
@@ -61,12 +68,15 @@ export function DocumentPreview({
           </p>
           <span className="inline-flex items-center gap-1.5 rounded-[3px] bg-signal px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-paper">
             <Sparkles className="h-3 w-3" strokeWidth={1.5} />
-            Demo
+            Demo · placeholder
           </span>
-          <p className="max-w-xs font-mono text-[10px] text-paper/60">
-            Documento de muestra · no descargable. En producción el archivo
-            real se mostraría aquí.
-          </p>
+          {generateSlot && <div className="mt-4">{generateSlot}</div>}
+          {!generateSlot && (
+            <p className="max-w-xs font-mono text-[10px] text-paper/60">
+              Documento de muestra. En producción el archivo real se mostraría
+              aquí.
+            </p>
+          )}
         </div>
       </div>
     )

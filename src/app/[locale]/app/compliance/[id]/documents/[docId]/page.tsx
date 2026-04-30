@@ -11,9 +11,11 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { categoryLabel, type DocCategory } from '@/lib/compliance-docs'
+import { hasPromptFor } from '@/lib/compliance-doc-prompts'
 import { getDocumentSignedUrl } from '@/app/[locale]/app/compliance/actions'
 import { DocumentReviewActions } from './review-actions'
 import { DocumentPreview } from './preview'
+import { GenerateDemoButton } from './generate-button'
 import type { Database } from '@/lib/database.types'
 
 type Document = Database['public']['Tables']['compliance_documents']['Row']
@@ -188,6 +190,14 @@ export default async function DocumentValidationPage({
             isPdf={isPdf}
             isDemo={isDemo}
             hasFile={!!doc.file_path}
+            generateSlot={
+              // Show the AI generation CTA when:
+              // - the file is a seeded demo placeholder, OR
+              // - there's no file at all and we have a prompt for this code
+              (isDemo || !doc.file_path) && doc.code && hasPromptFor(doc.code) ? (
+                <GenerateDemoButton documentId={doc.id} />
+              ) : null
+            }
           />
         </section>
 
