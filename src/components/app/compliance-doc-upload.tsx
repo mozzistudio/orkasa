@@ -1,20 +1,20 @@
 'use client'
 
 import { useRef, useState, useTransition } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Upload,
   Check,
   X,
   Loader2,
-  ExternalLink,
+  FileText,
   RefreshCw,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import {
   markDocumentUploaded,
   setDocumentStatus,
-  getDocumentSignedUrl,
 } from '@/app/[locale]/app/compliance/actions'
 import type { Database } from '@/lib/database.types'
 
@@ -67,9 +67,9 @@ export function ComplianceDocUpload({
   const [fileName, setFileName] = useState<string | null>(
     initialFileName ?? null,
   )
-  const [filePath, setFilePath] = useState<string | null>(
-    initialFilePath ?? null,
-  )
+  // Mark the prop as intentionally accepted (not used in render after the
+  // chip became a Link — the validation page handles the file URL itself)
+  void initialFilePath
 
   async function handleFile(file: File) {
     setError(null)
@@ -104,26 +104,8 @@ export function ComplianceDocUpload({
       }
       setStatus('uploaded')
       setFileName(file.name)
-      setFilePath(path)
       router.refresh()
     })
-  }
-
-  async function openFile() {
-    if (!filePath) return
-    const result = await getDocumentSignedUrl(documentId)
-    if (result.error) {
-      setError(result.error)
-      return
-    }
-    if (result.url?.startsWith('#demo-')) {
-      // Demo file — show a soft toast-ish hint instead of opening 404
-      setError(
-        `Demo: ${fileName ?? 'archivo'} (los documentos de muestra no son descargables)`,
-      )
-      return
-    }
-    if (result.url) window.open(result.url, '_blank', 'noopener,noreferrer')
   }
 
   function review(next: DocStatus) {
@@ -160,17 +142,18 @@ export function ComplianceDocUpload({
       />
 
       <div className="flex flex-wrap items-center gap-2">
-        {/* File chip — clickable when uploaded */}
+        {/* File chip — when uploaded, navigates to the dedicated validation
+            page where the compliance officer can preview the file, see
+            metadata, and approve/reject with notes. */}
         {isUploaded && fileName ? (
-          <button
-            type="button"
-            onClick={openFile}
+          <Link
+            href={`/app/compliance/${checkId}/documents/${documentId}`}
             className="inline-flex max-w-full items-center gap-1.5 truncate rounded-[4px] border border-bone bg-bone/40 px-2.5 py-1 font-mono text-[11px] text-ink transition-colors hover:border-ink"
-            title={fileName}
+            title={`Revisar ${fileName}`}
           >
-            <ExternalLink className="h-3 w-3 shrink-0" strokeWidth={1.5} />
+            <FileText className="h-3 w-3 shrink-0" strokeWidth={1.5} />
             <span className="truncate">{fileName}</span>
-          </button>
+          </Link>
         ) : (
           <span className="font-mono text-[11px] uppercase tracking-wider text-steel">
             Sin archivo
