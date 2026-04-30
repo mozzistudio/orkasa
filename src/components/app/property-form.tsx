@@ -121,7 +121,7 @@ export function PropertyForm({
             formId="property-form"
             images={images}
             onApplyText={(text) => setDescription(text)}
-            onApplyImageOrder={(next) => setImages(next)}
+            onImagesChange={(next) => setImages(next)}
           />
         </div>
         <ImageUpload

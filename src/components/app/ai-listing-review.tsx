@@ -2,21 +2,15 @@
 
 import { useState, useTransition } from 'react'
 import Image from 'next/image'
-import {
-  Sparkles,
-  RefreshCw,
-  Check,
-  X,
-  Star,
-  ArrowUp,
-  ArrowDown,
-} from 'lucide-react'
+import { Sparkles, RefreshCw, Check, X, Star, Wand2 } from 'lucide-react'
 import {
   reviewListing,
   type ReviewListingInput,
   type TextVariant,
   type PhotoReview,
 } from '@/app/[locale]/app/properties/ai-actions'
+import { enhanceImage } from '@/app/[locale]/app/properties/enhance-actions'
+import { ENHANCEMENTS, type EnhancementType } from '@/lib/gemini'
 import type { StoredImage } from '@/components/app/image-upload'
 
 type ReviewState =
@@ -48,16 +42,32 @@ function scoreColor(score: number): string {
   return 'text-signal'
 }
 
+// State for the per-photo enhancement sub-modal
+type EnhanceModalState =
+  | { stage: 'closed' }
+  | { stage: 'choose'; image: StoredImage; index: number }
+  | {
+      stage: 'comparing'
+      image: StoredImage
+      index: number
+      type: EnhancementType
+      enhancedUrl: string
+      enhancedPath: string
+    }
+  | { stage: 'loading'; image: StoredImage; index: number; type: EnhancementType }
+  | { stage: 'error'; image: StoredImage; index: number; message: string }
+
 export function AIListingReview({
   formId = 'property-form',
   images,
   onApplyText,
-  onApplyImageOrder,
+  onImagesChange,
 }: {
   formId?: string
   images: StoredImage[]
   onApplyText: (text: string) => void
-  onApplyImageOrder: (newOrder: StoredImage[]) => void
+  /** Called whenever the modal needs to update the image list (reorder, swap) */
+  onImagesChange: (next: StoredImage[]) => void
 }) {
   const [open, setOpen] = useState(false)
   const [state, setState] = useState<ReviewState>({ stage: 'idle' })
@@ -65,6 +75,9 @@ export function AIListingReview({
   const [appliedTone, setAppliedTone] = useState<TextVariant['tone'] | null>(
     null,
   )
+  const [enhanceModal, setEnhanceModal] = useState<EnhanceModalState>({
+    stage: 'closed',
+  })
 
   function readForm(): ReviewListingInput | null {
     const form = document.getElementById(formId) as HTMLFormElement | null
@@ -149,7 +162,43 @@ export function AIListingReview({
       const ob = orderByPath.get(b.path) ?? 999
       return oa - ob
     })
-    onApplyImageOrder(sorted)
+    onImagesChange(sorted)
+  }
+
+  function startEnhancement(image: StoredImage, index: number) {
+    setEnhanceModal({ stage: 'choose', image, index })
+  }
+
+  function runEnhancement(
+    image: StoredImage,
+    index: number,
+    type: EnhancementType,
+  ) {
+    setEnhanceModal({ stage: 'loading', image, index, type })
+    startTransition(async () => {
+      const result = await enhanceImage(image.url, type)
+      if (!result.ok) {
+        setEnhanceModal({ stage: 'error', image, index, message: result.error })
+        return
+      }
+      setEnhanceModal({
+        stage: 'comparing',
+        image,
+        index,
+        type,
+        enhancedUrl: result.url,
+        enhancedPath: result.path,
+      })
+    })
+  }
+
+  function applyEnhancement() {
+    if (enhanceModal.stage !== 'comparing') return
+    const { index, enhancedPath, enhancedUrl } = enhanceModal
+    const next = [...images]
+    next[index] = { path: enhancedPath, url: enhancedUrl }
+    onImagesChange(next)
+    setEnhanceModal({ stage: 'closed' })
   }
 
   return (
@@ -376,6 +425,14 @@ export function AIListingReview({
                                   {review.altText}
                                 </p>
                               </div>
+                              <button
+                                type="button"
+                                onClick={() => startEnhancement(img, review.index)}
+                                className="self-start inline-flex items-center gap-1.5 rounded-[4px] border border-bone px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-steel hover:border-signal hover:text-signal transition-colors"
+                              >
+                                <Wand2 className="h-3 w-3" strokeWidth={1.5} />
+                                Mejorar
+                              </button>
                             </div>
                           )
                         })}
@@ -398,6 +455,236 @@ export function AIListingReview({
                 >
                   Cerrar
                 </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Per-photo enhancement sub-modal (Gemini Flash Image) */}
+      {enhanceModal.stage !== 'closed' && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/60 p-4"
+          onClick={() =>
+            enhanceModal.stage !== 'loading' &&
+            setEnhanceModal({ stage: 'closed' })
+          }
+        >
+          <div
+            className="w-full max-w-3xl rounded-[4px] border border-bone bg-paper shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-bone px-5 py-3">
+              <div className="flex items-center gap-2">
+                <Wand2 className="h-4 w-4 text-signal" strokeWidth={1.5} />
+                <h3 className="text-[15px] font-medium text-ink">
+                  Mejorar foto con IA
+                </h3>
+                <span className="font-mono text-[10px] uppercase tracking-wider text-steel">
+                  gemini-2.5-flash-image
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  enhanceModal.stage !== 'loading' &&
+                  setEnhanceModal({ stage: 'closed' })
+                }
+                className="text-steel hover:text-ink transition-colors"
+                aria-label="Cerrar"
+              >
+                <X className="h-4 w-4" strokeWidth={1.5} />
+              </button>
+            </div>
+
+            <div className="px-5 py-5">
+              {/* Stage: choose enhancement type */}
+              {enhanceModal.stage === 'choose' && (
+                <>
+                  <div className="mb-4 flex gap-3">
+                    <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-[4px] border border-bone bg-coal">
+                      <Image
+                        src={enhanceModal.image.url}
+                        alt=""
+                        fill
+                        sizes="96px"
+                        className="object-cover"
+                      />
+                    </div>
+                    <p className="text-[13px] leading-relaxed text-steel">
+                      Elegí qué tipo de mejora aplicar. Vas a poder comparar
+                      antes/después y aceptar o reintentar.
+                    </p>
+                  </div>
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {ENHANCEMENTS.map((e) => (
+                      <button
+                        key={e.id}
+                        type="button"
+                        onClick={() =>
+                          runEnhancement(
+                            enhanceModal.image,
+                            enhanceModal.index,
+                            e.id,
+                          )
+                        }
+                        className="group rounded-[4px] border border-bone bg-paper p-3 text-left transition-colors hover:border-ink"
+                      >
+                        <h4 className="text-[13px] font-medium text-ink group-hover:text-signal">
+                          {e.label}
+                        </h4>
+                        <p className="mt-1 text-[12px] leading-relaxed text-steel">
+                          {e.description}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Stage: loading */}
+              {enhanceModal.stage === 'loading' && (
+                <div className="space-y-4 py-6">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-steel">
+                        Antes
+                      </p>
+                      <div className="relative aspect-[4/3] overflow-hidden rounded-[4px] border border-bone bg-coal">
+                        <Image
+                          src={enhanceModal.image.url}
+                          alt=""
+                          fill
+                          sizes="(max-width: 768px) 100vw, 400px"
+                          className="object-cover"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-steel">
+                        Después
+                      </p>
+                      <div className="relative aspect-[4/3] overflow-hidden rounded-[4px] border border-dashed border-bone bg-bone/30">
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="space-y-2 text-center">
+                            <Wand2
+                              className="mx-auto h-5 w-5 animate-pulse text-signal"
+                              strokeWidth={1.5}
+                            />
+                            <p className="font-mono text-[10px] uppercase tracking-wider text-steel">
+                              Generando…
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-center font-mono text-[11px] text-steel">
+                    Esto toma 5-10 segundos. Gemini está editando la foto.
+                  </p>
+                </div>
+              )}
+
+              {/* Stage: error */}
+              {enhanceModal.stage === 'error' && (
+                <div className="space-y-3">
+                  <p className="rounded-[4px] border border-signal/30 bg-signal-soft px-3 py-2 text-[13px] text-signal">
+                    {enhanceModal.message}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEnhanceModal({
+                        stage: 'choose',
+                        image: enhanceModal.image,
+                        index: enhanceModal.index,
+                      })
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-[4px] border border-ink px-3 py-1.5 text-[13px] text-ink hover:bg-bone/50 transition-colors"
+                  >
+                    <RefreshCw className="h-3 w-3" strokeWidth={1.5} />
+                    Volver
+                  </button>
+                </div>
+              )}
+
+              {/* Stage: comparing — before/after */}
+              {enhanceModal.stage === 'comparing' && (
+                <>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-steel">
+                        Antes
+                      </p>
+                      <div className="relative aspect-[4/3] overflow-hidden rounded-[4px] border border-bone bg-coal">
+                        <Image
+                          src={enhanceModal.image.url}
+                          alt=""
+                          fill
+                          sizes="(max-width: 768px) 100vw, 400px"
+                          className="object-cover"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="mb-2 flex items-center justify-between">
+                        <p className="font-mono text-[10px] uppercase tracking-wider text-signal">
+                          Después
+                        </p>
+                        <span className="font-mono text-[10px] uppercase tracking-wider text-steel">
+                          {enhanceModal.type.replace('_', ' ')}
+                        </span>
+                      </div>
+                      <div className="relative aspect-[4/3] overflow-hidden rounded-[4px] border border-ink bg-coal">
+                        <Image
+                          src={enhanceModal.enhancedUrl}
+                          alt=""
+                          fill
+                          sizes="(max-width: 768px) 100vw, 400px"
+                          className="object-cover"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Footer actions */}
+            {enhanceModal.stage === 'comparing' && (
+              <div className="flex items-center justify-between border-t border-bone bg-paper px-5 py-3">
+                <button
+                  type="button"
+                  onClick={() => setEnhanceModal({ stage: 'closed' })}
+                  className="text-[13px] text-steel hover:text-ink transition-colors"
+                >
+                  Cancelar
+                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      runEnhancement(
+                        enhanceModal.image,
+                        enhanceModal.index,
+                        enhanceModal.type,
+                      )
+                    }
+                    disabled={pending}
+                    className="inline-flex items-center gap-1.5 rounded-[4px] border border-ink px-3 py-1.5 text-[13px] text-ink hover:bg-bone/50 transition-colors disabled:opacity-60"
+                  >
+                    <RefreshCw className="h-3 w-3" strokeWidth={1.5} />
+                    Reintentar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={applyEnhancement}
+                    className="inline-flex items-center gap-1.5 rounded-[4px] bg-ink px-4 py-1.5 text-[13px] font-medium text-paper hover:bg-coal transition-colors"
+                  >
+                    <Check className="h-3 w-3" strokeWidth={1.5} />
+                    Aplicar
+                  </button>
+                </div>
               </div>
             )}
           </div>
