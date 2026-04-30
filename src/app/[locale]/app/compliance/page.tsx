@@ -7,6 +7,7 @@ import {
   Clock,
   AlertCircle,
   Filter,
+  ChevronRight,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 
@@ -305,11 +306,11 @@ export default async function CompliancePage({
           </p>
         </div>
       ) : (
-        <ul className="space-y-3">
+        <ul className="space-y-4">
           {leadGroups.map((g) => (
             <li key={g.leadId}>
               <article
-                className={`rounded-[4px] border bg-paper p-4 transition-colors hover:border-ink md:p-5 ${
+                className={`overflow-hidden rounded-[4px] border bg-paper ${
                   g.hasMatch
                     ? 'border-signal'
                     : g.hasOverdue
@@ -317,7 +318,8 @@ export default async function CompliancePage({
                       : 'border-bone'
                 }`}
               >
-                <div className="flex items-start justify-between gap-3">
+                {/* Lead header */}
+                <header className="flex items-start justify-between gap-3 border-b border-bone px-4 py-3 md:px-5">
                   <div className="min-w-0 flex-1">
                     <Link
                       href={`/app/leads/${g.leadId}`}
@@ -335,60 +337,83 @@ export default async function CompliancePage({
                     <span
                       className={`shrink-0 rounded-[4px] px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider ${RISK_COLOR[g.overallRisk]}`}
                     >
-                      {g.overallRisk}
+                      Riesgo {g.overallRisk}
                     </span>
                   )}
-                </div>
+                </header>
 
-                {/* Per-check chip row */}
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {g.checks.map((c) => (
-                    <Link
-                      key={c.id}
-                      href={`/app/compliance/${c.id}`}
-                      className="inline-flex items-center gap-1.5 rounded-[4px] border border-bone bg-paper px-2.5 py-1 transition-colors hover:border-ink"
-                    >
-                      <span className="font-mono text-[10px] font-medium uppercase tracking-wider text-ink">
-                        {TYPE_LABEL[c.type]}
-                      </span>
-                      <span
-                        className={`font-mono text-[10px] uppercase tracking-wider ${STATUS_COLOR[c.status]}`}
-                      >
-                        · {t(`status.${c.status}`)}
-                      </span>
-                      {(c.sanctions_match || c.pep_match) && (
-                        <ShieldAlert
-                          className="h-3 w-3 text-signal"
-                          strokeWidth={1.5}
-                        />
-                      )}
-                    </Link>
-                  ))}
-                </div>
-
-                <div className="mt-4 flex items-center justify-between gap-3 border-t border-bone pt-3">
-                  <p className="font-mono text-[11px] text-steel">
-                    {g.nextDue ? (
-                      <>
-                        {g.hasOverdue ? (
-                          <span className="text-signal">
-                            Vencida · {shortDate(g.nextDue)}
+                {/* Per-check rows — each one navigates to its detail page */}
+                <ul className="divide-y divide-bone">
+                  {g.checks.map((c) => {
+                    const overdue =
+                      isOverdue(c.due_at) &&
+                      c.status !== 'approved' &&
+                      c.status !== 'rejected'
+                    return (
+                      <li key={c.id}>
+                        <Link
+                          href={`/app/compliance/${c.id}`}
+                          className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-bone/30 md:px-5"
+                        >
+                          {/* Type chip */}
+                          <span className="inline-flex h-8 w-12 shrink-0 items-center justify-center rounded-[4px] bg-bone font-mono text-[10px] font-medium uppercase tracking-wider text-ink">
+                            {TYPE_LABEL[c.type]}
                           </span>
-                        ) : (
-                          <>Vence {shortDate(g.nextDue)}</>
-                        )}
-                      </>
-                    ) : (
-                      'Sin fecha límite'
-                    )}
-                  </p>
-                  <Link
-                    href={`/app/compliance/${g.checks[0]?.id ?? ''}`}
-                    className="font-mono text-[11px] text-ink transition-colors hover:text-signal"
-                  >
-                    Revisar →
-                  </Link>
-                </div>
+
+                          <div className="min-w-0 flex-1">
+                            <p
+                              className={`font-mono text-[12px] uppercase tracking-wider ${STATUS_COLOR[c.status]}`}
+                            >
+                              {t(`status.${c.status}`)}
+                            </p>
+                            <p className="mt-0.5 font-mono text-[10px] text-steel">
+                              {c.due_at ? (
+                                overdue ? (
+                                  <span className="text-signal">
+                                    Vencida · {shortDate(c.due_at)}
+                                  </span>
+                                ) : (
+                                  <>Vence {shortDate(c.due_at)}</>
+                                )
+                              ) : (
+                                'Sin fecha límite'
+                              )}
+                            </p>
+                          </div>
+
+                          {/* Match warning */}
+                          {(c.sanctions_match || c.pep_match) && (
+                            <span className="shrink-0 inline-flex items-center gap-1 rounded-[4px] bg-signal px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-paper">
+                              <ShieldAlert
+                                className="h-3 w-3"
+                                strokeWidth={1.5}
+                              />
+                              Match
+                            </span>
+                          )}
+
+                          {/* Risk per-check */}
+                          {c.risk_level && !g.overallRisk && (
+                            <span
+                              className={`shrink-0 rounded-[4px] px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider ${RISK_COLOR[c.risk_level]}`}
+                            >
+                              {c.risk_level}
+                            </span>
+                          )}
+
+                          {/* Explicit "go to detail" affordance */}
+                          <span className="shrink-0 inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-steel transition-colors group-hover:text-ink">
+                            Revisar
+                            <ChevronRight
+                              className="h-3 w-3 transition-transform group-hover:translate-x-0.5"
+                              strokeWidth={1.5}
+                            />
+                          </span>
+                        </Link>
+                      </li>
+                    )
+                  })}
+                </ul>
               </article>
             </li>
           ))}
