@@ -66,12 +66,12 @@ export function Navbar() {
   return (
     <>
       <nav
-        className="sticky top-0 z-50 h-14 border-b border-bone bg-paper md:h-16"
+        className="sticky top-0 z-50 h-16 border-b border-bone bg-paper md:h-20"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-4 md:px-6">
           <Link href="/" aria-label="Inicio">
-            <LogoLockup className="h-6 md:h-7" />
+            <LogoLockup className="h-8 md:h-10" />
           </Link>
 
           {/* Desktop nav */}
@@ -184,7 +184,7 @@ export function Navbar() {
             }}
           >
             <div className="flex items-center justify-between border-b border-bone px-4 py-3">
-              <LogoLockup className="h-6" />
+              <LogoLockup className="h-7" />
               <button
                 type="button"
                 onClick={() => setDrawerOpen(false)}

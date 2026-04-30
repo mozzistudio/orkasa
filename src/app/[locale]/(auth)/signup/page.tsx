@@ -31,7 +31,7 @@ export default function SignupPage() {
     <div className="flex min-h-screen">
       {/* Left — testimonial */}
       <div className="hidden w-1/2 flex-col justify-between bg-coal p-12 lg:flex">
-        <LogoLockup className="h-7 text-paper" />
+        <LogoLockup className="h-9 text-paper" />
         <div className="max-w-md">
           <p className="text-[18px] font-medium leading-relaxed text-paper">
             &ldquo;{t('testimonial')}&rdquo;
@@ -58,7 +58,7 @@ export default function SignupPage() {
       >
         <div className="w-full max-w-[400px] py-8">
           <div className="mb-8 lg:hidden">
-            <LogoLockup className="h-7 text-ink" />
+            <LogoLockup className="h-9 text-ink" />
           </div>
 
           {submittedEmail ? (
