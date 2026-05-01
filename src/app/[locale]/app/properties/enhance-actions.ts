@@ -6,20 +6,23 @@ import {
   getEnhancementMeta,
   type EnhancementType,
 } from '@/lib/gemini'
+import {
+  PHOTOROOM_PRESETS,
+  buildPhotoroomEditUrl,
+  getPhotoroomKey,
+  type PhotoroomEnhancementMeta,
+} from '@/lib/photoroom'
 import { createClient } from '@/lib/supabase/server'
 
 export type EnhanceResult =
-  | { ok: true; path: string; url: string }
+  | { ok: true; path: string; url: string; applied?: string[] }
   | { ok: false; error: string }
 
 /**
  * Enhance a property image via Gemini 2.5 Flash Image, then upload the result
- * to Supabase storage. Returns the new path + public URL so the client can
- * swap the image in the form state.
- *
- * Manual mode: this doesn't replace the original — both originals and
- * enhanced versions live side by side in storage. The form decides which
- * URL to keep.
+ * to Supabase storage. Used for the manual "Revisar con IA" review on the
+ * property edit page where the user picks a specific enhancement type
+ * (sky_replace, lighting, clutter_remove, virtual_stage).
  */
 export async function enhanceImage(
   sourceUrl: string,
@@ -56,7 +59,6 @@ export async function enhanceImage(
   }
 
   try {
-    // 1. Fetch the source image as bytes
     const sourceResp = await fetch(sourceUrl)
     if (!sourceResp.ok) {
       return {
@@ -68,7 +70,6 @@ export async function enhanceImage(
     const sourceBuffer = Buffer.from(await sourceResp.arrayBuffer())
     const sourceB64 = sourceBuffer.toString('base64')
 
-    // 2. Call Gemini with image + edit prompt
     const response = await client.models.generateContent({
       model: GEMINI_IMAGE_MODEL,
       contents: [
@@ -82,7 +83,6 @@ export async function enhanceImage(
       ],
     })
 
-    // 3. Extract the generated image from the response
     const imagePart = response.candidates
       ?.flatMap((c) => c.content?.parts ?? [])
       .find((p) => p.inlineData?.data)
@@ -99,34 +99,16 @@ export async function enhanceImage(
     const enhancedMime = imagePart.inlineData.mimeType ?? 'image/jpeg'
     const enhancedBuffer = Buffer.from(enhancedB64, 'base64')
 
-    // 4. Upload to Supabase storage. Path follows the existing convention:
-    //    <brokerage_id>/<property_id>/enhanced-<type>-<timestamp>.<ext>
-    //    We extract property_id from the source URL when possible (the upload
-    //    component generates paths under the property_id). Falls back to a
-    //    "shared" folder if the URL doesn't fit the pattern.
-    const ext = enhancedMime.split('/')[1]?.split('+')[0] ?? 'jpeg'
-    const propertyIdMatch = sourceUrl.match(
-      /\/property-images\/[^/]+\/([^/]+)\//,
-    )
-    const propertyFolder = propertyIdMatch?.[1] ?? 'shared'
-    const path = `${agent.brokerage_id}/${propertyFolder}/enhanced-${enhancementType}-${Date.now()}.${ext}`
+    const uploaded = await uploadToPropertyImages({
+      buffer: enhancedBuffer,
+      mime: enhancedMime,
+      sourceUrl,
+      brokerageId: agent.brokerage_id,
+      tag: `enhanced-${enhancementType}`,
+    })
+    if (!uploaded.ok) return uploaded
 
-    const { error: uploadErr } = await supabase.storage
-      .from('property-images')
-      .upload(path, enhancedBuffer, {
-        contentType: enhancedMime,
-        upsert: false,
-      })
-
-    if (uploadErr) {
-      return { ok: false, error: `Upload error: ${uploadErr.message}` }
-    }
-
-    const { data: pub } = supabase.storage
-      .from('property-images')
-      .getPublicUrl(path)
-
-    return { ok: true, path, url: pub.publicUrl }
+    return { ok: true, path: uploaded.path, url: uploaded.url }
   } catch (err) {
     if (err instanceof Error) {
       return { ok: false, error: err.message }
@@ -135,8 +117,125 @@ export async function enhanceImage(
   }
 }
 
+/**
+ * Auto-enhance via Photoroom v2/edit (AI relight + white balance / color
+ * correction). Used by the wizard's step 4 — the broker confirms photos in
+ * step 2, this step kicks off Photoroom in parallel for every photo. Fast,
+ * deterministic, and preserves the room's content (no hallucinated furniture).
+ *
+ * Falls back to Gemini's `lighting` enhancement if PHOTOROOM_API_KEY is not
+ * configured — that path is generative, slower, but takes a free-text prompt.
+ */
 export async function autoEnhanceImage(
   sourceUrl: string,
 ): Promise<EnhanceResult> {
-  return enhanceImage(sourceUrl, 'lighting')
+  const apiKey = getPhotoroomKey()
+  if (!apiKey) {
+    // Photoroom not configured → fall back to Gemini
+    return enhanceImage(sourceUrl, 'lighting')
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Not authenticated' }
+
+  const { data: agent } = await supabase
+    .from('agents')
+    .select('brokerage_id')
+    .eq('id', user.id)
+    .maybeSingle<{ brokerage_id: string | null }>()
+  if (!agent?.brokerage_id) {
+    return { ok: false, error: 'No brokerage' }
+  }
+
+  const preset: PhotoroomEnhancementMeta = PHOTOROOM_PRESETS[0]!
+  const editUrl = buildPhotoroomEditUrl(sourceUrl, preset)
+
+  try {
+    const resp = await fetch(editUrl, {
+      headers: { 'x-api-key': apiKey },
+    })
+    if (!resp.ok) {
+      const detail = await resp.text().catch(() => '')
+      return {
+        ok: false,
+        error: `Photoroom error ${resp.status}: ${detail.slice(0, 200) || resp.statusText}`,
+      }
+    }
+
+    const mime = resp.headers.get('content-type') ?? 'image/jpeg'
+    const buffer = Buffer.from(await resp.arrayBuffer())
+    if (buffer.byteLength < 1000) {
+      return {
+        ok: false,
+        error: 'Photoroom devolvió una imagen vacía. Reintentá en un momento.',
+      }
+    }
+
+    const uploaded = await uploadToPropertyImages({
+      buffer,
+      mime,
+      sourceUrl,
+      brokerageId: agent.brokerage_id,
+      tag: `pr-${preset.id}`,
+    })
+    if (!uploaded.ok) return uploaded
+
+    return {
+      ok: true,
+      path: uploaded.path,
+      url: uploaded.url,
+      applied: preset.applied,
+    }
+  } catch (err) {
+    if (err instanceof Error) {
+      return { ok: false, error: err.message }
+    }
+    return { ok: false, error: 'Error desconocido al mejorar la imagen.' }
+  }
+}
+
+// ─── helpers ─────────────────────────────────────────────────────────────────
+
+async function uploadToPropertyImages({
+  buffer,
+  mime,
+  sourceUrl,
+  brokerageId,
+  tag,
+}: {
+  buffer: Buffer
+  mime: string
+  sourceUrl: string
+  brokerageId: string
+  tag: string
+}): Promise<
+  { ok: true; path: string; url: string } | { ok: false; error: string }
+> {
+  const supabase = await createClient()
+  const ext = mime.split('/')[1]?.split('+')[0] ?? 'jpeg'
+
+  // Path follows the existing convention:
+  //   <brokerage_id>/<property_id>/<tag>-<timestamp>.<ext>
+  const propertyIdMatch = sourceUrl.match(
+    /\/property-images\/[^/]+\/([^/]+)\//,
+  )
+  const propertyFolder = propertyIdMatch?.[1] ?? 'shared'
+  const path = `${brokerageId}/${propertyFolder}/${tag}-${Date.now()}.${ext}`
+
+  const { error: uploadErr } = await supabase.storage
+    .from('property-images')
+    .upload(path, buffer, { contentType: mime, upsert: false })
+
+  if (uploadErr) {
+    return { ok: false, error: `Upload error: ${uploadErr.message}` }
+  }
+
+  const { data: pub } = supabase.storage
+    .from('property-images')
+    .getPublicUrl(path)
+
+  return { ok: true, path, url: pub.publicUrl }
 }

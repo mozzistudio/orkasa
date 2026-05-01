@@ -39,8 +39,19 @@ export const ENHANCEMENTS: EnhancementMeta[] = [
   {
     id: 'lighting',
     label: 'Mejorar iluminación',
-    description: 'Aclara naturalmente las zonas oscuras manteniendo los colores reales',
-    prompt: `Improve the lighting in this real estate photo. Brighten shadowed areas naturally — recover detail in dark zones without crushing highlights or producing HDR artifacts. Balance interior versus exterior exposure if there is a window. Keep the original colors true to life — no warm/cold cast shifts. Maintain natural shadow direction. The result should look like a well-exposed photograph, never an HDR composite or an over-processed image.`,
+    description:
+      'Iluminación natural, color realista, líneas rectas y cero desorden — listo para portal',
+    prompt: `Enhance this real estate photo to make it bright, clean, and highly attractive for property listing.
+Improve lighting to natural daylight, correct white balance, and increase clarity and sharpness.
+Remove clutter, imperfections, stains, cables, or unwanted objects.
+Straighten vertical and horizontal lines (walls, doors, windows).
+Apply subtle HDR effect while keeping a realistic look (no over-processing).
+Enhance colors naturally (neutral whites, warm tones, realistic materials).
+Improve shadows and highlights for better depth.
+Ensure the space looks spacious, clean, and welcoming.
+Keep original structure and layout unchanged.
+Do not add or invent furniture unless explicitly empty room staging is requested.
+Maintain a professional, high-end real estate photography style.`,
   },
   {
     id: 'clutter_remove',

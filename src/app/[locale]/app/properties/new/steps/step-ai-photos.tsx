@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition } from 'react'
 import Image from 'next/image'
-import { ChevronLeft, Sparkles, AlertCircle } from 'lucide-react'
+import { ChevronLeft, Sparkles, AlertCircle, Check } from 'lucide-react'
 import type { StoredImage } from '@/components/app/image-upload'
 import { BeforeAfterSlider } from '@/components/app/before-after-slider'
 import { autoEnhanceImage } from '../../enhance-actions'
@@ -14,6 +14,7 @@ type EnhancedState = {
   status: 'idle' | 'loading' | 'done' | 'error'
   error?: string
   useEnhanced: boolean
+  applied?: string[]
 }
 
 export function StepAIPhotos({
@@ -55,6 +56,7 @@ export function StepAIPhotos({
                 enhanced: { path: result.path, url: result.url },
                 status: 'done',
                 useEnhanced: true,
+                applied: result.applied,
               }
             }
             return { ...it, status: 'error', error: result.error }
@@ -102,62 +104,86 @@ export function StepAIPhotos({
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="space-y-5">
         {items.map((item, i) => (
           <div
             key={item.original.path}
-            className="rounded-[4px] border border-bone bg-paper p-3"
+            className="rounded-[4px] border border-bone bg-paper p-3 md:p-4"
           >
             {item.status === 'loading' && (
-              <div className="space-y-2">
-                <div className="relative aspect-[4/3] overflow-hidden rounded-[3px] bg-bone">
+              <div className="space-y-3">
+                <div className="relative aspect-[3/2] overflow-hidden rounded-[3px] bg-bone">
                   <Image
                     src={item.original.url}
                     alt=""
                     fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
+                    sizes="(max-width: 768px) 100vw, 720px"
                     className="object-cover opacity-60"
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <Sparkles
-                      className="h-6 w-6 animate-pulse text-signal"
+                      className="h-7 w-7 animate-pulse text-signal"
                       strokeWidth={1.5}
                     />
                   </div>
                 </div>
-                <p className="text-center font-mono text-[10px] uppercase tracking-wider text-steel">
+                <p className="text-center font-mono text-[11px] uppercase tracking-wider text-steel">
                   Mejorando foto {i + 1}…
                 </p>
               </div>
             )}
 
             {item.status === 'error' && (
-              <div className="space-y-2">
-                <div className="relative aspect-[4/3] overflow-hidden rounded-[3px]">
+              <div className="space-y-3">
+                <div className="relative aspect-[3/2] overflow-hidden rounded-[3px]">
                   <Image
                     src={item.original.url}
                     alt=""
                     fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
+                    sizes="(max-width: 768px) 100vw, 720px"
                     className="object-cover"
                   />
                 </div>
-                <div className="flex items-center gap-1.5 font-mono text-[10px] text-signal">
-                  <AlertCircle className="h-3 w-3" strokeWidth={1.5} />
-                  Se usará la original
+                <div className="flex items-center gap-1.5 font-mono text-[11px] text-signal">
+                  <AlertCircle className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  No pude mejorar esta foto — se usará la original
                 </div>
               </div>
             )}
 
             {item.status === 'done' && item.enhanced && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <BeforeAfterSlider
                   beforeUrl={item.original.url}
                   afterUrl={item.enhanced.url}
                   beforeLabel="Original"
                   afterLabel="Mejorada"
+                  aspect="aspect-[3/2]"
                 />
-                <div className="flex items-center gap-1 rounded-[4px] border border-bone bg-bone/30 p-1 font-mono text-[10px] uppercase tracking-wider">
+
+                {item.applied && item.applied.length > 0 && (
+                  <div className="rounded-[3px] border border-bone bg-bone/30 px-3 py-2.5">
+                    <p className="mb-1.5 font-mono text-[10px] uppercase tracking-wider text-steel">
+                      Cambios aplicados
+                    </p>
+                    <ul className="flex flex-wrap gap-x-3 gap-y-1.5">
+                      {item.applied.map((change) => (
+                        <li
+                          key={change}
+                          className="flex items-center gap-1.5 text-[12px] text-ink"
+                        >
+                          <Check
+                            className="h-3 w-3 text-signal"
+                            strokeWidth={2}
+                          />
+                          {change}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-1 rounded-[4px] border border-bone bg-bone/30 p-1 font-mono text-[11px] uppercase tracking-wider">
                   <button
                     type="button"
                     onClick={() =>
@@ -167,7 +193,7 @@ export function StepAIPhotos({
                         ),
                       )
                     }
-                    className={`flex-1 rounded-[3px] px-2 py-1.5 transition-colors ${
+                    className={`flex-1 rounded-[3px] px-3 py-2 transition-colors ${
                       !item.useEnhanced
                         ? 'bg-ink text-paper'
                         : 'text-steel hover:text-ink'
@@ -184,7 +210,7 @@ export function StepAIPhotos({
                         ),
                       )
                     }
-                    className={`flex-1 rounded-[3px] px-2 py-1.5 transition-colors ${
+                    className={`flex-1 rounded-[3px] px-3 py-2 transition-colors ${
                       item.useEnhanced
                         ? 'bg-signal text-paper'
                         : 'text-steel hover:text-ink'
