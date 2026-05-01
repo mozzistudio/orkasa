@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition } from 'react'
 import Image from 'next/image'
 import { ChevronLeft, Sparkles, AlertCircle } from 'lucide-react'
 import type { StoredImage } from '@/components/app/image-upload'
+import { BeforeAfterSlider } from '@/components/app/before-after-slider'
 import { autoEnhanceImage } from '../../enhance-actions'
 import { updatePropertyDraft } from '../../actions'
 
@@ -68,14 +69,6 @@ export function StepAIPhotos({
     (it) => it.status === 'done' || it.status === 'error',
   )
   const anyLoading = items.some((it) => it.status === 'loading')
-
-  function toggleUse(index: number) {
-    setItems((prev) =>
-      prev.map((it, i) =>
-        i === index ? { ...it, useEnhanced: !it.useEnhanced } : it,
-      ),
-    )
-  }
 
   function handleConfirm() {
     const finalImages = items.map((it) =>
@@ -156,9 +149,15 @@ export function StepAIPhotos({
               </div>
             )}
 
-            {item.status === 'done' && (
+            {item.status === 'done' && item.enhanced && (
               <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-2">
+                <BeforeAfterSlider
+                  beforeUrl={item.original.url}
+                  afterUrl={item.enhanced.url}
+                  beforeLabel="Original"
+                  afterLabel="Mejorada"
+                />
+                <div className="flex items-center gap-1 rounded-[4px] border border-bone bg-bone/30 p-1 font-mono text-[10px] uppercase tracking-wider">
                   <button
                     type="button"
                     onClick={() =>
@@ -168,40 +167,30 @@ export function StepAIPhotos({
                         ),
                       )
                     }
-                    className={`relative aspect-[4/3] overflow-hidden rounded-[3px] border-2 transition-colors ${
-                      !item.useEnhanced ? 'border-ink' : 'border-transparent'
+                    className={`flex-1 rounded-[3px] px-2 py-1.5 transition-colors ${
+                      !item.useEnhanced
+                        ? 'bg-ink text-paper'
+                        : 'text-steel hover:text-ink'
                     }`}
                   >
-                    <Image
-                      src={item.original.url}
-                      alt=""
-                      fill
-                      sizes="(max-width: 768px) 50vw, 25vw"
-                      className="object-cover"
-                    />
-                    <span className="absolute bottom-1 left-1 rounded-[3px] bg-coal/70 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-paper">
-                      Original
-                    </span>
+                    Usar original
                   </button>
                   <button
                     type="button"
-                    onClick={() => toggleUse(i)}
-                    className={`relative aspect-[4/3] overflow-hidden rounded-[3px] border-2 transition-colors ${
-                      item.useEnhanced ? 'border-ink' : 'border-transparent'
+                    onClick={() =>
+                      setItems((prev) =>
+                        prev.map((it, idx) =>
+                          idx === i ? { ...it, useEnhanced: true } : it,
+                        ),
+                      )
+                    }
+                    className={`flex-1 rounded-[3px] px-2 py-1.5 transition-colors ${
+                      item.useEnhanced
+                        ? 'bg-signal text-paper'
+                        : 'text-steel hover:text-ink'
                     }`}
                   >
-                    {item.enhanced && (
-                      <Image
-                        src={item.enhanced.url}
-                        alt=""
-                        fill
-                        sizes="(max-width: 768px) 50vw, 25vw"
-                        className="object-cover"
-                      />
-                    )}
-                    <span className="absolute bottom-1 left-1 rounded-[3px] bg-signal/90 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-paper">
-                      Mejorada
-                    </span>
+                    Usar mejorada
                   </button>
                 </div>
               </div>
