@@ -38,7 +38,7 @@ function NativeSelect({
         name={name}
         defaultValue={defaultValue}
         required
-        className="h-9 w-full appearance-none rounded-[4px] border border-bone bg-paper px-3 pr-8 text-[13px] text-ink focus:border-ink focus:outline-none focus:ring-0"
+        className="h-11 w-full appearance-none rounded-[4px] border border-bone bg-paper px-3 pr-8 text-[13px] text-ink focus:border-ink focus:outline-none focus:ring-0 md:h-9"
       >
         {options.map((o) => (
           <option key={o} value={o}>
@@ -132,7 +132,7 @@ export function PropertyForm({
       ref={formRef}
       id="property-form"
       action={handleSubmit}
-      className="space-y-6 md:space-y-8"
+      className="space-y-8"
     >
       {/* Hidden property_id for create flow (so image uploads can use it) */}
       {isCreate && (
@@ -158,7 +158,7 @@ export function PropertyForm({
             placeholder={t('form.titlePlaceholder')}
             required
             maxLength={200}
-            className="h-9 rounded-[4px] border-bone text-[13px] focus:border-ink focus:ring-0"
+            className="h-11 rounded-[4px] border-bone md:h-9 text-[13px] focus:border-ink focus:ring-0"
           />
         </div>
 
@@ -229,7 +229,7 @@ export function PropertyForm({
               step="0.01"
               min="0"
               defaultValue={defaults.price ?? ''}
-              className="h-9 rounded-[4px] border-bone font-mono text-[13px] tabular-nums focus:border-ink focus:ring-0"
+              className="h-11 rounded-[4px] border-bone md:h-9 font-mono text-[13px] tabular-nums focus:border-ink focus:ring-0"
             />
           </div>
           <div className="space-y-1.5 md:space-y-2">
@@ -242,7 +242,7 @@ export function PropertyForm({
               defaultValue={defaults.currency ?? 'USD'}
               maxLength={3}
               pattern="[A-Z]{3}"
-              className="h-9 rounded-[4px] border-bone text-center font-mono text-[13px] uppercase focus:border-ink focus:ring-0 md:text-left"
+              className="h-11 rounded-[4px] border-bone md:h-9 text-center font-mono text-[13px] uppercase focus:border-ink focus:ring-0 md:text-left"
             />
           </div>
         </div>
@@ -268,7 +268,7 @@ export function PropertyForm({
               type="number"
               min="0"
               defaultValue={defaults.bedrooms ?? ''}
-              className="h-9 rounded-[4px] border-bone font-mono text-[13px] tabular-nums focus:border-ink focus:ring-0"
+              className="h-11 rounded-[4px] border-bone md:h-9 font-mono text-[13px] tabular-nums focus:border-ink focus:ring-0"
             />
           </div>
           <div className="space-y-1.5 md:space-y-2">
@@ -282,7 +282,7 @@ export function PropertyForm({
               step="0.5"
               min="0"
               defaultValue={defaults.bathrooms ?? ''}
-              className="h-9 rounded-[4px] border-bone font-mono text-[13px] tabular-nums focus:border-ink focus:ring-0"
+              className="h-11 rounded-[4px] border-bone md:h-9 font-mono text-[13px] tabular-nums focus:border-ink focus:ring-0"
             />
           </div>
           <div className="space-y-1.5 md:space-y-2">
@@ -296,7 +296,7 @@ export function PropertyForm({
               step="0.01"
               min="0"
               defaultValue={defaults.area_m2 ?? ''}
-              className="h-9 rounded-[4px] border-bone font-mono text-[13px] tabular-nums focus:border-ink focus:ring-0"
+              className="h-11 rounded-[4px] border-bone md:h-9 font-mono text-[13px] tabular-nums focus:border-ink focus:ring-0"
             />
           </div>
         </div>
@@ -318,7 +318,7 @@ export function PropertyForm({
             id="address"
             name="address"
             defaultValue={defaults.address ?? ''}
-            className="h-9 rounded-[4px] border-bone text-[13px] focus:border-ink focus:ring-0"
+            className="h-11 rounded-[4px] border-bone md:h-9 text-[13px] focus:border-ink focus:ring-0"
           />
         </div>
         <div className="grid gap-3 md:grid-cols-3 md:gap-4">
@@ -330,7 +330,7 @@ export function PropertyForm({
               id="neighborhood"
               name="neighborhood"
               defaultValue={defaults.neighborhood ?? ''}
-              className="h-9 rounded-[4px] border-bone text-[13px] focus:border-ink focus:ring-0"
+              className="h-11 rounded-[4px] border-bone md:h-9 text-[13px] focus:border-ink focus:ring-0"
             />
           </div>
           <div className="space-y-1.5 md:space-y-2">
@@ -341,7 +341,7 @@ export function PropertyForm({
               id="city"
               name="city"
               defaultValue={defaults.city ?? ''}
-              className="h-9 rounded-[4px] border-bone text-[13px] focus:border-ink focus:ring-0"
+              className="h-11 rounded-[4px] border-bone md:h-9 text-[13px] focus:border-ink focus:ring-0"
             />
           </div>
           <div className="space-y-1.5 md:space-y-2">
@@ -353,7 +353,7 @@ export function PropertyForm({
               name="external_id"
               defaultValue={defaults.external_id ?? ''}
               placeholder={t('form.externalIdPlaceholder')}
-              className="h-9 rounded-[4px] border-bone font-mono text-[13px] focus:border-ink focus:ring-0"
+              className="h-11 rounded-[4px] border-bone md:h-9 font-mono text-[13px] focus:border-ink focus:ring-0"
             />
           </div>
         </div>
@@ -427,13 +427,13 @@ export function PropertyForm({
         </p>
       )}
 
-      {/* === FOOTER ACTIONS === */}
-      <div className="flex flex-col items-stretch gap-3 border-t border-bone pt-6 md:flex-row md:items-center md:justify-end">
+      {/* === FOOTER ACTIONS (desktop) === */}
+      <div className="hidden md:flex items-center justify-end gap-3 border-t border-bone pt-6">
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-[4px] border border-ink px-4 py-2.5 text-[13px] text-ink transition-colors hover:bg-bone/50 md:py-2"
+            className="rounded-[4px] border border-ink px-4 py-2 text-[13px] text-ink transition-colors hover:bg-bone/50"
           >
             {t('back')}
           </button>
@@ -441,7 +441,7 @@ export function PropertyForm({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-[4px] border border-ink px-5 py-2.5 text-[13px] font-medium text-ink transition-colors hover:bg-bone/50 disabled:opacity-60 md:py-2"
+          className="rounded-[4px] border border-ink px-5 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-bone/50 disabled:opacity-60"
         >
           {pending ? '…' : isCreate ? 'Guardar borrador' : submitLabel}
         </button>
@@ -450,10 +450,47 @@ export function PropertyForm({
             type="button"
             onClick={submitAndPublish}
             disabled={pending}
-            className="inline-flex items-center justify-center gap-1.5 rounded-[4px] bg-signal px-5 py-2.5 text-[13px] font-medium text-paper transition-colors hover:bg-signal/90 disabled:opacity-60 md:py-2"
+            className="inline-flex items-center justify-center gap-1.5 rounded-[4px] bg-signal px-5 py-2 text-[13px] font-medium text-paper transition-colors hover:bg-signal/90 disabled:opacity-60"
           >
             <Send className="h-3.5 w-3.5" strokeWidth={1.5} />
             Guardar y publicar
+          </button>
+        )}
+      </div>
+
+      {/* Spacer for mobile sticky footer */}
+      <div className="h-24 md:hidden" />
+
+      {/* === STICKY FOOTER (mobile) === */}
+      <div
+        className="fixed inset-x-0 z-20 flex items-center gap-2 border-t border-bone bg-paper px-4 py-3 md:hidden"
+        style={{ bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))' }}
+      >
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 rounded-[4px] border border-ink px-3 py-2.5 text-[13px] text-ink transition-colors active:bg-bone/30"
+          >
+            {t('back')}
+          </button>
+        )}
+        <button
+          type="submit"
+          disabled={pending}
+          className="flex-1 rounded-[4px] border border-ink px-3 py-2.5 text-[13px] font-medium text-ink transition-colors active:bg-bone/30 disabled:opacity-60"
+        >
+          {pending ? '…' : isCreate ? 'Borrador' : submitLabel}
+        </button>
+        {isCreate && (
+          <button
+            type="button"
+            onClick={submitAndPublish}
+            disabled={pending}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-[4px] bg-signal px-3 py-2.5 text-[13px] font-medium text-paper transition-colors active:bg-signal/80 disabled:opacity-60"
+          >
+            <Send className="h-3.5 w-3.5" strokeWidth={1.5} />
+            Publicar
           </button>
         )}
       </div>

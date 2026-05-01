@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Plus, LayoutGrid, List } from 'lucide-react'
+import { Plus, LayoutGrid, List, Users } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import {
@@ -11,6 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { LeadsKanban, type KanbanLead } from '@/components/app/leads-kanban'
+import { LeadsFilters } from './filters'
 
 const STATUS_COLOR: Record<string, string> = {
   new: 'text-signal',
@@ -30,14 +31,25 @@ function shortDate(iso: string | null) {
   })
 }
 
+function initial(name: string): string {
+  return (name[0] ?? '').toUpperCase()
+}
+
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string }>
+  searchParams: Promise<{ view?: string; q?: string; status?: string }>
 }) {
   const t = await getTranslations('leads')
   const params = await searchParams
   const view = params.view === 'kanban' ? 'kanban' : 'table'
+  const q = params.q?.trim() ?? ''
+  const VALID_STATUSES = ['new', 'contacted', 'qualified', 'viewing_scheduled', 'negotiating', 'closed_won', 'closed_lost'] as const
+  type LeadStatus = (typeof VALID_STATUSES)[number]
+  const statusFilter: LeadStatus | null =
+    VALID_STATUSES.includes(params.status as LeadStatus)
+      ? (params.status as LeadStatus)
+      : null
 
   const supabase = await createClient()
 
@@ -54,14 +66,30 @@ export default async function LeadsPage({
     created_at: string | null
   }
 
+  let leadsQuery = supabase
+    .from('leads')
+    .select(
+      'id, full_name, email, phone, origin, status, ai_score, property_id, assigned_agent_id, created_at',
+    )
+    .order('created_at', { ascending: false })
+
+  if (q.length > 0) {
+    const escaped = q.replace(/[%_]/g, '\\$&')
+    leadsQuery = leadsQuery.or(
+      [
+        `full_name.ilike.%${escaped}%`,
+        `email.ilike.%${escaped}%`,
+        `phone.ilike.%${escaped}%`,
+      ].join(','),
+    )
+  }
+
+  if (statusFilter) {
+    leadsQuery = leadsQuery.eq('status', statusFilter)
+  }
+
   const [leadsRes, agentsRes, propertiesRes] = await Promise.all([
-    supabase
-      .from('leads')
-      .select(
-        'id, full_name, email, phone, origin, status, ai_score, property_id, assigned_agent_id, created_at',
-      )
-      .order('created_at', { ascending: false })
-      .returns<RawLead[]>(),
+    leadsQuery.returns<RawLead[]>(),
     supabase
       .from('agents')
       .select('id, full_name')
@@ -80,7 +108,7 @@ export default async function LeadsPage({
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between md:mb-6">
         <h1 className="text-[22px] font-medium tracking-[-0.5px] text-ink">
           {t('title')}
           <span className="ml-3 font-mono text-[12px] tabular-nums text-steel">
@@ -89,8 +117,8 @@ export default async function LeadsPage({
         </h1>
 
         <div className="flex items-center gap-2">
-          {/* View toggle */}
-          <div className="inline-flex rounded-[4px] border border-bone p-0.5">
+          {/* View toggle — desktop only (kanban unusable on mobile) */}
+          <div className="hidden md:inline-flex rounded-[4px] border border-bone p-0.5">
             <Link
               href="/app/leads?view=table"
               className={`flex items-center gap-1.5 rounded-[4px] px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors ${
@@ -117,7 +145,7 @@ export default async function LeadsPage({
 
           <Link
             href="/app/leads/new"
-            className="inline-flex items-center gap-2 rounded-[4px] bg-ink px-4 py-2 text-[13px] font-medium text-paper transition-colors hover:bg-coal"
+            className="hidden md:inline-flex items-center gap-2 rounded-[4px] bg-ink px-4 py-2 text-[13px] font-medium text-paper transition-colors hover:bg-coal"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
             {t('new')}
@@ -125,9 +153,27 @@ export default async function LeadsPage({
         </div>
       </div>
 
+      <div className="mb-4">
+        <LeadsFilters q={q} status={statusFilter} />
+      </div>
+
       {leads.length === 0 ? (
-        <div className="rounded-[4px] border border-bone bg-paper p-12 text-center">
-          <p className="text-[13px] text-steel">{t('empty')}</p>
+        <div className="rounded-[4px] border border-bone bg-paper p-8 text-center md:p-12">
+          <Users className="mx-auto mb-3 h-6 w-6 text-steel" strokeWidth={1.5} />
+          <p className="text-[13px] text-steel">
+            {q || statusFilter
+              ? 'Sin resultados con esos filtros.'
+              : t('empty')}
+          </p>
+          {!(q || statusFilter) && (
+            <Link
+              href="/app/leads/new"
+              className="mt-4 inline-flex items-center gap-2 rounded-[4px] bg-ink px-4 py-2.5 text-[13px] font-medium text-paper transition-colors hover:bg-coal active:bg-coal w-full justify-center md:w-auto"
+            >
+              <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+              {t('new')}
+            </Link>
+          )}
         </div>
       ) : view === 'kanban' ? (
         <LeadsKanban
@@ -151,51 +197,44 @@ export default async function LeadsPage({
         />
       ) : (
         <>
-          {/* Mobile: card layout */}
-          <div className="space-y-3 md:hidden">
+          {/* Mobile: card layout with avatar */}
+          <div className="space-y-2 md:hidden">
             {leads.map((lead) => (
               <Link
                 key={lead.id}
                 href={`/app/leads/${lead.id}`}
-                className="block rounded-[4px] border border-bone bg-paper p-4 active:bg-bone/30"
+                className="flex items-center gap-3 rounded-[4px] border border-bone bg-paper p-3 active:bg-bone/20 transition-colors"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[15px] font-medium text-ink line-clamp-1">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] bg-bone font-mono text-[12px] font-medium text-ink">
+                  {initial(lead.full_name)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[14px] font-medium text-ink truncate">
                       {lead.full_name}
                     </p>
-                    {lead.email && (
-                      <p className="mt-0.5 font-mono text-[11px] text-steel line-clamp-1">
-                        {lead.email}
-                      </p>
+                    {lead.ai_score != null && (
+                      <span className={`shrink-0 font-mono text-[14px] tabular-nums font-medium ${lead.ai_score > 70 ? 'text-signal' : 'text-steel'}`}>
+                        {lead.ai_score}
+                      </span>
                     )}
                   </div>
-                  {lead.ai_score && (
-                    <span className="font-mono text-[15px] tabular-nums text-signal">
-                      {lead.ai_score}
+                  <p className="mt-0.5 font-mono text-[11px] text-steel truncate">
+                    {lead.email ?? lead.phone ?? '—'}
+                  </p>
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    <span
+                      className={`font-mono text-[10px] uppercase tracking-wider ${
+                        STATUS_COLOR[lead.status] ?? 'text-steel'
+                      }`}
+                    >
+                      {t(`status.${lead.status}`)}
                     </span>
-                  )}
-                </div>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span
-                    className={`font-mono text-[10px] uppercase tracking-wider ${
-                      STATUS_COLOR[lead.status] ?? 'text-steel'
-                    }`}
-                  >
-                    {t(`status.${lead.status}`)}
-                  </span>
-                  <span className="font-mono text-[10px] text-steel">·</span>
-                  <span className="font-mono text-[11px] text-steel">
-                    {t(`origin.${lead.origin}`)}
-                  </span>
-                  {lead.property_id && propsById.get(lead.property_id) && (
-                    <>
-                      <span className="font-mono text-[10px] text-steel">·</span>
-                      <span className="text-[11px] text-ink line-clamp-1">
-                        {propsById.get(lead.property_id)}
-                      </span>
-                    </>
-                  )}
+                    <span className="font-mono text-[10px] text-steel">·</span>
+                    <span className="font-mono text-[10px] text-steel uppercase tracking-wider">
+                      {t(`origin.${lead.origin}`)}
+                    </span>
+                  </div>
                 </div>
               </Link>
             ))}

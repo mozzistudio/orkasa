@@ -52,10 +52,12 @@ function CommandDialog({
       <DialogContent
         className={cn(
           'overflow-hidden border-bone p-0 sm:max-w-[640px]',
+          'max-md:top-auto max-md:bottom-0 max-md:left-0 max-md:w-full max-md:max-w-full max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-t-[4px] max-md:rounded-b-none',
           className,
         )}
         showCloseButton={showCloseButton}
       >
+        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-bone md:hidden" />
         <Command className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[1.5px] [&_[cmdk-group-heading]]:text-steel [&_[cmdk-input-wrapper]_svg]:h-4 [&_[cmdk-input-wrapper]_svg]:w-4 [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-2.5 [&_[cmdk-item]_svg]:h-4 [&_[cmdk-item]_svg]:w-4">
           {children}
         </Command>

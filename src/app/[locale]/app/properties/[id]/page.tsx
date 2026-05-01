@@ -45,7 +45,7 @@ export default async function PropertyDetailPage({
     <div className="mx-auto max-w-4xl">
       <Link
         href="/app/properties"
-        className="mb-6 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-steel hover:text-ink transition-colors"
+        className="mb-6 hidden md:inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-steel hover:text-ink transition-colors"
       >
         <ArrowLeft className="h-3 w-3" strokeWidth={1.5} />
         {t('title')}
@@ -123,7 +123,7 @@ export default async function PropertyDetailPage({
           : []
         const cover = images[0]
         return (
-          <div className="relative mb-6 h-64 overflow-hidden rounded-[4px] border border-ink bg-coal">
+          <div className="relative mb-6 -mx-4 h-56 overflow-hidden bg-coal md:mx-0 md:h-64 md:rounded-[4px] md:border md:border-ink">
             {cover ? (
               <Image
                 src={cover.url}
@@ -178,17 +178,17 @@ export default async function PropertyDetailPage({
           : []
         if (images.length <= 1) return null
         return (
-          <div className="mb-6 grid grid-cols-3 gap-3 md:grid-cols-4">
+          <div className="mb-6 flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-4 md:gap-3 md:overflow-visible">
             {images.slice(1).map((img) => (
               <div
                 key={img.path}
-                className="relative aspect-square overflow-hidden rounded-[4px] border border-bone"
+                className="relative shrink-0 h-20 w-20 overflow-hidden rounded-[4px] border border-bone md:h-auto md:w-auto md:aspect-square"
               >
                 <Image
                   src={img.url}
                   alt=""
                   fill
-                  sizes="(max-width: 768px) 33vw, 25vw"
+                  sizes="(max-width: 768px) 80px, 25vw"
                   className="object-cover"
                 />
               </div>
@@ -198,7 +198,7 @@ export default async function PropertyDetailPage({
       })()}
 
       {/* Specs grid */}
-      <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="mb-6 flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-4 md:gap-4 md:overflow-visible">
         <SpecCell label="Tipo" value={t(`type.${property.property_type}`)} />
         <SpecCell
           label="Operación"
@@ -273,7 +273,7 @@ function SpecCell({
   accent?: boolean
 }) {
   return (
-    <div className="rounded-[4px] border border-bone bg-paper p-3">
+    <div className="shrink-0 w-[130px] rounded-[4px] border border-bone bg-paper p-3 md:w-auto">
       <p className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
         {label}
       </p>

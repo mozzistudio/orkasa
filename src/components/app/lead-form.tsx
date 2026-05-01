@@ -70,7 +70,7 @@ export function LeadForm({
             defaultValue={defaults.full_name ?? ''}
             placeholder={t('form.fullNamePlaceholder')}
             required
-            className="h-9 rounded-[4px] border-bone text-[13px] focus:border-ink focus:ring-0"
+            className="h-11 rounded-[4px] border-bone md:h-9 text-[13px] focus:border-ink focus:ring-0"
           />
         </div>
 
@@ -84,7 +84,7 @@ export function LeadForm({
             type="email"
             defaultValue={defaults.email ?? ''}
             placeholder={t('form.emailPlaceholder')}
-            className="h-9 rounded-[4px] border-bone text-[13px] focus:border-ink focus:ring-0"
+            className="h-11 rounded-[4px] border-bone md:h-9 text-[13px] focus:border-ink focus:ring-0"
           />
         </div>
 
@@ -97,7 +97,7 @@ export function LeadForm({
             name="phone"
             defaultValue={defaults.phone ?? ''}
             placeholder={t('form.phonePlaceholder')}
-            className="h-9 rounded-[4px] border-bone font-mono text-[13px] focus:border-ink focus:ring-0"
+            className="h-11 rounded-[4px] border-bone md:h-9 font-mono text-[13px] focus:border-ink focus:ring-0"
           />
         </div>
 
@@ -136,7 +136,7 @@ export function LeadForm({
             min="0"
             max="100"
             defaultValue={defaults.ai_score ?? ''}
-            className="h-9 rounded-[4px] border-bone font-mono text-[13px] tabular-nums focus:border-ink focus:ring-0"
+            className="h-11 rounded-[4px] border-bone md:h-9 font-mono text-[13px] tabular-nums focus:border-ink focus:ring-0"
           />
         </div>
 
@@ -146,7 +146,7 @@ export function LeadForm({
             <select
               name="property_id"
               defaultValue={defaults.property_id ?? ''}
-              className="h-9 w-full appearance-none rounded-[4px] border border-bone bg-paper px-3 pr-8 text-[13px] text-ink focus:border-ink focus:outline-none focus:ring-0"
+              className="h-11 w-full appearance-none rounded-[4px] border border-bone bg-paper px-3 pr-8 text-[13px] text-ink focus:border-ink focus:outline-none focus:ring-0 md:h-9"
             >
               <option value="">{t('form.noProperty')}</option>
               {properties.map((p) => (
@@ -167,7 +167,7 @@ export function LeadForm({
             <select
               name="assigned_agent_id"
               defaultValue={defaults.assigned_agent_id ?? ''}
-              className="h-9 w-full appearance-none rounded-[4px] border border-bone bg-paper px-3 pr-8 text-[13px] text-ink focus:border-ink focus:outline-none focus:ring-0"
+              className="h-11 w-full appearance-none rounded-[4px] border border-bone bg-paper px-3 pr-8 text-[13px] text-ink focus:border-ink focus:outline-none focus:ring-0 md:h-9"
             >
               <option value="">{t('form.noAssignment')}</option>
               {agents.map((a) => (
@@ -201,11 +201,29 @@ export function LeadForm({
         </p>
       )}
 
-      <div className="flex items-center justify-end border-t border-bone pt-6">
+      {/* Desktop footer */}
+      <div className="hidden md:flex items-center justify-end border-t border-bone pt-6">
         <button
           type="submit"
           disabled={pending}
           className="rounded-[4px] bg-ink px-5 py-2 text-[13px] font-medium text-paper transition-colors hover:bg-coal disabled:opacity-60"
+        >
+          {pending ? '…' : submitLabel}
+        </button>
+      </div>
+
+      {/* Spacer for mobile sticky footer */}
+      <div className="h-24 md:hidden" />
+
+      {/* Sticky footer (mobile) */}
+      <div
+        className="fixed inset-x-0 z-20 border-t border-bone bg-paper px-4 py-3 md:hidden"
+        style={{ bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))' }}
+      >
+        <button
+          type="submit"
+          disabled={pending}
+          className="w-full rounded-[4px] bg-ink px-5 py-2.5 text-[13px] font-medium text-paper transition-colors active:bg-coal disabled:opacity-60"
         >
           {pending ? '…' : submitLabel}
         </button>
@@ -231,7 +249,7 @@ function NativeSelect({
         name={name}
         defaultValue={defaultValue}
         required
-        className="h-9 w-full appearance-none rounded-[4px] border border-bone bg-paper px-3 pr-8 text-[13px] text-ink focus:border-ink focus:outline-none focus:ring-0"
+        className="h-11 w-full appearance-none rounded-[4px] border border-bone bg-paper px-3 pr-8 text-[13px] text-ink focus:border-ink focus:outline-none focus:ring-0 md:h-9"
       >
         {options.map((o) => (
           <option key={o} value={o}>

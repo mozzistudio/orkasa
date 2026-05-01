@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   Mail,
   Phone,
+  MessageCircle,
   MapPin,
   ExternalLink,
   Building2,
@@ -149,22 +150,23 @@ export default async function LeadDetailPage({
     <div className="mx-auto max-w-5xl">
       <Link
         href="/app/leads"
-        className="mb-6 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-steel hover:text-ink transition-colors"
+        className="mb-6 hidden md:inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-steel hover:text-ink transition-colors"
       >
         <ArrowLeft className="h-3 w-3" strokeWidth={1.5} />
         {t('title')}
       </Link>
 
       {/* Header */}
-      <div className="mb-6 flex items-start justify-between gap-4">
+      <div className="mb-4 flex items-start justify-between gap-4 md:mb-6">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[1.5px] text-steel">
             [ {lead.id.slice(0, 8)} ]
           </p>
-          <h1 className="mt-1 text-[24px] font-medium tracking-[-0.5px] text-ink">
+          <h1 className="mt-1 text-[22px] font-medium tracking-[-0.5px] text-ink md:text-[24px]">
             {lead.full_name}
           </h1>
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-[13px] text-steel">
+          {/* Desktop: inline contact links */}
+          <div className="mt-2 hidden md:flex flex-wrap items-center gap-3 text-[13px] text-steel">
             {lead.email && (
               <a
                 href={`mailto:${lead.email}`}
@@ -186,6 +188,61 @@ export default async function LeadDetailPage({
           </div>
         </div>
         <LeadDeleteButton id={lead.id} />
+      </div>
+
+      {/* Mobile: quick action buttons */}
+      {(lead.phone || lead.email) && (
+        <div className="mb-4 flex gap-2 md:hidden">
+          {lead.phone && (
+            <a
+              href={`tel:${lead.phone}`}
+              className="flex flex-1 items-center justify-center gap-2 rounded-[4px] border border-bone px-3 py-2.5 text-[13px] text-ink active:bg-bone/30 transition-colors"
+            >
+              <Phone className="h-4 w-4 text-steel" strokeWidth={1.5} />
+              Llamar
+            </a>
+          )}
+          {lead.phone && (
+            <a
+              href={`https://wa.me/${lead.phone.replace(/[^0-9+]/g, '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-1 items-center justify-center gap-2 rounded-[4px] border border-bone px-3 py-2.5 text-[13px] text-ink active:bg-bone/30 transition-colors"
+            >
+              <MessageCircle className="h-4 w-4 text-steel" strokeWidth={1.5} />
+              WhatsApp
+            </a>
+          )}
+          {lead.email && (
+            <a
+              href={`mailto:${lead.email}`}
+              className="flex flex-1 items-center justify-center gap-2 rounded-[4px] border border-bone px-3 py-2.5 text-[13px] text-ink active:bg-bone/30 transition-colors"
+            >
+              <Mail className="h-4 w-4 text-steel" strokeWidth={1.5} />
+              Email
+            </a>
+          )}
+        </div>
+      )}
+
+      {/* Mobile: metadata chips row */}
+      <div className="mb-4 flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1 md:hidden">
+        <div className="shrink-0 rounded-[4px] border border-bone px-3 py-2 flex flex-col items-center">
+          <span className="font-mono text-[9px] uppercase tracking-wider text-steel">Status</span>
+          <span className="font-mono text-[12px] text-ink mt-0.5">{t(`status.${lead.status ?? 'new'}`)}</span>
+        </div>
+        <div className="shrink-0 rounded-[4px] border border-bone px-3 py-2 flex flex-col items-center">
+          <span className="font-mono text-[9px] uppercase tracking-wider text-steel">Score</span>
+          <span className="font-mono text-[14px] font-medium text-signal mt-0.5">{lead.ai_score ?? '—'}</span>
+        </div>
+        <div className="shrink-0 rounded-[4px] border border-bone px-3 py-2 flex flex-col items-center">
+          <span className="font-mono text-[9px] uppercase tracking-wider text-steel">Origen</span>
+          <span className="font-mono text-[12px] text-ink mt-0.5">{t(`origin.${lead.origin}`)}</span>
+        </div>
+        <div className="shrink-0 rounded-[4px] border border-bone px-3 py-2 flex flex-col items-center">
+          <span className="font-mono text-[9px] uppercase tracking-wider text-steel">Agente</span>
+          <span className="text-[12px] text-ink mt-0.5 whitespace-nowrap">{assignedAgent?.full_name ?? '—'}</span>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -324,8 +381,8 @@ export default async function LeadDetailPage({
           </div>
         </div>
 
-        {/* Right col: meta */}
-        <div className="space-y-4">
+        {/* Right col: meta — hidden on mobile (shown as chips above) */}
+        <div className="hidden lg:block space-y-4">
           <SideCell label={t('table.status')}>
             <span className="font-mono text-[12px] uppercase tracking-wider text-ink">
               {t(`status.${lead.status ?? 'new'}`)}
@@ -480,7 +537,7 @@ function PropertyMatchRow({
   return (
     <Link
       href={`/app/properties/${property.id}`}
-      className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-bone/30"
+      className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-bone/30 active:bg-bone/30"
     >
       <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-[4px] border border-bone bg-coal">
         {cover ? (

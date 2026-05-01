@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { Link, usePathname } from '@/i18n/navigation'
 import {
   X,
+  Search,
   UserCheck,
   Shield,
   Plug,
@@ -71,7 +72,7 @@ export function MoreSheet({
       />
       {/* Sheet sliding from bottom */}
       <div
-        className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-[12px] border-t border-bone bg-paper shadow-2xl md:hidden"
+        className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-[4px] border-t border-bone bg-paper md:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         {/* Drag handle */}
@@ -88,6 +89,25 @@ export function MoreSheet({
               <X className="h-4 w-4" strokeWidth={1.5} />
             </button>
           </div>
+        </div>
+
+        {/* Quick search */}
+        <div className="border-b border-bone px-4 py-3">
+          <button
+            type="button"
+            onClick={() => {
+              onClose()
+              setTimeout(() => {
+                window.dispatchEvent(
+                  new KeyboardEvent('keydown', { key: 'k', metaKey: true }),
+                )
+              }, 200)
+            }}
+            className="flex h-10 w-full items-center gap-2 rounded-[4px] border border-bone bg-paper pl-3 text-left font-mono text-[12px] text-steel active:bg-bone/30 transition-colors"
+          >
+            <Search className="h-3.5 w-3.5" strokeWidth={1.5} />
+            Buscar...
+          </button>
         </div>
 
         {/* User card */}
@@ -122,7 +142,7 @@ export function MoreSheet({
                 className={`flex items-center gap-3 rounded-[4px] px-3 py-3 text-[14px] transition-colors ${
                   isActive
                     ? 'bg-bone/50 text-ink font-medium'
-                    : 'text-ink hover:bg-bone/30'
+                    : 'text-ink active:bg-bone/40'
                 }`}
               >
                 <Icon className="h-5 w-5 text-steel" strokeWidth={1.5} />

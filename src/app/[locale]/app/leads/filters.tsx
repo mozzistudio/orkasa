@@ -7,25 +7,23 @@ import { Search, X } from 'lucide-react'
 import Link from 'next/link'
 
 const STATUSES = [
-  'active',
-  'draft',
-  'pending',
-  'sold',
-  'rented',
-  'archived',
+  'new',
+  'contacted',
+  'qualified',
+  'viewing_scheduled',
+  'negotiating',
+  'closed_won',
+  'closed_lost',
 ] as const
-const TYPES = ['apartment', 'house', 'condo', 'land', 'commercial'] as const
 
-export function PropertiesFilters({
+export function LeadsFilters({
   q,
   status,
-  type,
 }: {
   q: string
   status: string | null
-  type: string | null
 }) {
-  const t = useTranslations('properties')
+  const t = useTranslations('leads')
   const router = useRouter()
   const sp = useSearchParams()
   const [, startTransition] = useTransition()
@@ -47,24 +45,20 @@ export function PropertiesFilters({
     const next = new URLSearchParams(sp.toString())
     if (value && value.length > 0) next.set(key, value)
     else next.delete(key)
-    next.delete('page')
     startTransition(() => {
-      router.push(`/app/properties?${next.toString()}`)
+      router.push(`/app/leads?${next.toString()}`)
     })
   }
 
-  function buildFilterHref(key: string, value: string | null) {
+  function buildStatusHref(value: string | null) {
     const next = new URLSearchParams(sp.toString())
-    if (value) next.set(key, value)
-    else next.delete(key)
-    next.delete('page')
+    if (value) next.set('status', value)
+    else next.delete('status')
+    next.delete('q')
     if (searchValue) next.set('q', searchValue)
-    else next.delete('q')
     const qs = next.toString()
-    return `/app/properties${qs ? `?${qs}` : ''}`
+    return `/app/leads${qs ? `?${qs}` : ''}`
   }
-
-  const hasFilters = q || status || type
 
   return (
     <div className="space-y-2">
@@ -77,7 +71,7 @@ export function PropertiesFilters({
         <input
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
-          placeholder={t('searchPlaceholder')}
+          placeholder="Buscar por nombre, email o teléfono…"
           className="h-11 w-full rounded-[4px] border border-bone bg-paper pl-9 pr-9 text-[13px] text-ink placeholder:text-steel focus:border-ink focus:outline-none md:h-9"
         />
         {searchValue && (
@@ -91,23 +85,22 @@ export function PropertiesFilters({
         )}
       </div>
 
-      {/* Filter pills — scrollable on mobile, wrap on desktop */}
+      {/* Status filter pills */}
       <div className="flex gap-1.5 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap">
-        {/* Status pills */}
         <Link
-          href={buildFilterHref('status', null)}
+          href={buildStatusHref(null)}
           className={`shrink-0 rounded-[4px] border px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-wider transition-colors ${
             !status
               ? 'border-ink bg-ink text-paper'
               : 'border-bone text-steel active:bg-bone/30'
           }`}
         >
-          {t('form.status')}
+          Todos
         </Link>
         {STATUSES.map((s) => (
           <Link
             key={s}
-            href={buildFilterHref('status', s)}
+            href={buildStatusHref(s)}
             className={`shrink-0 rounded-[4px] border px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-wider transition-colors ${
               status === s
                 ? 'border-ink bg-ink text-paper'
@@ -117,39 +110,6 @@ export function PropertiesFilters({
             {t(`status.${s}`)}
           </Link>
         ))}
-
-        {/* Separator */}
-        <div className="mx-0.5 w-px shrink-0 bg-bone md:hidden" />
-
-        {/* Type pills */}
-        {TYPES.map((tp) => (
-          <Link
-            key={tp}
-            href={buildFilterHref('type', type === tp ? null : tp)}
-            className={`shrink-0 rounded-[4px] border px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-wider transition-colors ${
-              type === tp
-                ? 'border-ink bg-ink text-paper'
-                : 'border-bone text-steel active:bg-bone/30'
-            }`}
-          >
-            {t(`type.${tp}`)}
-          </Link>
-        ))}
-
-        {hasFilters && (
-          <button
-            type="button"
-            onClick={() => {
-              setSearchValue('')
-              startTransition(() => {
-                router.push('/app/properties')
-              })
-            }}
-            className="shrink-0 font-mono text-[11px] uppercase tracking-wider text-steel hover:text-signal active:text-signal transition-colors px-2"
-          >
-            Limpiar
-          </button>
-        )}
       </div>
     </div>
   )

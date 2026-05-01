@@ -5,6 +5,7 @@ import { Sidebar } from './sidebar'
 import { Topbar } from './topbar'
 import { BottomTabBar } from './bottom-tab-bar'
 import { MoreSheet } from './more-sheet'
+import { Fab } from './fab'
 
 /**
  * Responsive shell that wraps the authenticated dashboard.
@@ -60,6 +61,9 @@ export function AppShell({
           {children}
         </main>
       </div>
+
+      {/* FAB — mobile only, listing pages */}
+      <Fab />
 
       {/* Bottom tab bar — mobile only */}
       <BottomTabBar onOpenMore={() => setMoreOpen(true)} />

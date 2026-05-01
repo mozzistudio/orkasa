@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
-import { Plus } from 'lucide-react'
+import { Building2, Plus } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatPrice } from '@/lib/utils'
 import {
@@ -175,33 +175,42 @@ export default async function PropertiesListPage({
       </div>
 
       {rows.length === 0 ? (
-        <div className="rounded-[4px] border border-bone bg-paper p-12 text-center">
+        <div className="rounded-[4px] border border-bone bg-paper p-8 text-center md:p-12">
+          <Building2 className="mx-auto mb-3 h-6 w-6 text-steel" strokeWidth={1.5} />
           <p className="text-[13px] text-steel">
             {q || status || propertyType
               ? 'Sin resultados con esos filtros.'
               : t('empty')}
           </p>
+          {!(q || status || propertyType) && (
+            <Link
+              href="/app/properties/new"
+              className="mt-4 inline-flex items-center gap-2 rounded-[4px] bg-ink px-4 py-2.5 text-[13px] font-medium text-paper transition-colors hover:bg-coal active:bg-coal w-full justify-center md:w-auto"
+            >
+              <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+              {t('new')}
+            </Link>
+          )}
         </div>
       ) : (
         <>
-          {/* Mobile: card layout */}
-          <div className="space-y-3 md:hidden">
+          {/* Mobile: compact horizontal cards */}
+          <div className="space-y-2 md:hidden">
             {rows.map((p) => {
               const cover = coverUrl(p.images)
               return (
                 <Link
                   key={p.id}
                   href={`/app/properties/${p.id}`}
-                  className="block overflow-hidden rounded-[4px] border border-bone bg-paper active:bg-bone/30"
+                  className="flex overflow-hidden rounded-[4px] border border-bone bg-paper active:bg-bone/20 transition-colors"
                 >
-                  {/* Cover image (if present) */}
-                  <div className="relative h-40 bg-coal">
+                  <div className="relative w-24 shrink-0 bg-coal">
                     {cover ? (
                       <Image
                         src={cover}
-                        alt={p.title}
+                        alt=""
                         fill
-                        sizes="100vw"
+                        sizes="96px"
                         className="object-cover"
                       />
                     ) : (
@@ -210,12 +219,12 @@ export default async function PropertiesListPage({
                         style={{
                           backgroundImage:
                             'linear-gradient(0deg, transparent 49%, rgba(255,255,255,0.06) 50%, transparent 51%)',
-                          backgroundSize: '100% 16px',
+                          backgroundSize: '100% 12px',
                         }}
                       />
                     )}
                     <div
-                      className={`absolute right-3 top-3 rounded-[4px] px-2 py-0.5 font-mono text-[10px] font-medium tracking-wider ${
+                      className={`absolute left-1.5 top-1.5 rounded-[3px] px-1.5 py-0.5 font-mono text-[9px] font-medium tracking-wider ${
                         p.status === 'active'
                           ? 'bg-signal text-paper'
                           : 'bg-paper/90 text-ink'
@@ -223,30 +232,21 @@ export default async function PropertiesListPage({
                     >
                       {t(`status.${p.status ?? 'draft'}`).toUpperCase()}
                     </div>
-                    {p.ai_score && (
-                      <div className="absolute bottom-3 right-3 rounded-[4px] bg-paper/90 px-2 py-0.5 font-mono text-[11px] font-medium text-signal">
-                        SCORE {p.ai_score}
-                      </div>
-                    )}
                   </div>
-                  <div className="p-4">
-                    <p className="text-[15px] font-medium text-ink line-clamp-1">
-                      {p.title}
-                    </p>
-                    <p className="mt-0.5 font-mono text-[11px] text-steel line-clamp-1">
-                      {[p.neighborhood, p.city].filter(Boolean).join(' · ') || '—'}
-                    </p>
-                    <div className="mt-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[12px] text-steel">
-                          {t(`type.${p.property_type}`)}
-                        </span>
-                        <span className="font-mono text-[10px] text-steel">·</span>
-                        <span className="text-[12px] text-steel">
-                          {t(`listingType.${p.listing_type}`)}
-                        </span>
-                      </div>
-                      <span className="font-mono text-[14px] tabular-nums font-medium text-ink">
+                  <div className="flex flex-1 flex-col justify-between p-3 min-w-0">
+                    <div>
+                      <p className="text-[14px] font-medium text-ink line-clamp-1">
+                        {p.title}
+                      </p>
+                      <p className="mt-0.5 font-mono text-[11px] text-steel line-clamp-1">
+                        {[p.neighborhood, p.city].filter(Boolean).join(' · ') || '—'}
+                      </p>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="font-mono text-[10px] text-steel uppercase tracking-wider">
+                        {t(`type.${p.property_type}`)} · {t(`listingType.${p.listing_type}`)}
+                      </span>
+                      <span className="font-mono text-[13px] tabular-nums font-medium text-ink">
                         {p.price ? formatPrice(Number(p.price)) : '—'}
                       </span>
                     </div>

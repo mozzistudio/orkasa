@@ -32,7 +32,7 @@ export function BottomTabBar({
             <Link
               key={key}
               href={href}
-              className={`flex flex-1 flex-col items-center justify-center gap-0.5 transition-colors ${
+              className={`flex flex-1 flex-col items-center justify-center gap-0.5 transition-colors active:bg-bone/30 ${
                 isActive ? 'text-ink' : 'text-steel'
               }`}
             >
@@ -52,7 +52,7 @@ export function BottomTabBar({
         <button
           type="button"
           onClick={onOpenMore}
-          className="flex flex-1 flex-col items-center justify-center gap-0.5 text-steel transition-colors"
+          className="flex flex-1 flex-col items-center justify-center gap-0.5 text-steel transition-colors active:bg-bone/30"
         >
           <Menu className="h-5 w-5" strokeWidth={1.5} />
           <span className="font-mono text-[9px] uppercase tracking-wider">
