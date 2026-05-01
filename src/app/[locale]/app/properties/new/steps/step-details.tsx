@@ -164,7 +164,7 @@ export function StepDetails({
             onChange={(v) => update('bathrooms', v)}
             min={0}
             max={6}
-            step={0.5}
+            step={1}
           />
           <div className="space-y-1.5 md:space-y-2">
             <Label className="text-[13px] text-ink">{t('form.areaM2')}</Label>
