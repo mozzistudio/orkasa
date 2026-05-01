@@ -498,6 +498,36 @@ export type Database = {
           },
         ]
       }
+      neighborhoods: {
+        Row: {
+          id: string
+          name: string
+          city: string
+          country_code: string
+          district: string | null
+          sort_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          city: string
+          country_code?: string
+          district?: string | null
+          sort_order?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          city?: string
+          country_code?: string
+          district?: string | null
+          sort_order?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
       properties: {
         Row: {
           address: string | null

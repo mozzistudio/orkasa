@@ -150,6 +150,90 @@ export async function updateProperty(
   redirect(`/app/properties/${id}`)
 }
 
+// ─── Wizard-specific actions (no redirect) ────────────────────────────────────
+
+export async function createPropertyDraft(data: {
+  id: string
+  property_type: string
+  listing_type: string
+  price: number | null
+  currency: string
+  bedrooms: number
+  bathrooms: number
+  area_m2: number | null
+  address: string
+  neighborhood: string
+  city: string
+  images: { path: string; url: string }[]
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Not authenticated' }
+
+  const { data: agent } = await supabase
+    .from('agents')
+    .select('brokerage_id')
+    .eq('id', user.id)
+    .maybeSingle<{ brokerage_id: string | null }>()
+  if (!agent?.brokerage_id) {
+    return { ok: false, error: 'No brokerage associated with this account' }
+  }
+
+  const insert: PropertyInsert = {
+    id: data.id,
+    title: '(borrador)',
+    property_type: data.property_type as PropertyInsert['property_type'],
+    listing_type: data.listing_type as PropertyInsert['listing_type'],
+    status: 'draft',
+    price: data.price,
+    currency: data.currency,
+    bedrooms: data.bedrooms,
+    bathrooms: data.bathrooms,
+    area_m2: data.area_m2,
+    address: data.address || null,
+    neighborhood: data.neighborhood || null,
+    city: data.city || null,
+    images: data.images,
+    brokerage_id: agent.brokerage_id,
+    agent_id: user.id,
+  }
+
+  const { error } = await supabase.from('properties').insert(insert)
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath('/app/properties')
+  return { ok: true }
+}
+
+export async function updatePropertyDraft(
+  id: string,
+  fields: {
+    title?: string
+    description?: string
+    images?: { path: string; url: string }[]
+  },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = await createClient()
+
+  const update: PropertyUpdate = {}
+  if (fields.title !== undefined) update.title = fields.title
+  if (fields.description !== undefined) update.description = fields.description
+  if (fields.images !== undefined) update.images = fields.images
+
+  const { error } = await supabase
+    .from('properties')
+    .update(update)
+    .eq('id', id)
+
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath(`/app/properties/${id}`)
+  return { ok: true }
+}
+
 export async function deleteProperty(id: string): Promise<void> {
   const supabase = await createClient()
   await supabase.from('properties').delete().eq('id', id)

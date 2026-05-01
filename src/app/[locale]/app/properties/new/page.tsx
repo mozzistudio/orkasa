@@ -3,9 +3,9 @@ import { redirect } from 'next/navigation'
 import { randomUUID } from 'node:crypto'
 import { getTranslations } from 'next-intl/server'
 import { ArrowLeft } from 'lucide-react'
-import { PropertyForm } from '@/components/app/property-form'
-import { createProperty } from '../actions'
 import { createClient } from '@/lib/supabase/server'
+import { INTEGRATION_PROVIDERS } from '@/lib/integrations'
+import { CreateWizard } from './create-wizard'
 
 export default async function NewPropertyPage() {
   const t = await getTranslations('properties')
@@ -24,8 +24,14 @@ export default async function NewPropertyPage() {
 
   if (!agent?.brokerage_id) redirect('/login')
 
-  // Pre-generate UUID so image uploads can use the eventual property_id path
   const propertyId = randomUUID()
+
+  const { data: neighborhoods } = await supabase
+    .from('neighborhoods')
+    .select('id, name, city')
+    .order('sort_order')
+
+  const providers = INTEGRATION_PROVIDERS.filter((p) => p.adapter)
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -41,16 +47,12 @@ export default async function NewPropertyPage() {
         {t('new')}
       </h1>
 
-      {/* No outer card on mobile — sections inside the form already have
-          their own borders/dividers. The card adds redundant nesting + 48px
-          of horizontal padding that cramps fields on small screens. */}
       <div className="md:rounded-[4px] md:border md:border-bone md:bg-paper md:p-6">
-        <PropertyForm
-          action={createProperty}
-          submitLabel={t('create')}
-          brokerageId={agent.brokerage_id}
+        <CreateWizard
           propertyId={propertyId}
-          isCreate
+          brokerageId={agent.brokerage_id}
+          neighborhoods={neighborhoods ?? []}
+          providers={providers}
         />
       </div>
     </div>

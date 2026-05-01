@@ -5,7 +5,11 @@ import {
   LISTING_STUDIO_MODEL,
   LISTING_STUDIO_SYSTEM_PROMPT,
 } from '@/lib/anthropic'
+import { createClient } from '@/lib/supabase/server'
+import type { Database } from '@/lib/database.types'
 import type Anthropic from '@anthropic-ai/sdk'
+
+type Property = Database['public']['Tables']['properties']['Row']
 
 // =============================================================================
 // Listing review — analyzes photos + text and returns suggestions to validate
@@ -212,5 +216,136 @@ export async function reviewListing(
       return { error: err.message }
     }
     return { error: 'Error desconocido al revisar el listing.' }
+  }
+}
+
+// =============================================================================
+// generateTitleAndDescription — wizard step 3
+// =============================================================================
+
+const GENERATE_SYSTEM_PROMPT = `${LISTING_STUDIO_SYSTEM_PROMPT}
+
+# Generation mode
+
+You are generating a title and description for a new real estate listing draft.
+Output STRICT JSON only:
+
+{ "title": "...", "description": "..." }
+
+# Title
+- Max 120 characters
+- Include neighborhood, property type, and standout feature (if visible in photos)
+- Sentence case, no ALL CAPS
+- No quotes, no emojis
+
+# Description
+- Sale: 110-160 words. Rent: 60-100 words.
+- Start with the strongest selling point (view, location, size, condition)
+- Mention specs naturally (don't just list them)
+- End with location context (barrio character, nearby landmarks)
+- Follow all brand voice rules from above
+
+# Output discipline
+- Output ONLY the JSON object, no markdown fences, no explanation.
+- Spanish appropriate to the property's country/region.`
+
+export async function generateTitleAndDescription(
+  propertyId: string,
+): Promise<{ title: string; description: string } | { error: string }> {
+  const client = getAnthropicClient()
+  if (!client) {
+    return {
+      error:
+        'ANTHROPIC_API_KEY no configurada. Agregala en .env.local para usar IA.',
+    }
+  }
+
+  const supabase = await createClient()
+  const { data: property } = await supabase
+    .from('properties')
+    .select('*')
+    .eq('id', propertyId)
+    .maybeSingle<Property>()
+  if (!property) return { error: 'Propiedad no encontrada.' }
+
+  const facts = [
+    `Tipo: ${property.property_type}`,
+    `Operación: ${property.listing_type}`,
+    property.bedrooms != null ? `Dormitorios: ${property.bedrooms}` : null,
+    property.bathrooms != null ? `Baños: ${Number(property.bathrooms)}` : null,
+    property.area_m2 != null ? `Área: ${Number(property.area_m2)} m²` : null,
+    property.price != null
+      ? `Precio: ${property.currency ?? 'USD'} ${Number(property.price).toLocaleString('en-US')}`
+      : null,
+    property.neighborhood ? `Barrio: ${property.neighborhood}` : null,
+    property.city ? `Ciudad: ${property.city}` : null,
+    property.address ? `Dirección: ${property.address}` : null,
+  ].filter(Boolean)
+
+  const content: Anthropic.ContentBlockParam[] = [
+    {
+      type: 'text',
+      text: [
+        'Generá un título y descripción para esta propiedad inmobiliaria.',
+        '',
+        facts.join('\n'),
+        '',
+        'Devolvé únicamente el JSON {"title": "...", "description": "..."} sin texto adicional.',
+      ].join('\n'),
+    },
+  ]
+
+  const images = (property.images as { path: string; url: string }[]) ?? []
+  const heroImages = images.slice(0, 4)
+  for (let i = 0; i < heroImages.length; i++) {
+    const img = heroImages[i]
+    if (!img) continue
+    content.push(
+      { type: 'text', text: `Foto ${i + 1}:` },
+      { type: 'image', source: { type: 'url', url: img.url } },
+    )
+  }
+
+  try {
+    const response = await client.messages.create({
+      model: LISTING_STUDIO_MODEL,
+      max_tokens: 2000,
+      system: [
+        {
+          type: 'text',
+          text: GENERATE_SYSTEM_PROMPT,
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
+      messages: [{ role: 'user', content }],
+    })
+
+    const textBlock = response.content.find((b) => b.type === 'text')
+    if (!textBlock || textBlock.type !== 'text') {
+      return { error: 'La IA no devolvió texto.' }
+    }
+
+    let raw = textBlock.text.trim()
+    if (raw.startsWith('```')) {
+      raw = raw.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '')
+    }
+
+    let parsed: { title?: string; description?: string }
+    try {
+      parsed = JSON.parse(raw)
+    } catch {
+      return { error: 'Formato de respuesta inválido.' }
+    }
+
+    const title = (parsed.title ?? '').trim()
+    const description = (parsed.description ?? '').trim()
+    if (!title || !description) {
+      return { error: 'La IA no generó título o descripción.' }
+    }
+
+    return { title, description }
+  } catch (err) {
+    if (err instanceof Error) return { error: err.message }
+    return { error: 'Error desconocido al generar contenido.' }
   }
 }

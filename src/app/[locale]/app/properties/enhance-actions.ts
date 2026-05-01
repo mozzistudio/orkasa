@@ -134,3 +134,9 @@ export async function enhanceImage(
     return { ok: false, error: 'Error desconocido al mejorar la imagen.' }
   }
 }
+
+export async function autoEnhanceImage(
+  sourceUrl: string,
+): Promise<EnhanceResult> {
+  return enhanceImage(sourceUrl, 'lighting')
+}
