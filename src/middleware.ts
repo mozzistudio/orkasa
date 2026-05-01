@@ -17,6 +17,9 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Match all paths except: api routes, Next.js internals, static files
-  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'],
+  // Match all paths except: api routes, Next.js internals, static files,
+  // and Next.js metadata routes (icon, apple-icon, opengraph-image, etc.)
+  matcher: [
+    '/((?!api|_next|_vercel|icon|icon0|apple-icon|opengraph-image|twitter-image|sitemap|robots|.*\\..*).*)',
+  ],
 }

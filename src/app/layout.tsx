@@ -34,13 +34,6 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  icons: {
-    icon: [
-      { url: '/icon.svg', type: 'image/svg+xml' },
-    ],
-    shortcut: '/icon.svg',
-    apple: '/icon.svg',
-  },
   manifest: '/manifest.webmanifest',
   openGraph: {
     type: 'website',
