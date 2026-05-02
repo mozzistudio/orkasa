@@ -37,13 +37,13 @@ export default async function NewPropertyPage() {
     <div className="mx-auto max-w-3xl">
       <Link
         href="/app/properties"
-        className="mb-4 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-steel hover:text-ink transition-colors md:mb-6"
+        className="mb-3 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-steel hover:text-ink transition-colors md:mb-6"
       >
         <ArrowLeft className="h-3 w-3" strokeWidth={1.5} />
         {t('title')}
       </Link>
 
-      <h1 className="mb-5 text-[22px] font-medium tracking-[-0.5px] text-ink md:mb-8">
+      <h1 className="mb-4 text-[20px] font-medium tracking-[-0.4px] text-ink md:mb-8 md:text-[22px] md:tracking-[-0.5px]">
         {t('new')}
       </h1>
 

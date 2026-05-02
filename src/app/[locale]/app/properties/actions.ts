@@ -164,7 +164,7 @@ export async function createPropertyDraft(data: {
   address: string
   neighborhood: string
   city: string
-  images: { path: string; url: string }[]
+  images?: { path: string; url: string }[]
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const supabase = await createClient()
 
@@ -182,7 +182,11 @@ export async function createPropertyDraft(data: {
     return { ok: false, error: 'No brokerage associated with this account' }
   }
 
-  const insert: PropertyInsert = {
+  // UPSERT (not insert) so the wizard can call this at step 1 with empty
+  // images, then again at step 2 to attach them — without colliding on the
+  // pre-generated property ID. Also makes the wizard recoverable if the user
+  // navigates back and re-confirms a step.
+  const row: PropertyInsert = {
     id: data.id,
     title: '(borrador)',
     property_type: data.property_type as PropertyInsert['property_type'],
@@ -196,12 +200,14 @@ export async function createPropertyDraft(data: {
     address: data.address || null,
     neighborhood: data.neighborhood || null,
     city: data.city || null,
-    images: data.images,
+    images: data.images ?? [],
     brokerage_id: agent.brokerage_id,
     agent_id: user.id,
   }
 
-  const { error } = await supabase.from('properties').insert(insert)
+  const { error } = await supabase
+    .from('properties')
+    .upsert(row, { onConflict: 'id' })
   if (error) return { ok: false, error: error.message }
 
   revalidatePath('/app/properties')

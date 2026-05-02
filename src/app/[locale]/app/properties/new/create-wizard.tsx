@@ -126,34 +126,66 @@ export function CreateWizard({
     return () => window.removeEventListener('beforeunload', handler)
   }, [state.savedToDb, state.step])
 
+  const currentStep = STEPS.find((s) => s.num === state.step)
+
   return (
     <div>
-      {/* Progress indicator */}
-      <div className="-mx-4 mb-6 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap px-4 font-mono text-[10px] uppercase tracking-[1.5px] scrollbar-hide md:mx-0 md:mb-8 md:px-0">
-        {STEPS.map((s, i) => (
-          <span key={s.num} className="flex items-center gap-1.5">
-            {i > 0 && (
-              <ChevronRight
-                className="h-3 w-3 shrink-0 text-steel"
-                strokeWidth={1.5}
+      {/* Progress indicator — mobile: dots + current label; desktop: full chain */}
+      <div className="mb-5 md:mb-8">
+        {/* Mobile: dot row + current step label */}
+        <div className="md:hidden">
+          <div className="mb-2 flex items-center gap-1.5">
+            {STEPS.map((s) => {
+              const isActive = state.step === s.num
+              const isDone = state.step > s.num
+              return (
+                <span
+                  key={s.num}
+                  className={`h-1 flex-1 rounded-full transition-colors ${
+                    isActive
+                      ? 'bg-ink'
+                      : isDone
+                        ? 'bg-ink/60'
+                        : 'bg-bone'
+                  }`}
+                />
+              )
+            })}
+          </div>
+          <p className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
+            {String(state.step).padStart(2, '0')} / {STEPS.length}
+            {currentStep ? ` · ${currentStep.label}` : ''}
+          </p>
+        </div>
+        {/* Desktop: full chain */}
+        <div className="hidden md:flex items-center gap-1.5 overflow-x-auto whitespace-nowrap font-mono text-[10px] uppercase tracking-[1.5px] scrollbar-hide">
+          {STEPS.map((s, i) => (
+            <span key={s.num} className="flex items-center gap-1.5">
+              {i > 0 && (
+                <ChevronRight
+                  className="h-3 w-3 shrink-0 text-steel"
+                  strokeWidth={1.5}
+                />
+              )}
+              <StageStep
+                label={`${String(s.num).padStart(2, '0')} · ${s.label}`}
+                active={state.step === s.num}
+                done={state.step > s.num}
               />
-            )}
-            <StageStep
-              label={`${String(s.num).padStart(2, '0')} · ${s.label}`}
-              active={state.step === s.num}
-              done={state.step > s.num}
-            />
-          </span>
-        ))}
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* Step content */}
       {state.step === 1 && (
         <StepDetails
+          propertyId={propertyId}
           details={state.details}
           neighborhoods={neighborhoods}
           onConfirm={(details) => {
             dispatch({ type: 'SET_DETAILS', details })
+            dispatch({ type: 'MARK_SAVED' })
             dispatch({ type: 'NEXT_STEP' })
           }}
         />
@@ -164,12 +196,10 @@ export function CreateWizard({
           propertyId={propertyId}
           brokerageId={brokerageId}
           images={state.images}
-          details={state.details}
           onImagesChange={(images) =>
             dispatch({ type: 'SET_IMAGES', images })
           }
           onConfirm={() => {
-            dispatch({ type: 'MARK_SAVED' })
             dispatch({ type: 'NEXT_STEP' })
           }}
           onBack={() => dispatch({ type: 'PREV_STEP' })}

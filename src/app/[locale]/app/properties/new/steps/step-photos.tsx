@@ -3,14 +3,12 @@
 import { useState, useTransition } from 'react'
 import { ChevronLeft, ImageIcon } from 'lucide-react'
 import { ImageUpload, type StoredImage } from '@/components/app/image-upload'
-import { createPropertyDraft } from '../../actions'
-import type { PropertyDetails } from '../create-wizard'
+import { updatePropertyDraft } from '../../actions'
 
 export function StepPhotos({
   propertyId,
   brokerageId,
   images,
-  details,
   onImagesChange,
   onConfirm,
   onBack,
@@ -18,7 +16,6 @@ export function StepPhotos({
   propertyId: string
   brokerageId: string
   images: StoredImage[]
-  details: PropertyDetails
   onImagesChange: (images: StoredImage[]) => void
   onConfirm: () => void
   onBack: () => void
@@ -29,12 +26,9 @@ export function StepPhotos({
   function handleConfirm() {
     if (images.length === 0) return
     setError(null)
+    // Property was already created on step 1 — just attach the images.
     startTransition(async () => {
-      const result = await createPropertyDraft({
-        id: propertyId,
-        ...details,
-        images,
-      })
+      const result = await updatePropertyDraft(propertyId, { images })
       if (!result.ok) {
         setError(result.error ?? 'Error guardando')
         return

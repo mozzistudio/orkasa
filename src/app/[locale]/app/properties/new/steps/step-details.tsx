@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import { ChevronDown } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { NumberStepper } from '@/components/app/number-stepper'
+import { createPropertyDraft } from '../../actions'
 import type { PropertyDetails, Neighborhood } from '../create-wizard'
 
 const PROPERTY_TYPES = ['apartment', 'house', 'condo', 'land', 'commercial'] as const
@@ -44,16 +45,20 @@ function NativeSelect({
 }
 
 export function StepDetails({
+  propertyId,
   details,
   neighborhoods,
   onConfirm,
 }: {
+  propertyId: string
   details: PropertyDetails
   neighborhoods: Neighborhood[]
   onConfirm: (details: PropertyDetails) => void
 }) {
   const t = useTranslations('properties')
   const [form, setForm] = useState<PropertyDetails>(details)
+  const [pending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
 
   const cities = [...new Set(neighborhoods.map((n) => n.city))]
   const filteredNeighborhoods = form.city
@@ -67,8 +72,26 @@ export function StepDetails({
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
+  function handleConfirm() {
+    setError(null)
+    startTransition(async () => {
+      // Persist the draft NOW (with empty images). All subsequent steps read
+      // from this row — saving early prevents "Propiedad no encontrada" if
+      // the user later jumps ahead or the network drops on step 2.
+      const result = await createPropertyDraft({
+        id: propertyId,
+        ...form,
+      })
+      if (!result.ok) {
+        setError(result.error)
+        return
+      }
+      onConfirm(form)
+    })
+  }
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 md:space-y-8">
       {/* Type + operation */}
       <section className="space-y-3 md:space-y-4">
         <header className="border-b border-bone pb-1.5 md:pb-2">
@@ -149,7 +172,7 @@ export function StepDetails({
             Especificaciones
           </h2>
         </header>
-        <div className="grid grid-cols-3 gap-2 md:gap-4">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-4">
           <NumberStepper
             label={t('form.bedrooms')}
             value={form.bedrooms}
@@ -166,7 +189,7 @@ export function StepDetails({
             max={6}
             step={1}
           />
-          <div className="space-y-1.5 md:space-y-2">
+          <div className="col-span-2 space-y-1.5 md:col-span-1 md:space-y-2">
             <Label className="text-[13px] text-ink">{t('form.areaM2')}</Label>
             <Input
               type="number"
@@ -179,7 +202,7 @@ export function StepDetails({
                   e.target.value ? parseFloat(e.target.value) : null,
                 )
               }
-              className="h-11 rounded-[4px] border-bone md:h-9 font-mono text-[13px] tabular-nums focus:border-ink focus:ring-0"
+              className="h-10 rounded-[4px] border-bone md:h-9 font-mono text-[13px] tabular-nums focus:border-ink focus:ring-0"
             />
           </div>
         </div>
@@ -228,14 +251,21 @@ export function StepDetails({
         </div>
       </section>
 
+      {error && (
+        <p className="rounded-[4px] border border-signal/30 bg-signal-soft px-3 py-2 text-[13px] text-signal">
+          {error}
+        </p>
+      )}
+
       {/* Footer */}
       <div className="hidden md:flex justify-end border-t border-bone pt-6">
         <button
           type="button"
-          onClick={() => onConfirm(form)}
-          className="rounded-[4px] bg-ink px-5 py-2 text-[13px] font-medium text-paper transition-colors hover:bg-coal"
+          onClick={handleConfirm}
+          disabled={pending}
+          className="rounded-[4px] bg-ink px-5 py-2 text-[13px] font-medium text-paper transition-colors hover:bg-coal disabled:opacity-60"
         >
-          Continuar
+          {pending ? 'Guardando…' : 'Continuar'}
         </button>
       </div>
 
@@ -246,10 +276,11 @@ export function StepDetails({
       >
         <button
           type="button"
-          onClick={() => onConfirm(form)}
-          className="flex-1 rounded-[4px] bg-ink px-3 py-2.5 text-[13px] font-medium text-paper transition-colors active:bg-coal"
+          onClick={handleConfirm}
+          disabled={pending}
+          className="flex-1 rounded-[4px] bg-ink px-3 py-2.5 text-[13px] font-medium text-paper transition-colors active:bg-coal disabled:opacity-60"
         >
-          Continuar
+          {pending ? 'Guardando…' : 'Continuar'}
         </button>
       </div>
     </div>

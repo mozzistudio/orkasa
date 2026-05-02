@@ -29,18 +29,18 @@ export function NumberStepper({
           type="button"
           disabled={current <= min}
           onClick={() => onChange(Math.max(min, current - step))}
-          className="flex h-11 w-11 items-center justify-center text-steel transition-colors hover:text-ink disabled:opacity-30 md:h-9 md:w-9"
+          className="flex h-10 w-9 items-center justify-center text-steel transition-colors hover:text-ink disabled:opacity-30 md:h-9"
         >
           <Minus className="h-4 w-4" strokeWidth={1.5} />
         </button>
-        <span className="flex-1 text-center font-mono text-[14px] tabular-nums text-ink md:text-[13px]">
+        <span className="min-w-0 flex-1 text-center font-mono text-[14px] tabular-nums text-ink md:text-[13px]">
           {step < 1 ? current.toFixed(1) : current}
         </span>
         <button
           type="button"
           disabled={current >= max}
           onClick={() => onChange(Math.min(max, current + step))}
-          className="flex h-11 w-11 items-center justify-center text-steel transition-colors hover:text-ink disabled:opacity-30 md:h-9 md:w-9"
+          className="flex h-10 w-9 items-center justify-center text-steel transition-colors hover:text-ink disabled:opacity-30 md:h-9"
         >
           <Plus className="h-4 w-4" strokeWidth={1.5} />
         </button>
