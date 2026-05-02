@@ -7,11 +7,23 @@ export type PipelineStage = {
   count: number
 }
 
+export type ClosableDeal = {
+  leadId: string
+  leadName: string
+  propertyTitle: string | null
+  price: number
+  commission: number
+  daysInStage: number
+}
+
 export type PipelineSnapshot = {
   totalValue: number
   readyToSign: number
   closedThisMonth: number
   estimatedCommission: number
+  commissionEarned: number
+  commissionClosable: number
+  closableDeals: ClosableDeal[]
   closeRate: number
   stages: PipelineStage[]
   trends: {
@@ -67,6 +79,25 @@ export type AgentPerformance = {
   tier: 'top' | 'warn' | 'default'
 }
 
+export type UpcomingViewing = {
+  id: string
+  scheduledAt: string
+  leadName: string
+  propertyTitle: string
+  leadId: string | null
+}
+
+export type PendingReminder = {
+  id: string
+  kind: 'document' | 'signature' | 'compliance'
+  docKind: string | null
+  label: string
+  leadName: string | null
+  leadPhone: string | null
+  propertyTitle: string | null
+  checkId: string | null
+}
+
 const LEAD_STAGES: Array<{ id: string; name: string; statuses: string[] }> = [
   { id: 'new', name: 'Nuevos', statuses: ['new'] },
   { id: 'contacted', name: 'Contactados', statuses: ['contacted'] },
@@ -110,10 +141,12 @@ function endOfLastWeek(d: Date): string {
 
 type LeadWithProperty = {
   id: string
+  full_name: string | null
   status: string | null
   property_id: string | null
   properties: { price: number | null; title: string | null } | null
   created_at: string | null
+  updated_at: string | null
 }
 
 export async function getPipelineSnapshot(): Promise<PipelineSnapshot> {
@@ -123,7 +156,7 @@ export async function getPipelineSnapshot(): Promise<PipelineSnapshot> {
   const [leadsRes, closedLastMonthRes, leadsLastMonthRes, visitsWeekRes, visitsLastWeekRes] = await Promise.all([
     supabase
       .from('leads')
-      .select('id, status, property_id, properties(price, title), created_at')
+      .select('id, full_name, status, property_id, properties(price, title), created_at, updated_at')
       .not('status', 'eq', 'closed_lost')
       .returns<LeadWithProperty[]>(),
     supabase
@@ -169,6 +202,26 @@ export async function getPipelineSnapshot(): Promise<PipelineSnapshot> {
   const readyToSign = stages.find((s) => s.id === 'negotiating')?.value ?? 0
   const closedThisMonth = stages.find((s) => s.id === 'closed_won')?.value ?? 0
   const estimatedCommission = totalValue * COMMISSION_RATE
+  const commissionEarned = closedThisMonth * COMMISSION_RATE
+  const commissionClosable = readyToSign * COMMISSION_RATE
+
+  const closableDeals: ClosableDeal[] = leads
+    .filter((l) => l.status === 'negotiating')
+    .map((l) => {
+      const updated = l.updated_at ? new Date(l.updated_at).getTime() : Date.now()
+      const daysInStage = Math.max(0, Math.floor((Date.now() - updated) / 86_400_000))
+      const price = l.properties?.price ?? 0
+      return {
+        leadId: l.id,
+        leadName: l.full_name ?? 'Cliente',
+        propertyTitle: l.properties?.title ?? null,
+        price,
+        commission: price * COMMISSION_RATE,
+        daysInStage,
+      }
+    })
+    .sort((a, b) => b.commission - a.commission)
+    .slice(0, 3)
 
   const closedLastMonthValue = (closedLastMonthRes.data ?? []).reduce(
     (s, l) => s + (l.properties?.price ?? 0),
@@ -202,6 +255,9 @@ export async function getPipelineSnapshot(): Promise<PipelineSnapshot> {
     readyToSign,
     closedThisMonth,
     estimatedCommission,
+    commissionEarned,
+    commissionClosable,
+    closableDeals,
     closeRate: closeRateThisMonth,
     stages,
     trends: { closedDelta, closeRateDelta, visitsDelta, visitsThisWeek },
@@ -584,4 +640,109 @@ export async function getDashboardUser(): Promise<{
     role: agent?.role ?? 'agent',
     brokerageId: agent?.brokerage_id ?? null,
   }
+}
+
+export async function getUpcomingViewings(limit = 5): Promise<UpcomingViewing[]> {
+  const supabase = await createClient()
+  const now = new Date().toISOString()
+
+  const { data } = await supabase
+    .from('viewings')
+    .select('id, scheduled_at, lead_id, leads(full_name), properties(title)')
+    .gte('scheduled_at', now)
+    .eq('status', 'scheduled')
+    .order('scheduled_at', { ascending: true })
+    .limit(limit)
+    .returns<Array<{
+      id: string
+      scheduled_at: string
+      lead_id: string | null
+      leads: { full_name: string } | null
+      properties: { title: string } | null
+    }>>()
+
+  return (data ?? []).map((v) => ({
+    id: v.id,
+    scheduledAt: v.scheduled_at,
+    leadName: v.leads?.full_name ?? 'Cliente',
+    propertyTitle: v.properties?.title ?? 'Propiedad',
+    leadId: v.lead_id,
+  }))
+}
+
+export async function getPendingReminders(limit = 5): Promise<PendingReminder[]> {
+  const supabase = await createClient()
+
+  const [docsRes, checksRes] = await Promise.all([
+    supabase
+      .from('compliance_documents')
+      .select('id, name, kind, status, check_id, compliance_checks(lead_id, leads(full_name, phone, properties(title)))')
+      .in('status', ['pending', 'rejected', 'expired'])
+      .limit(limit)
+      .returns<Array<{
+        id: string
+        name: string | null
+        kind: string
+        status: string
+        check_id: string
+        compliance_checks: {
+          lead_id: string | null
+          leads: {
+            full_name: string
+            phone: string | null
+            properties: { title: string } | null
+          } | null
+        } | null
+      }>>(),
+    supabase
+      .from('compliance_checks')
+      .select('id, type, status, lead_id, leads(full_name, phone, properties(title))')
+      .in('status', ['pending', 'requires_action'])
+      .limit(limit)
+      .returns<Array<{
+        id: string
+        type: string
+        status: string
+        lead_id: string | null
+        leads: {
+          full_name: string
+          phone: string | null
+          properties: { title: string } | null
+        } | null
+      }>>(),
+  ])
+
+  const reminders: PendingReminder[] = []
+
+  for (const doc of docsRes.data ?? []) {
+    const kind = (['identity', 'address_proof', 'income_proof', 'funds_origin'].includes(doc.kind))
+      ? 'document' as const
+      : 'signature' as const
+    const lead = doc.compliance_checks?.leads
+    reminders.push({
+      id: doc.id,
+      kind,
+      docKind: doc.kind,
+      label: doc.name ?? doc.kind,
+      leadName: lead?.full_name ?? null,
+      leadPhone: lead?.phone ?? null,
+      propertyTitle: lead?.properties?.title ?? null,
+      checkId: doc.check_id,
+    })
+  }
+
+  for (const check of checksRes.data ?? []) {
+    reminders.push({
+      id: check.id,
+      kind: 'compliance',
+      docKind: check.type,
+      label: check.type.toUpperCase(),
+      leadName: check.leads?.full_name ?? null,
+      leadPhone: check.leads?.phone ?? null,
+      propertyTitle: check.leads?.properties?.title ?? null,
+      checkId: check.id,
+    })
+  }
+
+  return reminders.slice(0, limit)
 }
