@@ -19,7 +19,7 @@ import {
 
 const navItems = [
   { key: 'title',        href: '/app',              icon: LayoutDashboard, match: 'exact' as const },
-  { key: 'properties',   href: '/app/properties',   icon: Building2,       match: 'prefix' as const },
+  { key: 'inventory',    href: '/app/properties',   icon: Building2,       match: 'prefix' as const },
   { key: 'leads',        href: '/app/leads',        icon: Users,           match: 'prefix' as const },
   { key: 'agents',       href: '/app/agents',       icon: UserCheck,       match: 'prefix' as const },
   { key: 'analytics',    href: '/app/analytics',    icon: BarChart3,       match: 'prefix' as const },

@@ -123,8 +123,7 @@
   },
   "dashboard": {
     "title": "Inicio",
-    "properties": "Propiedades",
-    "inventory": "Inventario",
+    "inventory": "Propiedades",
     "leads": "Leads",
     "agents": "Agentes",
     "analytics": "Análisis",

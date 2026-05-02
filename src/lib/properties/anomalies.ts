@@ -29,12 +29,19 @@ export function detectAnomalies(p: PropertyRow): Anomaly[] {
   const anomalies: Anomaly[] = []
 
   if (p.price !== null && p.price > 0 && p.price < SUSPICIOUS_LOW_PRICE_USD) {
-    const inflated = p.price * 1000
+    // Brokers usually mistype by leaving off "K" or several zeros.
+    // For prices < $1K, the most common typo is missing the "thousand" suffix
+    // (e.g. $3 meant $300K). Multiply by 100,000 to suggest a realistic price band.
+    const inflated = p.price * 100_000
+    const inflatedShort =
+      inflated >= 1_000_000
+        ? `${(inflated / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`
+        : `${Math.round(inflated / 1_000)}K`
     anomalies.push({
       level: 'error',
       field: 'price',
       message: 'Precio sospechoso · revisar antes de publicar',
-      suggestion: `¿Querías $${inflated.toLocaleString('es-PA')}?`,
+      suggestion: `¿Querías $${inflatedShort}?`,
     })
   }
 
