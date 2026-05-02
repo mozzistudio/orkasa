@@ -21,6 +21,7 @@ import {
   ProviderReviewCard,
   type Adapted,
 } from '@/components/app/publish-shared'
+import { PlatformLogo } from '@/components/app/platform-logo'
 
 export function StepPlatformContent({
   propertyId,
@@ -152,9 +153,7 @@ export function StepPlatformContent({
                   : 'border-bone hover:border-ink'
               }`}
             >
-              <span className="font-mono text-[10px] font-medium text-ink">
-                {meta.shortLabel}
-              </span>
+              <PlatformLogo provider={meta} size={20} />
               <span className="text-[12px] text-ink">{meta.label}</span>
               {a?.validated && (
                 <Check className="h-3 w-3 text-[#0A6B3D]" strokeWidth={2.5} />

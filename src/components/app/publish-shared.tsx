@@ -13,6 +13,7 @@ import {
   type IntegrationProviderMeta,
 } from '@/lib/integrations'
 import type { StoredImage } from '@/components/app/image-upload'
+import { PlatformLogo } from '@/components/app/platform-logo'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -159,9 +160,7 @@ export function ProviderReviewCard({
     <div className="rounded-[4px] border border-bone bg-paper p-4 md:p-6">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="flex flex-1 items-center gap-3 min-w-0">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] bg-bone font-mono text-[13px] font-medium text-ink">
-            {meta.shortLabel}
-          </div>
+          <PlatformLogo provider={meta} size={40} />
           <div className="min-w-0">
             <h3 className="truncate text-[15px] font-medium text-ink">{meta.label}</h3>
             <p className="truncate font-mono text-[10px] uppercase tracking-wider text-steel">

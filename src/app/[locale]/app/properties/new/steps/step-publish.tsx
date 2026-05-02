@@ -13,6 +13,7 @@ import type {
   IntegrationProvider,
   IntegrationProviderMeta,
 } from '@/lib/integrations'
+import { PlatformLogo } from '@/components/app/platform-logo'
 import {
   ChannelStatusChip,
   type PerChannelStatus,
@@ -108,9 +109,7 @@ export function StepPublish({
               key={providerId}
               className="flex items-center gap-3 px-4 py-3"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] bg-bone font-mono text-[11px] font-medium text-ink">
-                {meta.shortLabel}
-              </div>
+              <PlatformLogo provider={meta} size={36} />
               <div className="flex-1 min-w-0">
                 <p className="truncate text-[13px] font-medium text-ink">
                   {meta.label}

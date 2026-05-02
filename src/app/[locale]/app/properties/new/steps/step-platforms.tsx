@@ -10,6 +10,7 @@ import type {
   IntegrationProvider,
   IntegrationProviderMeta,
 } from '@/lib/integrations'
+import { PlatformLogo } from '@/components/app/platform-logo'
 
 export function StepPlatforms({
   providers,
@@ -51,9 +52,7 @@ export function StepPlatforms({
                   : 'border-bone hover:border-ink'
               }`}
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] bg-bone font-mono text-[13px] font-medium text-ink">
-                {p.shortLabel}
-              </div>
+              <PlatformLogo provider={p} size={40} />
               <div className="flex-1">
                 <h3 className="text-[14px] font-medium text-ink">{p.label}</h3>
                 <p className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-steel">

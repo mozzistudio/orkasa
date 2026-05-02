@@ -23,6 +23,7 @@ import {
 } from '@/lib/integrations'
 import type { StoredImage } from '@/components/app/image-upload'
 import type { Database } from '@/lib/database.types'
+import { PlatformLogo } from '@/components/app/platform-logo'
 import {
   StageStep,
   ChannelStatusChip,
@@ -290,9 +291,7 @@ export function PublishWizard({
                       : 'border-bone hover:border-ink'
                   }`}
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] bg-bone font-mono text-[13px] font-medium text-ink">
-                    {p.shortLabel}
-                  </div>
+                  <PlatformLogo provider={p} size={40} />
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <h3 className="text-[14px] font-medium text-ink">
@@ -371,9 +370,7 @@ export function PublishWizard({
                       : 'border-bone hover:border-ink'
                   }`}
                 >
-                  <span className="font-mono text-[10px] font-medium text-ink">
-                    {meta.shortLabel}
-                  </span>
+                  <PlatformLogo provider={meta} size={20} />
                   <span className="text-[12px] text-ink">{meta.label}</span>
                   {a?.validated && (
                     <Check
@@ -519,9 +516,7 @@ export function PublishWizard({
                   key={providerId}
                   className="flex items-center gap-3 px-4 py-3"
                 >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] bg-bone font-mono text-[11px] font-medium text-ink">
-                    {meta.shortLabel}
-                  </div>
+                  <PlatformLogo provider={meta} size={36} />
                   <div className="flex-1 min-w-0">
                     <p className="truncate text-[13px] font-medium text-ink">
                       {meta.label}
