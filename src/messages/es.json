@@ -146,23 +146,37 @@
     "seedDemo": "Sembrar datos demo",
     "seeding": "Sembrando...",
     "pipeline": {
-      "label": "Pipeline · este mes",
+      "label": "Tu mes",
       "readyToSign": "listos para firmar",
       "closedAlready": "cerrados ya",
       "estimatedCommission": "comisión estimada",
       "closedMonth": "Cerrados mes",
       "closeRate": "Tasa cierre",
-      "visits7d": "Visitas 7d",
+      "visits7d": "Visitas",
       "vsLastMonth": "vs {period}",
-      "pts": "pts"
+      "vsLastWeek": "vs sem. pasada",
+      "pts": "pts",
+      "commissionEarned": "comisión ganada",
+      "commissionClosable": "{count, plural, =0 {sin deals listos} =1 {cerrable este mes · 1 deal listo} other {cerrable este mes · # deals listos}}",
+      "closableDealsTitle": "Cerrá estos {count, plural, =1 {deal antes de fin de mes} other {# deals antes de fin de mes}} · {amount} comisión",
+      "inNegotiationDays": "{days, plural, =0 {recién en negociación} =1 {1 día en negociación} other {# días en negociación}}",
+      "commission": "comisión",
+      "noClosableDeals": "Sin deals en negociación todavía. Empujá los calificados para acercarlos al cierre.",
+      "activePortfolio": "Cartera activa",
+      "emptyPortfolio": "sin leads activos"
     },
-    "today": {
-      "title": "Hoy hay que · {count} acciones",
-      "potential": "potencial {amount} en juego",
-      "openLead": "Abrir lead",
-      "assign": "Asignar",
-      "reactivate": "Reactivar",
-      "noUrgency": "Sin urgencia"
+    "visits": {
+      "title": "Visitas programadas",
+      "subtitle": "{count} visitas próximas",
+      "viewAll": "Ver agenda",
+      "empty": "Sin visitas programadas."
+    },
+    "docs": {
+      "title": "Pendientes",
+      "subtitle": "{count} documentos o trámites por resolver",
+      "viewAll": "Ver compliance",
+      "empty": "Todo al día. Sin pendientes.",
+      "corporate": "Corporativo"
     },
     "cooling": {
       "title": "Leads que se enfrían",
