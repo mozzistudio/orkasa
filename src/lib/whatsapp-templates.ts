@@ -45,6 +45,28 @@ export type DashboardReminderType = 'reactivate' | 'pre_visit' | 'price_drop'
 
 export type DocumentReminderType = 'identity' | 'income_proof' | 'funds_origin' | 'company_ubo' | 'ready_to_sign'
 
+export function requestPayslips(clientName: string, propertyTitle: string): string {
+  return `Hola ${clientName}, te escribo de Orkasa. Para avanzar con la compra del ${propertyTitle}, el banco nos pide tus 3 últimas fichas de pago. ¿Me las podrías enviar por aquí cuando puedas? Gracias!`
+}
+
+export function askPepRelationship(clientName: string): string {
+  return `Hola ${clientName}, una pregunta rápida obligatoria: ¿tenés parientes cercanos (padres, hermanos, cónyuge, hijos) que ocupen o hayan ocupado cargos públicos en el gobierno panameño? Si la respuesta es no, perfecto. Si es sí, vamos a necesitarte un papel adicional. Gracias!`
+}
+
+export function askUbo(clientName: string, companyName: string): string {
+  return `Hola ${clientName}, para avanzar con la compra a nombre de ${companyName}, necesitamos una declaración firmada que indique quién es el dueño real (beneficiario final) de la empresa. Es un papel estándar que tu contador o abogado te lo prepara en minutos. Gracias!`
+}
+
+export function askGenericDocument(clientName: string, docName: string, propertyTitle: string): string {
+  return `Hola ${clientName}, te escribo de Orkasa. Para avanzar con el ${propertyTitle}, necesitamos ${docName.toLowerCase()}. ¿Me lo podrías enviar por aquí cuando puedas? Gracias!`
+}
+
+export type DetailReminderType =
+  | 'request_payslips'
+  | 'ask_pep'
+  | 'ask_ubo'
+  | 'ready_to_sign'
+
 export function getReminderMessage(
   type: DocumentReminderType,
   clientName: string,
