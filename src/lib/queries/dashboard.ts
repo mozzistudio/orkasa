@@ -89,13 +89,14 @@ export type UpcomingViewing = {
 
 export type PendingReminder = {
   id: string
-  kind: 'document' | 'signature' | 'compliance'
-  docKind: string | null
-  label: string
-  leadName: string | null
+  leadId: string | null
+  leadName: string
   leadPhone: string | null
   propertyTitle: string | null
   checkId: string | null
+  docCount: number
+  docNames: string[]
+  oldestDays: number
 }
 
 const LEAD_STAGES: Array<{ id: string; name: string; statuses: string[] }> = [
@@ -673,76 +674,81 @@ export async function getUpcomingViewings(limit = 5): Promise<UpcomingViewing[]>
 export async function getPendingReminders(limit = 5): Promise<PendingReminder[]> {
   const supabase = await createClient()
 
-  const [docsRes, checksRes] = await Promise.all([
-    supabase
-      .from('compliance_documents')
-      .select('id, name, kind, status, check_id, compliance_checks(lead_id, leads(full_name, phone, properties(title)))')
-      .in('status', ['pending', 'rejected', 'expired'])
-      .limit(limit)
-      .returns<Array<{
+  const { data: docs } = await supabase
+    .from('compliance_documents')
+    .select('id, name, kind, status, check_id, created_at, is_required, compliance_checks(id, lead_id, leads(full_name, phone, properties(title)))')
+    .neq('status', 'verified')
+    .not('is_required', 'is', false)
+    .order('created_at', { ascending: true })
+    .returns<Array<{
+      id: string
+      name: string | null
+      kind: string
+      status: string
+      check_id: string
+      created_at: string | null
+      is_required: boolean | null
+      compliance_checks: {
         id: string
-        name: string | null
-        kind: string
-        status: string
-        check_id: string
-        compliance_checks: {
-          lead_id: string | null
-          leads: {
-            full_name: string
-            phone: string | null
-            properties: { title: string } | null
-          } | null
-        } | null
-      }>>(),
-    supabase
-      .from('compliance_checks')
-      .select('id, type, status, lead_id, leads(full_name, phone, properties(title))')
-      .in('status', ['pending', 'requires_action'])
-      .limit(limit)
-      .returns<Array<{
-        id: string
-        type: string
-        status: string
         lead_id: string | null
         leads: {
           full_name: string
           phone: string | null
           properties: { title: string } | null
         } | null
-      }>>(),
-  ])
+      } | null
+    }>>()
 
-  const reminders: PendingReminder[] = []
+  if (!docs?.length) return []
 
-  for (const doc of docsRes.data ?? []) {
-    const kind = (['identity', 'address_proof', 'income_proof', 'funds_origin'].includes(doc.kind))
-      ? 'document' as const
-      : 'signature' as const
-    const lead = doc.compliance_checks?.leads
-    reminders.push({
-      id: doc.id,
-      kind,
-      docKind: doc.kind,
-      label: doc.name ?? doc.kind,
-      leadName: lead?.full_name ?? null,
-      leadPhone: lead?.phone ?? null,
-      propertyTitle: lead?.properties?.title ?? null,
-      checkId: doc.check_id,
-    })
+  type Bucket = {
+    leadId: string | null
+    leadName: string
+    leadPhone: string | null
+    propertyTitle: string | null
+    checkId: string
+    docNames: string[]
+    oldestCreatedAt: number
   }
 
-  for (const check of checksRes.data ?? []) {
-    reminders.push({
-      id: check.id,
-      kind: 'compliance',
-      docKind: check.type,
-      label: check.type.toUpperCase(),
-      leadName: check.leads?.full_name ?? null,
-      leadPhone: check.leads?.phone ?? null,
-      propertyTitle: check.leads?.properties?.title ?? null,
-      checkId: check.id,
-    })
+  const byLead = new Map<string, Bucket>()
+  for (const doc of docs) {
+    const check = doc.compliance_checks
+    const lead = check?.leads
+    if (!check || !lead) continue
+    const key = check.lead_id ?? check.id
+    const created = doc.created_at ? new Date(doc.created_at).getTime() : Date.now()
+    const docName = doc.name ?? doc.kind
+    const existing = byLead.get(key)
+    if (existing) {
+      if (!existing.docNames.includes(docName)) existing.docNames.push(docName)
+      if (created < existing.oldestCreatedAt) existing.oldestCreatedAt = created
+    } else {
+      byLead.set(key, {
+        leadId: check.lead_id,
+        leadName: lead.full_name,
+        leadPhone: lead.phone,
+        propertyTitle: lead.properties?.title ?? null,
+        checkId: check.id,
+        docNames: [docName],
+        oldestCreatedAt: created,
+      })
+    }
   }
 
-  return reminders.slice(0, limit)
+  const now = Date.now()
+  return Array.from(byLead.values())
+    .sort((a, b) => a.oldestCreatedAt - b.oldestCreatedAt)
+    .slice(0, limit)
+    .map((b) => ({
+      id: b.checkId,
+      leadId: b.leadId,
+      leadName: b.leadName,
+      leadPhone: b.leadPhone,
+      propertyTitle: b.propertyTitle,
+      checkId: b.checkId,
+      docCount: b.docNames.length,
+      docNames: b.docNames,
+      oldestDays: Math.max(0, Math.floor((now - b.oldestCreatedAt) / 86_400_000)),
+    }))
 }

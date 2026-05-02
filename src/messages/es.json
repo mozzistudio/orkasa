@@ -123,7 +123,7 @@
   },
   "dashboard": {
     "title": "Inicio",
-    "inventory": "Inventario",
+    "inventory": "Propiedades",
     "leads": "Leads",
     "agents": "Agentes",
     "analytics": "Análisis",
@@ -173,10 +173,12 @@
     },
     "docs": {
       "title": "Pendientes",
-      "subtitle": "{count} documentos o trámites por resolver",
+      "subtitleLead": "{count, plural, =1 {1 lead} other {# leads}}",
+      "subtitleDocs": "{count, plural, =1 {1 documento} other {# documentos}}",
+      "subtitleSep": "·",
+      "subtitleSuffix": "por chasear",
       "viewAll": "Ver compliance",
-      "empty": "Todo al día. Sin pendientes.",
-      "corporate": "Corporativo"
+      "empty": "Todo al día. Sin pendientes."
     },
     "cooling": {
       "title": "Leads que se enfrían",

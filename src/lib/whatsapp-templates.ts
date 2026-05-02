@@ -61,6 +61,12 @@ export function askGenericDocument(clientName: string, docName: string, property
   return `Hola ${clientName}, te escribo de Orkasa. Para avanzar con el ${propertyTitle}, necesitamos ${docName.toLowerCase()}. ¿Me lo podrías enviar por aquí cuando puedas? Gracias!`
 }
 
+export function askMultipleDocuments(clientName: string, docNames: string[], propertyTitle: string): string {
+  if (docNames.length === 1) return askGenericDocument(clientName, docNames[0], propertyTitle)
+  const list = docNames.map((d) => `• ${d}`).join('\n')
+  return `Hola ${clientName}, te escribo de Orkasa. Para avanzar con el ${propertyTitle} nos faltan ${docNames.length} documentos:\n\n${list}\n\n¿Podemos coordinar para que los envíes por acá? Gracias!`
+}
+
 export type DetailReminderType =
   | 'request_payslips'
   | 'ask_pep'

@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
-import { Star, Eye, Bell, RefreshCw } from 'lucide-react'
+import { Star, Eye, Bell, RefreshCw, Building2 } from 'lucide-react'
 import type { PropertyAlert } from '@/lib/queries/dashboard'
 
 const ACTION_ICONS: Record<string, typeof Star> = {
@@ -30,7 +30,7 @@ export async function PropertiesAttentionPanel({
         <div className="border-b border-bone px-[18px] py-[14px]">
           <div className="flex items-center gap-[7px] text-[14px] font-medium text-ink">
             <span className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px] bg-bone-soft text-ink">
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 6h12v9H2z"/><path d="M2 6l6-4 6 4"/></svg>
+              <Building2 className="h-3 w-3" strokeWidth={1.5} />
             </span>
             {t('title')}
           </div>

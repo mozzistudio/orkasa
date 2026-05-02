@@ -29,7 +29,7 @@ export async function PendingDocsPanel({
     )
   }
 
-  const corporateLabel = t('corporate')
+  const totalDocs = reminders.reduce((sum, r) => sum + r.docCount, 0)
 
   return (
     <section className="overflow-hidden rounded-[10px] border border-bone bg-paper">
@@ -42,7 +42,10 @@ export async function PendingDocsPanel({
             {t('title')}
           </div>
           <div className="text-[11px] text-steel">
-            {t('subtitle', { count: reminders.length })}
+            {t('subtitleLead', { count: reminders.length })}
+            {' '}{t('subtitleSep')}{' '}
+            {t('subtitleDocs', { count: totalDocs })}
+            {' '}{t('subtitleSuffix')}
           </div>
         </div>
         <Link
@@ -54,7 +57,7 @@ export async function PendingDocsPanel({
       </div>
 
       {reminders.map((r) => (
-        <PendingDocRow key={r.id} reminder={r} corporateLabel={corporateLabel} />
+        <PendingDocRow key={r.id} reminder={r} />
       ))}
     </section>
   )

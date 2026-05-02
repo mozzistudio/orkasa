@@ -546,11 +546,14 @@ export type Database = {
           features: Json | null
           id: string
           images: Json | null
+          is_boosted: boolean
           latitude: number | null
+          listing_expires_at: string | null
           listing_type: Database['public']['Enums']['listing_type']
           longitude: number | null
           neighborhood: string | null
           price: number | null
+          price_history: Json
           property_type: Database['public']['Enums']['property_type']
           status: Database['public']['Enums']['property_status'] | null
           title: string
@@ -573,11 +576,14 @@ export type Database = {
           features?: Json | null
           id?: string
           images?: Json | null
+          is_boosted?: boolean
           latitude?: number | null
+          listing_expires_at?: string | null
           listing_type: Database['public']['Enums']['listing_type']
           longitude?: number | null
           neighborhood?: string | null
           price?: number | null
+          price_history?: Json
           property_type: Database['public']['Enums']['property_type']
           status?: Database['public']['Enums']['property_status'] | null
           title: string
@@ -600,11 +606,14 @@ export type Database = {
           features?: Json | null
           id?: string
           images?: Json | null
+          is_boosted?: boolean
           latitude?: number | null
+          listing_expires_at?: string | null
           listing_type?: Database['public']['Enums']['listing_type']
           longitude?: number | null
           neighborhood?: string | null
           price?: number | null
+          price_history?: Json
           property_type?: Database['public']['Enums']['property_type']
           status?: Database['public']['Enums']['property_status'] | null
           title?: string
