@@ -122,7 +122,7 @@
     "testimonialRole": "Founder, Vásquez Bienes Raíces"
   },
   "dashboard": {
-    "title": "Dashboard",
+    "title": "Home",
     "inventory": "Inventory",
     "leads": "Leads",
     "agents": "Agents",
@@ -130,8 +130,9 @@
     "compliance": "Compliance",
     "integrations": "Integrations",
     "settings": "Settings",
-    "search": "Search...",
+    "search": "Search client, property...",
     "uploadProperty": "Upload property",
+    "newLead": "Lead",
     "recentLeads": "Recent leads",
     "featuredProperties": "Featured properties",
     "lead": "Lead",
@@ -141,9 +142,69 @@
     "action": "Action",
     "view": "View",
     "emptyTitle": "Your brokerage is empty",
-    "emptyDescription": "Upload a property or seed demo data to see how the dashboard works.",
+    "emptyDescription": "Upload a property or seed demo data to see how it works.",
     "seedDemo": "Seed demo data",
-    "seeding": "Seeding..."
+    "seeding": "Seeding...",
+    "pipeline": {
+      "label": "Pipeline · this month",
+      "readyToSign": "ready to sign",
+      "closedAlready": "closed already",
+      "estimatedCommission": "estimated commission",
+      "closedMonth": "Closed month",
+      "closeRate": "Close rate",
+      "visits7d": "Visits 7d",
+      "vsLastMonth": "vs {period}",
+      "pts": "pts"
+    },
+    "today": {
+      "title": "Today · {count} actions",
+      "potential": "potential {amount} at stake",
+      "openLead": "Open lead",
+      "assign": "Assign",
+      "reactivate": "Reactivate",
+      "noUrgency": "No urgency"
+    },
+    "cooling": {
+      "title": "Cooling leads",
+      "subtitle": "{count} leads with no recent contact — re-engage before losing them",
+      "daysSilent": "{days} days no contact",
+      "reactivate": "Reactivate",
+      "viewPipeline": "View pipeline",
+      "empty": "No cooling leads. Great follow-up"
+    },
+    "properties": {
+      "title": "Properties to review",
+      "subtitle": "{count} properties need your attention",
+      "viewInventory": "Inventory",
+      "empty": "Your inventory is up to date. No alerts.",
+      "boost": "Boost listing",
+      "viewLeads": "View leads",
+      "notifyLeads": "Notify leads",
+      "renewListing": "Renew listing"
+    },
+    "team": {
+      "title": "My team · this week",
+      "fullReport": "Full report",
+      "pipeline": "Pipeline",
+      "avgResponse": "Avg. response",
+      "deals": "Deals",
+      "dealsOpen": "{count} open",
+      "uncontacted": "Uncontacted",
+      "uncontactedLeads": "{count} leads",
+      "viewProfile": "View profile",
+      "help": "Help",
+      "empty": "Invite your first agent",
+      "yourMetrics": "Your metrics · this week"
+    },
+    "empty": {
+      "title": "Welcome to Orkasa",
+      "cta1": "Upload property",
+      "cta2": "Create lead"
+    },
+    "error": {
+      "block": "Could not load this section.",
+      "retry": "Retry"
+    }
   },
   "integrations": {
     "title": "Integrations",

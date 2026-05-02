@@ -26,6 +26,23 @@ export function readyToSign(clientName: string, propertyTitle: string): string {
   return `Hola ${clientName}, te escribo de Orkasa. Ya está todo listo para firmar el contrato del ${propertyTitle}. ¿Cuándo te queda bien pasar a firmar? ¡Gracias!`
 }
 
+export function reactivateColdLead(clientName: string, propertyTitle: string, daysAgo: number): string {
+  if (daysAgo < 14) {
+    return `Hola ${clientName}, ¿cómo estás? Te escribo para retomar lo del ${propertyTitle}. ¿Seguís interesado/a? Tengo novedades que te pueden interesar.`
+  }
+  return `Hola ${clientName}! Hace tiempo que no hablamos. Sigo atento a propiedades que se ajusten a lo que buscabas. ¿Te interesa que te mande algunas opciones nuevas?`
+}
+
+export function preVisitReminder(clientName: string, propertyTitle: string, time: string): string {
+  return `Hola ${clientName}, te confirmo nuestra cita hoy a las ${time} para ver el ${propertyTitle}. La dirección y código de acceso te los paso por aquí. Cualquier cosa avísame!`
+}
+
+export function priceDropAlert(clientName: string, propertyTitle: string, oldPrice: string, newPrice: string): string {
+  return `Hola ${clientName}! Buena noticia — el ${propertyTitle} bajó de ${oldPrice} a ${newPrice}. Vos lo viste hace poco, capaz ahora encaja con tu presupuesto. ¿Querés que te agende una segunda visita?`
+}
+
+export type DashboardReminderType = 'reactivate' | 'pre_visit' | 'price_drop'
+
 export type DocumentReminderType = 'identity' | 'income_proof' | 'funds_origin' | 'company_ubo' | 'ready_to_sign'
 
 export function getReminderMessage(
