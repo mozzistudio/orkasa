@@ -1,54 +1,12 @@
 'use client'
 
-import { MessageCircle, FileText, PenLine, Shield } from 'lucide-react'
+import { MessageCircle, FileText } from 'lucide-react'
 import { useRouter } from '@/i18n/navigation'
-import {
-  buildReminderUrl,
-  askGenericDocument,
-  reminderCedula,
-  reminderIncomeProof,
-  reminderFundsOrigin,
-  askPepRelationship,
-  askUbo,
-} from '@/lib/whatsapp-templates'
+import { buildReminderUrl, askMultipleDocuments } from '@/lib/whatsapp-templates'
 import type { PendingReminder } from '@/lib/queries/dashboard'
 
-const KIND_CONFIG = {
-  document: { Icon: FileText, bg: 'bg-amber-50', text: 'text-amber-text' },
-  signature: { Icon: PenLine, bg: 'bg-signal-bg', text: 'text-signal-deep' },
-  compliance: { Icon: Shield, bg: 'bg-bone-soft', text: 'text-ink' },
-} as const
-
-function buildMessage(r: PendingReminder): string {
-  const name = r.leadName ?? 'cliente'
-  const property = r.propertyTitle ?? 'la propiedad'
-  switch (r.docKind) {
-    case 'identity':
-      return reminderCedula(name, property)
-    case 'income_proof':
-      return reminderIncomeProof(name, property)
-    case 'funds_origin':
-      return reminderFundsOrigin(name, property)
-    case 'pep':
-      return askPepRelationship(name)
-    case 'aml':
-    case 'sanctions':
-      return askUbo(name, property)
-    default:
-      return askGenericDocument(name, r.label, property)
-  }
-}
-
-export function PendingDocRow({
-  reminder,
-  corporateLabel,
-}: {
-  reminder: PendingReminder
-  corporateLabel: string
-}) {
+export function PendingDocRow({ reminder }: { reminder: PendingReminder }) {
   const router = useRouter()
-  const config = KIND_CONFIG[reminder.kind]
-  const Icon = config.Icon
 
   function handleOpen() {
     router.push(
@@ -61,25 +19,38 @@ export function PendingDocRow({
   function handleWhatsApp(e: React.MouseEvent) {
     e.stopPropagation()
     if (!reminder.leadPhone) return
-    window.open(buildReminderUrl(reminder.leadPhone, buildMessage(reminder)), '_blank')
+    const message = askMultipleDocuments(
+      reminder.leadName,
+      reminder.docNames,
+      reminder.propertyTitle ?? 'la propiedad',
+    )
+    window.open(buildReminderUrl(reminder.leadPhone, message), '_blank')
   }
+
+  const overdue = reminder.oldestDays >= 3
 
   return (
     <div
       onClick={handleOpen}
       className="grid grid-cols-[28px_1fr_auto] items-center gap-3 border-b border-bone px-[18px] py-[13px] cursor-pointer transition-colors last:border-b-0 hover:bg-paper-warm"
     >
-      <span
-        className={`flex h-7 w-7 items-center justify-center rounded-[5px] ${config.bg} ${config.text}`}
-      >
-        <Icon className="h-[13px] w-[13px]" strokeWidth={1.5} />
+      <span className="flex h-7 w-7 items-center justify-center rounded-[5px] bg-amber-50 text-amber-text">
+        <FileText className="h-[13px] w-[13px]" strokeWidth={1.5} />
       </span>
       <div className="min-w-0">
         <div className="mb-[2px] truncate text-[13px] font-medium text-ink">
-          {reminder.label}
+          {reminder.leadName}
         </div>
         <div className="truncate text-[11px] text-steel">
-          {reminder.leadName ?? corporateLabel}
+          {reminder.docCount} {reminder.docCount === 1 ? 'documento' : 'documentos'}
+          {' · '}
+          <span className={overdue ? 'text-signal-deep' : 'text-steel'}>
+            {reminder.oldestDays === 0
+              ? 'pedido hoy'
+              : reminder.oldestDays === 1
+                ? '1 día sin respuesta'
+                : `${reminder.oldestDays} días sin respuesta`}
+          </span>
         </div>
       </div>
       {reminder.leadPhone && (
