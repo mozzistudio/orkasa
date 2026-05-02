@@ -4,20 +4,16 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import {
   ArrowLeft,
-  Mail,
   Phone,
-  MessageCircle,
-  MapPin,
-  ExternalLink,
-  Building2,
-  Sparkles,
+  Calendar,
+  MoreHorizontal,
+  ChevronDown,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatPrice } from '@/lib/utils'
-import { LeadForm } from '@/components/app/lead-form'
+import { Composer } from './composer'
+import { LeadTabs } from './lead-tabs'
 import { LeadDeleteButton } from './delete-button'
-import { AddInteractionForm } from './add-interaction-form'
-import { updateLead } from '../actions'
 import type { Database } from '@/lib/database.types'
 
 type Lead = Database['public']['Tables']['leads']['Row']
@@ -26,26 +22,16 @@ type Property = Database['public']['Tables']['properties']['Row']
 
 type StoredImage = { path: string; url: string }
 
-/** Cover URL extracted from the JSONB images field. */
 function coverUrl(images: unknown): string | null {
   if (!Array.isArray(images)) return null
   const first = images[0] as StoredImage | undefined
   return first?.url ?? null
 }
 
-/**
- * Pick up to 3 properties that match the lead's interest property:
- * same neighborhood OR city, similar price (±25%), same property type,
- * active status, excluding the property of interest itself.
- */
-function pickMatches(
-  interest: Property | null,
-  pool: Property[],
-): Property[] {
+function pickMatches(interest: Property | null, pool: Property[]): Property[] {
   if (!interest) {
-    // No anchor — surface 3 active properties as generic suggestions
     return pool
-      .filter((p) => p.status === 'active' && p.id !== interest)
+      .filter((p) => p.status === 'active')
       .slice(0, 3)
   }
   const interestPrice = interest.price ? Number(interest.price) : null
@@ -66,7 +52,6 @@ function pickMatches(
       return (sameLocation || sameType) && priceFit
     })
     .sort((a, b) => {
-      // Prefer same neighborhood, then same city, then highest score
       const aHood = a.neighborhood === interest.neighborhood ? 2 : 0
       const bHood = b.neighborhood === interest.neighborhood ? 2 : 0
       const aCity = a.city === interest.city ? 1 : 0
@@ -78,6 +63,38 @@ function pickMatches(
     .slice(0, 3)
 }
 
+const PIPELINE_STAGES = [
+  'new',
+  'contacted',
+  'qualified',
+  'viewing_scheduled',
+  'negotiating',
+] as const
+
+const PIPELINE_LABELS: Record<string, string> = {
+  new: 'Nuevo',
+  contacted: 'Contacto',
+  qualified: 'Califi.',
+  viewing_scheduled: 'Visita',
+  negotiating: 'Cierre',
+}
+
+const STATUS_DISPLAY: Record<string, { label: string; style: string }> = {
+  new: { label: 'Nuevo', style: 'bg-bone-soft text-steel' },
+  contacted: { label: 'Contactado', style: 'bg-bone-soft text-steel' },
+  qualified: { label: 'Calificado', style: 'bg-green-bg text-green-text' },
+  viewing_scheduled: {
+    label: 'Visita agendada',
+    style: 'bg-amber-bg text-amber-text',
+  },
+  negotiating: {
+    label: 'Negociando',
+    style: 'bg-signal-bg text-signal-deep',
+  },
+  closed_won: { label: 'Cerrado ✓', style: 'bg-green-bg text-green-text' },
+  closed_lost: { label: 'Perdido', style: 'bg-bone-soft text-steel-soft' },
+}
+
 export default async function LeadDetailPage({
   params,
 }: {
@@ -87,35 +104,33 @@ export default async function LeadDetailPage({
   const { id } = await params
   const supabase = await createClient()
 
-  const [leadRes, propertiesRes, agentsRes, interactionsRes] = await Promise.all([
-    supabase
-      .from('leads')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle<Lead>(),
-    // Pull full property records — we need images, location, price for the card
-    supabase
-      .from('properties')
-      .select(
-        'id, title, property_type, listing_type, status, price, currency, ai_score, neighborhood, city, images, bedrooms, bathrooms, area_m2, address, brokerage_id, agent_id, country_code, created_at, updated_at, description, external_id, features, latitude, longitude',
-      )
-      .returns<Property[]>(),
-    supabase
-      .from('agents')
-      .select('id, full_name')
-      .returns<Array<{ id: string; full_name: string }>>(),
-    supabase
-      .from('lead_interactions')
-      .select('*')
-      .eq('lead_id', id)
-      .order('created_at', { ascending: false })
-      .returns<Interaction[]>(),
-  ])
+  const [leadRes, propertiesRes, agentsRes, interactionsRes] =
+    await Promise.all([
+      supabase
+        .from('leads')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle<Lead>(),
+      supabase
+        .from('properties')
+        .select(
+          'id, title, property_type, listing_type, status, price, currency, ai_score, neighborhood, city, images, bedrooms, bathrooms, area_m2, address, brokerage_id, agent_id, country_code, created_at, updated_at, description, external_id, features, latitude, longitude',
+        )
+        .returns<Property[]>(),
+      supabase
+        .from('agents')
+        .select('id, full_name')
+        .returns<Array<{ id: string; full_name: string }>>(),
+      supabase
+        .from('lead_interactions')
+        .select('*')
+        .eq('lead_id', id)
+        .order('created_at', { ascending: false })
+        .returns<Interaction[]>(),
+    ])
 
   const lead = leadRes.data
   if (!lead) notFound()
-
-  const updateWithId = updateLead.bind(null, id)
 
   const allProperties = propertiesRes.data ?? []
   const property = lead.property_id
@@ -123,495 +138,489 @@ export default async function LeadDetailPage({
     : null
   const matches = pickMatches(property, allProperties)
 
+  const agents = agentsRes.data ?? []
+  const agentMap: Record<string, string> = {}
+  for (const a of agents) agentMap[a.id] = a.full_name
+
   const assignedAgent = lead.assigned_agent_id
-    ? (agentsRes.data ?? []).find((a) => a.id === lead.assigned_agent_id)
+    ? agents.find((a) => a.id === lead.assigned_agent_id)
     : null
 
   const interactions = interactionsRes.data ?? []
 
-  // The form expects `{id, title}[]` — slice the richer pool
-  const propertiesForSelect = allProperties.map((p) => ({
-    id: p.id,
-    title: p.title,
-  }))
+  // Compute days since last contact
+  const lastInteraction = interactions[0]
+  const daysSinceContact = lastInteraction?.created_at
+    ? Math.floor(
+        (Date.now() - new Date(lastInteraction.created_at).getTime()) /
+          86_400_000,
+      )
+    : null
+
+  const isCooling = daysSinceContact !== null && daysSinceContact > 7
+
+  // Pipeline index
+  const status = lead.status ?? 'new'
+  const pipelineIdx = PIPELINE_STAGES.indexOf(
+    status as (typeof PIPELINE_STAGES)[number],
+  )
+  const statusDisplay = STATUS_DISPLAY[status] ?? STATUS_DISPLAY.new
+
+  // Compute smart tasks
+  const tasks = computeTasks(lead, interactions, property, daysSinceContact)
 
   const dateLong = (iso: string | null) =>
     iso
-      ? new Date(iso).toLocaleString('es-PA', {
+      ? new Date(iso).toLocaleDateString('es-PA', {
           day: '2-digit',
           month: 'short',
           year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
         })
       : '—'
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-[1280px]">
+      {/* Back link */}
       <Link
         href="/app/leads"
-        className="mb-6 hidden md:inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-steel hover:text-ink transition-colors"
+        className="inline-flex items-center gap-1.5 text-[12px] text-steel hover:text-ink transition-colors mb-4"
       >
-        <ArrowLeft className="h-3 w-3" strokeWidth={1.5} />
-        {t('title')}
+        <ArrowLeft className="h-[11px] w-[11px]" strokeWidth={1.5} />
+        Volver a Clientes
       </Link>
 
-      {/* Header */}
-      <div className="mb-4 flex items-start justify-between gap-4 md:mb-6">
-        <div>
-          <p className="font-mono text-[11px] uppercase tracking-[1.5px] text-steel">
-            [ {lead.id.slice(0, 8)} ]
-          </p>
-          <h1 className="mt-1 text-[22px] font-medium tracking-[-0.5px] text-ink md:text-[24px]">
-            {lead.full_name}
-          </h1>
-          {/* Desktop: inline contact links */}
-          <div className="mt-2 hidden md:flex flex-wrap items-center gap-3 text-[13px] text-steel">
-            {lead.email && (
-              <a
-                href={`mailto:${lead.email}`}
-                className="inline-flex items-center gap-1.5 hover:text-signal"
-              >
-                <Mail className="h-3.5 w-3.5" strokeWidth={1.5} />
-                {lead.email}
-              </a>
-            )}
-            {lead.phone && (
-              <a
-                href={`tel:${lead.phone}`}
-                className="inline-flex items-center gap-1.5 font-mono hover:text-signal"
-              >
-                <Phone className="h-3.5 w-3.5" strokeWidth={1.5} />
-                {lead.phone}
-              </a>
-            )}
-          </div>
-        </div>
-        <LeadDeleteButton id={lead.id} />
-      </div>
-
-      {/* Mobile: quick action buttons */}
-      {(lead.phone || lead.email) && (
-        <div className="mb-4 flex gap-2 md:hidden">
-          {lead.phone && (
-            <a
-              href={`tel:${lead.phone}`}
-              className="flex flex-1 items-center justify-center gap-2 rounded-[4px] border border-bone px-3 py-2.5 text-[13px] text-ink active:bg-bone/30 transition-colors"
-            >
-              <Phone className="h-4 w-4 text-steel" strokeWidth={1.5} />
-              Llamar
-            </a>
-          )}
-          {lead.phone && (
-            <a
-              href={`https://wa.me/${lead.phone.replace(/[^0-9+]/g, '')}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-1 items-center justify-center gap-2 rounded-[4px] border border-bone px-3 py-2.5 text-[13px] text-ink active:bg-bone/30 transition-colors"
-            >
-              <MessageCircle className="h-4 w-4 text-steel" strokeWidth={1.5} />
-              WhatsApp
-            </a>
-          )}
-          {lead.email && (
-            <a
-              href={`mailto:${lead.email}`}
-              className="flex flex-1 items-center justify-center gap-2 rounded-[4px] border border-bone px-3 py-2.5 text-[13px] text-ink active:bg-bone/30 transition-colors"
-            >
-              <Mail className="h-4 w-4 text-steel" strokeWidth={1.5} />
-              Email
-            </a>
-          )}
-        </div>
-      )}
-
-      {/* Mobile: metadata chips row */}
-      <div className="mb-4 flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1 md:hidden">
-        <div className="shrink-0 rounded-[4px] border border-bone px-3 py-2 flex flex-col items-center">
-          <span className="font-mono text-[9px] uppercase tracking-wider text-steel">Status</span>
-          <span className="font-mono text-[12px] text-ink mt-0.5">{t(`status.${lead.status ?? 'new'}`)}</span>
-        </div>
-        <div className="shrink-0 rounded-[4px] border border-bone px-3 py-2 flex flex-col items-center">
-          <span className="font-mono text-[9px] uppercase tracking-wider text-steel">Score</span>
-          <span className="font-mono text-[14px] font-medium text-signal mt-0.5">{lead.ai_score ?? '—'}</span>
-        </div>
-        <div className="shrink-0 rounded-[4px] border border-bone px-3 py-2 flex flex-col items-center">
-          <span className="font-mono text-[9px] uppercase tracking-wider text-steel">Origen</span>
-          <span className="font-mono text-[12px] text-ink mt-0.5">{t(`origin.${lead.origin}`)}</span>
-        </div>
-        <div className="shrink-0 rounded-[4px] border border-bone px-3 py-2 flex flex-col items-center">
-          <span className="font-mono text-[9px] uppercase tracking-wider text-steel">Agente</span>
-          <span className="text-[12px] text-ink mt-0.5 whitespace-nowrap">{assignedAgent?.full_name ?? '—'}</span>
-        </div>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left col: form + property + interactions */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Property of interest — rich card */}
-          <section className="rounded-[4px] border border-bone bg-paper">
-            <header className="flex items-center justify-between border-b border-bone px-4 py-3">
-              <div className="flex items-center gap-2">
-                <Building2
-                  className="h-4 w-4 text-ink"
-                  strokeWidth={1.5}
-                />
-                <h3 className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
-                  Propiedad de interés
-                </h3>
-              </div>
-              {property && (
-                <Link
-                  href={`/app/properties/${property.id}`}
-                  className="inline-flex items-center gap-1 font-mono text-[11px] text-steel transition-colors hover:text-signal"
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
+        {/* ── Main column ── */}
+        <div className="min-w-0 flex flex-col gap-4">
+          {/* Hero Lead */}
+          <section className="relative rounded-[14px] border border-bone bg-gradient-to-b from-paper to-paper-warm overflow-hidden">
+            <div className="relative z-[1] px-6 py-6">
+              {/* Status + meta */}
+              <div className="flex items-center gap-2 mb-3">
+                <span
+                  className={`font-mono text-[10px] tracking-[1.3px] uppercase px-2.5 py-0.5 rounded-full font-medium ${statusDisplay.style}`}
                 >
-                  Ver ficha completa
-                  <ExternalLink className="h-3 w-3" strokeWidth={1.5} />
-                </Link>
-              )}
-            </header>
-
-            {property ? (
-              <PropertyHeroCard property={property} t={t} />
-            ) : (
-              <div className="flex flex-col items-center justify-center gap-3 px-4 py-10 text-center">
-                <Building2
-                  className="h-6 w-6 text-steel"
-                  strokeWidth={1.5}
-                />
-                <p className="text-[13px] text-steel">
-                  Sin propiedad asignada todavía. Asignala en el formulario para
-                  ver matches.
-                </p>
+                  {statusDisplay.label}
+                </span>
+                {isCooling && (
+                  <>
+                    <span className="font-mono text-[10px] tracking-[1.3px] uppercase text-steel">
+                      ·
+                    </span>
+                    <span className="font-mono text-[10px] tracking-[1.3px] uppercase text-steel">
+                      <span className="text-signal-deep font-medium">
+                        {daysSinceContact} días sin contacto
+                      </span>{' '}
+                      — relanzá
+                    </span>
+                  </>
+                )}
               </div>
-            )}
-          </section>
 
-          {/* Matching properties */}
-          {matches.length > 0 && (
-            <section className="rounded-[4px] border border-bone bg-paper">
-              <header className="flex items-center justify-between border-b border-bone px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles
-                    className="h-4 w-4 text-signal"
+              {/* Name + more button */}
+              <div className="flex items-start justify-between gap-6 mb-2">
+                <div>
+                  <h1 className="text-[30px] font-medium tracking-[-0.6px] leading-tight text-ink mb-1">
+                    {lead.full_name}
+                  </h1>
+                  <div className="text-[14px] text-steel flex items-center gap-1.5 flex-wrap">
+                    {lead.phone && (
+                      <a
+                        href={`tel:${lead.phone}`}
+                        className="text-ink hover:underline"
+                      >
+                        {lead.phone}
+                      </a>
+                    )}
+                    {lead.phone && lead.email && (
+                      <span className="text-steel-soft">·</span>
+                    )}
+                    {lead.email && (
+                      <a
+                        href={`mailto:${lead.email}`}
+                        className="text-ink hover:underline"
+                      >
+                        {lead.email}
+                      </a>
+                    )}
+                  </div>
+                </div>
+                <LeadDeleteButton id={lead.id} />
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-2 mt-4 pt-4 border-t border-bone">
+                {lead.phone && (
+                  <a
+                    href={`https://wa.me/${lead.phone.replace(/[^0-9+]/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-[8px] bg-whatsapp text-white text-[13px] font-medium hover:bg-whatsapp-deep transition-colors"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M17.5 14.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.1-1.3-.5-2.5-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6.1-.1.3-.4.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.4-.2.3-1 1-1 2.4 0 1.4 1 2.8 1.2 3 .1.2 2 3.1 4.9 4.3 2.9 1.2 2.9.8 3.4.8.5 0 1.6-.7 1.9-1.3.2-.7.2-1.2.2-1.3-.1-.1-.3-.2-.6-.4zM12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.3c1.4.8 3 1.2 4.8 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2z" />
+                    </svg>
+                    WhatsApp
+                  </a>
+                )}
+                {lead.phone && (
+                  <a
+                    href={`tel:${lead.phone}`}
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-[8px] bg-ink text-white text-[13px] font-medium hover:bg-coal transition-colors"
+                  >
+                    <Phone
+                      className="h-[13px] w-[13px]"
+                      strokeWidth={1.6}
+                    />
+                    Llamar
+                  </a>
+                )}
+                <button
+                  type="button"
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-[8px] bg-white text-ink border border-bone text-[13px] font-medium hover:border-steel-soft transition-colors"
+                >
+                  <Calendar
+                    className="h-[13px] w-[13px]"
                     strokeWidth={1.5}
                   />
-                  <h3 className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
-                    Propiedades similares
-                  </h3>
-                  <span className="font-mono text-[11px] tabular-nums text-steel">
-                    {matches.length}
+                  Agendar visita
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* Composer */}
+          <Composer leadId={lead.id} />
+
+          {/* Main Tabs (Historia / Propiedades) */}
+          <LeadTabs
+            interactions={interactions}
+            agentMap={agentMap}
+            property={property}
+            matches={matches}
+          />
+
+          {/* ── Tareas — standalone div, NOT a tab ── */}
+          <section className="rounded-[12px] border border-bone bg-paper overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-bone flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  className="text-ink"
+                >
+                  <rect x="2" y="3" width="12" height="11" rx="1" />
+                  <path d="M5 7l2 2 4-4" />
+                </svg>
+                <h3 className="font-mono text-[10px] tracking-[1.4px] uppercase text-steel">
+                  Tareas
+                </h3>
+                {tasks.length > 0 && (
+                  <span className="font-mono text-[10px] px-1.5 py-px rounded-full bg-ink text-white">
+                    {tasks.length}
                   </span>
-                </div>
-                {property && (
-                  <p className="hidden font-mono text-[10px] uppercase tracking-wider text-steel md:block">
-                    Mismo barrio o tipo · ±25% precio
-                  </p>
                 )}
-              </header>
-              <ul className="divide-y divide-bone">
-                {matches.map((p) => (
-                  <li key={p.id}>
-                    <PropertyMatchRow property={p} t={t} />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {/* Edit form */}
-          <div className="rounded-[4px] border border-bone bg-paper p-6">
-            <LeadForm
-              action={updateWithId}
-              submitLabel={t('save')}
-              defaults={{
-                full_name: lead.full_name,
-                email: lead.email,
-                phone: lead.phone,
-                origin: lead.origin,
-                status: lead.status ?? 'new',
-                property_id: lead.property_id,
-                assigned_agent_id: lead.assigned_agent_id,
-                ai_score: lead.ai_score,
-                notes: lead.notes,
-              }}
-              properties={propertiesForSelect}
-              agents={agentsRes.data ?? []}
-            />
-          </div>
-
-          {/* Interactions */}
-          <div className="rounded-[4px] border border-bone bg-paper">
-            <div className="border-b border-bone px-4 py-3">
-              <h3 className="text-[16px] font-medium tracking-[-0.3px] text-ink">
-                {t('interaction.title')}
-                <span className="ml-2 font-mono text-[11px] tabular-nums text-steel">
-                  {interactions.length}
-                </span>
-              </h3>
+              </div>
             </div>
-            <div className="p-4">
-              <AddInteractionForm leadId={lead.id} />
-            </div>
-            <div className="border-t border-bone">
-              {interactions.length === 0 ? (
-                <p className="px-4 py-8 text-center text-[13px] text-steel">
-                  {t('interaction.empty')}
+
+            <div className="px-5 py-2 pb-5">
+              {tasks.length === 0 ? (
+                <p className="py-6 text-center text-[13px] text-steel">
+                  Sin tareas pendientes.
                 </p>
               ) : (
-                <ul className="divide-y divide-bone">
-                  {interactions.map((it) => (
-                    <li key={it.id} className="px-4 py-3">
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-[10px] uppercase tracking-wider text-steel">
-                          {t(`interaction.type.${it.type}`, { fallback: it.type })}
-                        </span>
-                        <span className="font-mono text-[11px] text-steel">
-                          {dateLong(it.created_at)}
-                        </span>
+                <div>
+                  {tasks.map((task, i) => (
+                    <div
+                      key={i}
+                      className="flex items-start justify-between gap-4 py-3.5 border-b border-bone-soft last:border-b-0"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-[13px] text-ink leading-normal">
+                          {task.title}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          {task.auto && (
+                            <span className="font-mono text-[9px] tracking-[0.7px] uppercase px-1.5 py-0.5 rounded-full bg-bone-soft text-steel font-medium">
+                              Auto
+                            </span>
+                          )}
+                          <span
+                            className={`font-mono text-[9px] tracking-[0.7px] uppercase px-1.5 py-0.5 rounded-full font-medium ${task.urgencyStyle}`}
+                          >
+                            {task.urgencyLabel}
+                          </span>
+                          {task.reason && (
+                            <span className="text-[11px] text-steel">
+                              · {task.reason}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <p className="mt-1.5 whitespace-pre-wrap text-[13px] text-ink">
-                        {it.content}
-                      </p>
-                    </li>
+                      {task.cta && (
+                        <a
+                          href={task.cta.href}
+                          target={
+                            task.cta.href.startsWith('http')
+                              ? '_blank'
+                              : undefined
+                          }
+                          rel={
+                            task.cta.href.startsWith('http')
+                              ? 'noopener noreferrer'
+                              : undefined
+                          }
+                          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] bg-ink text-white text-[12px] font-medium hover:bg-coal transition-colors"
+                        >
+                          {task.cta.icon === 'phone' && (
+                            <Phone
+                              className="h-3 w-3"
+                              strokeWidth={1.5}
+                            />
+                          )}
+                          {task.cta.icon === 'calendar' && (
+                            <Calendar
+                              className="h-3 w-3"
+                              strokeWidth={1.5}
+                            />
+                          )}
+                          {task.cta.icon === 'whatsapp' && (
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                            >
+                              <path d="M17.5 14.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.1-1.3-.5-2.5-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6.1-.1.3-.4.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.4-.2.3-1 1-1 2.4 0 1.4 1 2.8 1.2 3 .1.2 2 3.1 4.9 4.3 2.9 1.2 2.9.8 3.4.8.5 0 1.6-.7 1.9-1.3.2-.7.2-1.2.2-1.3-.1-.1-.3-.2-.6-.4zM12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.3c1.4.8 3 1.2 4.8 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2z" />
+                            </svg>
+                          )}
+                          {task.cta.label}
+                        </a>
+                      )}
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
             </div>
-          </div>
+          </section>
         </div>
 
-        {/* Right col: meta — hidden on mobile (shown as chips above) */}
-        <div className="hidden lg:block space-y-4">
-          <SideCell label={t('table.status')}>
-            <span className="font-mono text-[12px] uppercase tracking-wider text-ink">
-              {t(`status.${lead.status ?? 'new'}`)}
-            </span>
-          </SideCell>
-          <SideCell label={t('table.origin')}>
-            <span className="font-mono text-[12px] uppercase tracking-wider text-steel">
-              {t(`origin.${lead.origin}`)}
-            </span>
-          </SideCell>
-          <SideCell label="Score IA">
-            <span className="font-mono text-[18px] font-medium tabular-nums text-signal">
-              {lead.ai_score ?? '—'}
-            </span>
-          </SideCell>
-          <SideCell label={t('table.property')}>
-            {property ? (
-              <Link
-                href={`/app/properties/${property.id}`}
-                className="text-[13px] font-medium text-ink hover:text-signal"
-              >
-                {property.title}
-              </Link>
-            ) : (
-              <span className="text-[13px] text-steel">{t('form.noProperty')}</span>
-            )}
-          </SideCell>
-          <SideCell label={t('form.assignedAgent')}>
-            <span className="text-[13px] text-ink">
-              {assignedAgent?.full_name ?? t('form.noAssignment')}
-            </span>
-          </SideCell>
-          <SideCell label="Creado">
-            <span className="font-mono text-[11px] text-steel">
-              {dateLong(lead.created_at)}
-            </span>
-          </SideCell>
+        {/* ── Sidebar ── */}
+        <div className="hidden lg:flex flex-col gap-3.5 sticky top-[76px]">
+          {/* About card */}
+          <section className="rounded-[12px] border border-bone bg-paper overflow-hidden">
+            <div className="px-4 pt-3.5 pb-2.5 flex justify-between items-center">
+              <h3 className="font-mono text-[10px] tracking-[1.4px] uppercase text-steel">
+                Sobre {lead.full_name.split(' ')[0]}
+              </h3>
+            </div>
+            <div className="px-4 pb-3.5">
+              <AboutRow label="Cliente desde" value={dateLong(lead.created_at)} mono />
+              <AboutRow
+                label="Origen"
+                value={
+                  <span className="font-mono text-[9px] tracking-[0.7px] uppercase px-1.5 py-0.5 rounded-full bg-bone-soft text-steel">
+                    {t(`origin.${lead.origin}`)}
+                  </span>
+                }
+              />
+              <AboutRow
+                label="Asignado a"
+                value={assignedAgent?.full_name ?? '—'}
+              />
+              <AboutRow label="Score IA" value={lead.ai_score != null ? String(lead.ai_score) : '—'} mono />
+            </div>
+          </section>
+
+          {/* Pipeline card */}
+          <section className="rounded-[12px] border border-bone bg-paper overflow-hidden">
+            <div className="px-4 pt-3.5 pb-2.5">
+              <h3 className="font-mono text-[10px] tracking-[1.4px] uppercase text-steel">
+                En el pipeline
+              </h3>
+            </div>
+            <div className="px-4 pb-4">
+              {/* Stage bars */}
+              <div className="flex gap-[3px] mb-2.5">
+                {PIPELINE_STAGES.map((stage, i) => (
+                  <div
+                    key={stage}
+                    className={`flex-1 h-[5px] rounded-[2px] ${
+                      i < pipelineIdx
+                        ? 'bg-ink'
+                        : i === pipelineIdx
+                          ? 'bg-signal'
+                          : 'bg-bone'
+                    }`}
+                  />
+                ))}
+              </div>
+              {/* Labels */}
+              <div className="flex justify-between font-mono text-[10px] tracking-[0.4px] text-steel-soft">
+                {PIPELINE_STAGES.map((stage, i) => (
+                  <span
+                    key={stage}
+                    className={
+                      i === pipelineIdx
+                        ? 'text-signal font-medium'
+                        : undefined
+                    }
+                  >
+                    {PIPELINE_LABELS[stage]}
+                  </span>
+                ))}
+              </div>
+              {/* Current info */}
+              {daysSinceContact !== null && (
+                <div className="mt-3.5 px-3 py-2.5 bg-paper-warm rounded-[7px] text-[12px] text-steel leading-normal">
+                  Lleva{' '}
+                  <strong className="text-ink font-medium">
+                    {daysSinceContact} días
+                  </strong>{' '}
+                  en {statusDisplay.label}.
+                  {interactions.length > 0 &&
+                    ` ${interactions.length} interacciones registradas.`}
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Technical details (collapsible) */}
+          <section className="rounded-[12px] border border-dashed border-bone bg-paper-warm overflow-hidden">
+            <div className="px-4 py-3 flex items-center justify-between cursor-pointer">
+              <div className="font-mono text-[10px] tracking-[1.4px] uppercase text-steel flex items-center gap-1.5">
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                >
+                  <circle cx="8" cy="8" r="2" />
+                  <path d="M8 1v3M8 12v3M1 8h3M12 8h3" />
+                </svg>
+                Detalles técnicos
+              </div>
+              <ChevronDown
+                className="h-[11px] w-[11px] text-steel-soft"
+                strokeWidth={1.5}
+              />
+            </div>
+          </section>
         </div>
       </div>
     </div>
   )
 }
 
-function PropertyHeroCard({
-  property,
-  t,
-}: {
-  property: Property
-  t: Awaited<ReturnType<typeof getTranslations<'leads'>>>
-}) {
-  const cover = coverUrl(property.images)
-  const location = [property.neighborhood, property.city]
-    .filter(Boolean)
-    .join(' · ')
+// ── Helper: About row ──
 
-  return (
-    <Link
-      href={`/app/properties/${property.id}`}
-      className="block overflow-hidden transition-colors hover:bg-bone/30"
-    >
-      <div className="grid gap-4 p-4 md:grid-cols-[180px_1fr] md:gap-5">
-        {/* Image */}
-        <div className="relative aspect-[4/3] overflow-hidden rounded-[4px] border border-bone bg-coal md:aspect-square">
-          {cover ? (
-            <Image
-              src={cover}
-              alt={property.title}
-              fill
-              sizes="(max-width: 768px) 100vw, 180px"
-              className="object-cover"
-            />
-          ) : (
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage:
-                  'linear-gradient(0deg, transparent 49%, rgba(255,255,255,0.06) 50%, transparent 51%)',
-                backgroundSize: '100% 16px',
-              }}
-            />
-          )}
-          {property.ai_score && (
-            <div className="absolute right-2 top-2 rounded-[3px] bg-paper/90 px-1.5 py-0.5 font-mono text-[10px] font-medium text-signal backdrop-blur-sm">
-              SCORE {property.ai_score}
-            </div>
-          )}
-        </div>
-
-        {/* Body */}
-        <div className="min-w-0 flex flex-col">
-          <h4 className="text-[16px] font-medium tracking-[-0.2px] text-ink line-clamp-1">
-            {property.title}
-          </h4>
-          {location && (
-            <p className="mt-1 inline-flex items-center gap-1 font-mono text-[11px] text-steel">
-              <MapPin className="h-3 w-3" strokeWidth={1.5} />
-              {location}
-            </p>
-          )}
-
-          <dl className="mt-3 grid grid-cols-3 gap-3 border-t border-bone pt-3">
-            <Stat
-              label="Tipo"
-              value={t(`form.${property.property_type}`, {
-                fallback: property.property_type,
-              })}
-            />
-            <Stat
-              label="Operación"
-              value={property.listing_type === 'sale' ? 'Venta' : 'Alquiler'}
-            />
-            <Stat
-              label="Precio"
-              value={
-                property.price
-                  ? formatPrice(Number(property.price))
-                  : '—'
-              }
-              accent
-            />
-            {property.bedrooms != null && (
-              <Stat label="Dorm." value={property.bedrooms} />
-            )}
-            {property.bathrooms != null && (
-              <Stat label="Baños" value={Number(property.bathrooms)} />
-            )}
-            {property.area_m2 != null && (
-              <Stat
-                label="Área"
-                value={`${Number(property.area_m2)} m²`}
-              />
-            )}
-          </dl>
-        </div>
-      </div>
-    </Link>
-  )
-}
-
-function PropertyMatchRow({
-  property,
-  t,
-}: {
-  property: Property
-  t: Awaited<ReturnType<typeof getTranslations<'leads'>>>
-}) {
-  const cover = coverUrl(property.images)
-  const location = [property.neighborhood, property.city]
-    .filter(Boolean)
-    .join(' · ')
-
-  return (
-    <Link
-      href={`/app/properties/${property.id}`}
-      className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-bone/30 active:bg-bone/30"
-    >
-      <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-[4px] border border-bone bg-coal">
-        {cover ? (
-          <Image
-            src={cover}
-            alt=""
-            fill
-            sizes="64px"
-            className="object-cover"
-          />
-        ) : null}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-medium text-ink">
-          {property.title}
-        </p>
-        <p className="truncate font-mono text-[10px] uppercase tracking-wider text-steel">
-          {location || '—'} · {t(`form.${property.property_type}`, {
-            fallback: property.property_type,
-          })}
-        </p>
-      </div>
-      <div className="shrink-0 text-right">
-        <p className="font-mono text-[13px] tabular-nums font-medium text-ink">
-          {property.price ? formatPrice(Number(property.price)) : '—'}
-        </p>
-        {property.ai_score != null && (
-          <p className="font-mono text-[10px] uppercase tracking-wider text-signal">
-            score {property.ai_score}
-          </p>
-        )}
-      </div>
-    </Link>
-  )
-}
-
-function Stat({
+function AboutRow({
   label,
   value,
-  accent,
+  mono,
 }: {
   label: string
   value: React.ReactNode
-  accent?: boolean
+  mono?: boolean
 }) {
   return (
-    <div>
-      <dt className="font-mono text-[10px] uppercase tracking-wider text-steel">
-        {label}
-      </dt>
-      <dd
-        className={`mt-0.5 font-mono text-[13px] tabular-nums ${
-          accent ? 'font-medium text-ink' : 'text-ink'
-        }`}
+    <div className="grid grid-cols-[1fr_auto] gap-3 py-[7px] text-[12px] items-center">
+      <span className="text-steel">{label}</span>
+      <span
+        className={`text-ink text-right ${mono ? 'font-mono text-[11px]' : ''}`}
       >
         {value}
-      </dd>
+      </span>
     </div>
   )
 }
 
-function SideCell({
-  label,
-  children,
-}: {
-  label: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="rounded-[4px] border border-bone bg-paper p-3">
-      <p className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
-        {label}
-      </p>
-      <div className="mt-1.5">{children}</div>
-    </div>
-  )
+// ── Helper: Compute smart tasks from lead data ──
+
+type SmartTask = {
+  title: string
+  auto: boolean
+  urgencyLabel: string
+  urgencyStyle: string
+  reason?: string
+  cta?: { label: string; href: string; icon: string }
+}
+
+function computeTasks(
+  lead: Lead,
+  interactions: Interaction[],
+  property: Property | null,
+  daysSinceContact: number | null,
+): SmartTask[] {
+  const tasks: SmartTask[] = []
+
+  if (daysSinceContact !== null && daysSinceContact > 7 && lead.phone) {
+    tasks.push({
+      title: `Llamar a ${lead.full_name.split(' ')[0]} para retomar contacto`,
+      auto: true,
+      urgencyLabel:
+        daysSinceContact > 14
+          ? `Vencida hace ${daysSinceContact - 7} días`
+          : 'Esta semana',
+      urgencyStyle:
+        daysSinceContact > 14
+          ? 'bg-signal-bg text-signal-deep'
+          : 'bg-amber-bg text-amber-text',
+      reason: 'generada porque está cooling',
+      cta: { label: 'Llamar', href: `tel:${lead.phone}`, icon: 'phone' },
+    })
+  }
+
+  if (
+    property &&
+    lead.status !== 'viewing_scheduled' &&
+    lead.status !== 'negotiating' &&
+    lead.status !== 'closed_won' &&
+    lead.status !== 'closed_lost'
+  ) {
+    const hasVisit = interactions.some((i) => i.type === 'visit')
+    if (!hasVisit) {
+      tasks.push({
+        title: `Agendar visita a ${property.title}`,
+        auto: false,
+        urgencyLabel: 'Pendiente',
+        urgencyStyle: 'bg-paper-warm text-steel',
+        reason: 'cliente mostró interés',
+        cta: { label: 'Agendar', href: '#', icon: 'calendar' },
+      })
+    }
+  }
+
+  if (
+    daysSinceContact !== null &&
+    daysSinceContact > 3 &&
+    daysSinceContact <= 7 &&
+    lead.phone
+  ) {
+    tasks.push({
+      title: `Enviar seguimiento por WhatsApp`,
+      auto: true,
+      urgencyLabel: 'Esta semana',
+      urgencyStyle: 'bg-amber-bg text-amber-text',
+      reason: `${daysSinceContact} días sin respuesta`,
+      cta: {
+        label: 'WhatsApp',
+        href: `https://wa.me/${lead.phone.replace(/[^0-9+]/g, '')}`,
+        icon: 'whatsapp',
+      },
+    })
+  }
+
+  return tasks
 }
