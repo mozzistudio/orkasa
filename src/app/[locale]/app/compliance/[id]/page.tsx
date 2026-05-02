@@ -102,6 +102,36 @@ const ACTION_TO_TIMELINE: Record<
         ? `<strong>${actor}</strong> rechazó el deal`
         : 'Se rechazó el deal',
   },
+  flag_pep_cleared: {
+    variant: 'verified',
+    text: (details, actor) => {
+      const d = details as { answer?: string }
+      const answerText = d.answer === 'no'
+        ? 'sin parientes en cargos públicos'
+        : 'con parientes en cargos públicos — declaración pendiente'
+      return actor
+        ? `<strong>${actor}</strong> aclaró la pregunta PEP — ${answerText}`
+        : `Se aclaró la pregunta PEP — ${answerText}`
+    },
+  },
+  flag_high_amount_cleared: {
+    variant: 'verified',
+    text: (_d, actor) =>
+      actor
+        ? `<strong>${actor}</strong> reportó la operación a la UAF`
+        : 'Se reportó la operación a la UAF',
+  },
+  flag_ubo_cleared: {
+    variant: 'verified',
+    text: (_d, actor) =>
+      actor
+        ? `<strong>${actor}</strong> verificó el beneficiario final`
+        : 'Se verificó el beneficiario final',
+  },
+  created: {
+    variant: 'created',
+    text: () => 'Expediente abierto al pasar a <strong>Negociando</strong>',
+  },
 }
 
 export default async function ComplianceDetailPage({
@@ -177,9 +207,20 @@ export default async function ComplianceDetailPage({
   const missingRequired = requiredDocs.filter((d) => d.status !== 'verified')
   const optionalDocs = documents.filter((d) => d.is_required === false)
 
-  // Build pending questions from screening flags
+  // Build pending questions from screening flags. A flag stays "pending" until
+  // the broker explicitly clears it via the PEP modal (logged as
+  // `flag_pep_cleared` in the audit trail). Once cleared, the dossier moves
+  // from `incomplete` → `flagged` (banner) and broker can approve with
+  // justification.
+  const clearedFlags = new Set(
+    audit
+      .filter((a) => a.action.startsWith('flag_') && a.action.endsWith('_cleared'))
+      .map((a) => a.action.replace(/^flag_(.+)_cleared$/, '$1')),
+  )
   const pendingQuestions: Array<{ flagType: 'pep' | 'high_amount' | 'ubo' }> = []
-  if (check.pep_match) pendingQuestions.push({ flagType: 'pep' })
+  if (check.pep_match && !clearedFlags.has('pep')) {
+    pendingQuestions.push({ flagType: 'pep' })
+  }
 
   const state: DossierState = computeDossierState({
     sanctionsMatch: check.sanctions_match ?? false,
@@ -265,8 +306,10 @@ export default async function ComplianceDetailPage({
     }
   })
 
-  // Add the check creation as the last event
-  if (check.created_at) {
+  // Add the check creation as the last event if there's no audit-logged
+  // 'created' event for it.
+  const hasCreatedEvent = audit.some((a) => a.action === 'created')
+  if (!hasCreatedEvent && check.created_at) {
     timelineEvents.push({
       id: 'created',
       text: 'Expediente abierto al pasar a <strong>Negociando</strong>',
