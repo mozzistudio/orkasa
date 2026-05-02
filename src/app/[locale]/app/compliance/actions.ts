@@ -500,3 +500,101 @@ export async function setAlertStatus(
   revalidatePath('/app/compliance')
   return {}
 }
+
+// =============================================================================
+// Broker-view actions
+// =============================================================================
+
+export async function approveDeal(
+  leadId: string,
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: checks, error: fetchErr } = await supabase
+    .from('compliance_checks')
+    .select('id')
+    .eq('lead_id', leadId)
+    .neq('status', 'approved')
+
+  if (fetchErr) return { error: fetchErr.message }
+  if (!checks?.length) return {}
+
+  const now = new Date().toISOString()
+  const { error } = await supabase
+    .from('compliance_checks')
+    .update({
+      status: 'approved' as ComplianceStatus,
+      reviewed_by: user.id,
+      reviewed_at: now,
+    })
+    .eq('lead_id', leadId)
+    .neq('status', 'approved')
+
+  if (error) return { error: error.message }
+
+  for (const c of checks) {
+    await logAudit(c.id, 'deal_approved', { approved_by: user.id })
+  }
+
+  revalidatePath('/app/compliance')
+  return {}
+}
+
+export async function logWhatsAppReminder(
+  leadId: string,
+  documentType: string,
+): Promise<void> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return
+
+  await supabase.from('lead_interactions').insert({
+    lead_id: leadId,
+    type: 'whatsapp_reminder',
+    content: `Reminder sent for: ${documentType}`,
+    agent_id: user.id,
+  })
+
+  const { data: check } = await supabase
+    .from('compliance_checks')
+    .select('id')
+    .eq('lead_id', leadId)
+    .limit(1)
+    .maybeSingle<{ id: string }>()
+
+  if (check) {
+    await logAudit(check.id, 'whatsapp_reminder_sent', { documentType })
+  }
+
+  revalidatePath('/app/compliance')
+}
+
+export async function postponeReminder(
+  leadId: string,
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: check } = await supabase
+    .from('compliance_checks')
+    .select('id')
+    .eq('lead_id', leadId)
+    .limit(1)
+    .maybeSingle<{ id: string }>()
+
+  if (check) {
+    await logAudit(check.id, 'reminder_postponed', { postponed_by: user.id })
+  }
+
+  revalidatePath('/app/compliance')
+  return {}
+}
