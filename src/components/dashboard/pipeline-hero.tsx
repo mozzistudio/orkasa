@@ -1,11 +1,12 @@
 import { getTranslations } from 'next-intl/server'
-import { ArrowRight, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { ArrowRight, Minus } from 'lucide-react'
+import { TrendingUpIcon, TrendingDownIcon } from '@/components/icons/icons'
 import { formatPriceCompact } from '@/lib/utils'
 import type { PipelineSnapshot } from '@/lib/queries/dashboard'
 
 function TrendIcon({ delta }: { delta: number }) {
-  if (delta > 0) return <TrendingUp className="h-3 w-3" strokeWidth={1.75} />
-  if (delta < 0) return <TrendingDown className="h-3 w-3" strokeWidth={1.75} />
+  if (delta > 0) return <TrendingUpIcon size={12} />
+  if (delta < 0) return <TrendingDownIcon size={12} />
   return <Minus className="h-3 w-3" strokeWidth={1.75} />
 }
 

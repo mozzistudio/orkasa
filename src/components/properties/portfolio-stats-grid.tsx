@@ -1,4 +1,5 @@
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { Minus } from 'lucide-react'
+import { TrendingUpIcon, TrendingDownIcon } from '@/components/icons/icons'
 import { formatPriceCompact } from '@/lib/utils'
 import type { PortfolioSnapshot } from '@/lib/queries/properties'
 
@@ -11,12 +12,12 @@ function DeltaPill({ delta }: { delta: number }) {
       </span>
     )
   }
-  const Icon = delta > 0 ? TrendingUp : TrendingDown
+  const Icon = delta > 0 ? TrendingUpIcon : TrendingDownIcon
   return (
     <span
       className={`inline-flex items-center gap-1 ${delta > 0 ? 'text-green-text' : 'text-signal-deep'} font-medium`}
     >
-      <Icon className="h-3 w-3" strokeWidth={1.75} />
+      <Icon size={12} />
       {delta > 0 ? '+' : ''}
       {delta} esta semana
     </span>

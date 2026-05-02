@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
-import { Calendar } from 'lucide-react'
+import { CalendarIcon } from '@/components/icons/icons'
 import type { UpcomingViewing } from '@/lib/queries/dashboard'
 
 export async function VisitsPanel({
@@ -16,7 +16,7 @@ export async function VisitsPanel({
         <div className="border-b border-bone px-[18px] py-[14px]">
           <div className="flex items-center gap-[7px] text-[14px] font-medium text-ink">
             <span className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px] bg-bone-soft text-steel">
-              <Calendar className="h-3 w-3" strokeWidth={1.5} />
+              <CalendarIcon size={12} />
             </span>
             {t('title')}
           </div>
@@ -34,7 +34,7 @@ export async function VisitsPanel({
         <div className="min-w-0">
           <div className="mb-[3px] flex items-center gap-[7px] text-[14px] font-medium text-ink">
             <span className="flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded-[5px] bg-bone-soft text-steel">
-              <Calendar className="h-3 w-3" strokeWidth={1.5} />
+              <CalendarIcon size={12} />
             </span>
             {t('title')}
           </div>

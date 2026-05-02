@@ -1,7 +1,13 @@
 'use client'
 
 import { Link } from '@/i18n/navigation'
-import { Share2, ArrowDown, MoreHorizontal, Users, Star } from 'lucide-react'
+import { MoreHorizontal } from 'lucide-react'
+import {
+  ShareIcon,
+  ArrowDownIcon,
+  PeopleIcon,
+  StarIcon,
+} from '@/components/icons/icons'
 import { formatPriceCompact } from '@/lib/utils'
 import {
   computePropertyAlert,
@@ -46,17 +52,17 @@ function coverUrl(images: unknown): string | null {
 function MiniBtnIcon({ tag }: { tag: string }) {
   switch (tag) {
     case 'caliente':
-      return <Share2 className="h-[13px] w-[13px]" strokeWidth={1.5} />
+      return <ShareIcon size={13} />
     case 'atencion':
-      return <ArrowDown className="h-[13px] w-[13px]" strokeWidth={1.5} />
+      return <ArrowDownIcon size={13} />
     case 'estancada':
       return <MoreHorizontal className="h-[13px] w-[13px]" strokeWidth={1.5} />
     case 'vence_pronto':
-      return <Users className="h-[13px] w-[13px]" strokeWidth={1.5} />
+      return <PeopleIcon size={13} />
     case 'oportunidad':
-      return <Star className="h-[13px] w-[13px]" strokeWidth={1.5} />
+      return <StarIcon size={13} />
     default:
-      return <Share2 className="h-[13px] w-[13px]" strokeWidth={1.5} />
+      return <ShareIcon size={13} />
   }
 }
 

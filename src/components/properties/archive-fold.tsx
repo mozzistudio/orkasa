@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { Link } from '@/i18n/navigation'
-import { Archive, ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
+import { ArchiveIcon, ChevronDownIcon } from '@/components/icons/icons'
 import { formatPriceCompact } from '@/lib/utils'
 import { formatRelativeEs } from '@/lib/compliance-copy'
 import type { ArchivedProperty } from '@/lib/queries/properties'
@@ -30,7 +31,7 @@ export function ArchiveFold({ items }: { items: ArchivedProperty[] }) {
       >
         <div className="flex items-center gap-[10px]">
           <span className="flex h-7 w-7 items-center justify-center rounded-[5px] border border-bone bg-paper text-steel">
-            <Archive className="h-[13px] w-[13px]" strokeWidth={1.5} />
+            <ArchiveIcon size={13} />
           </span>
           <span className="text-[12px] text-steel">
             <span className="font-medium text-ink">
@@ -41,7 +42,7 @@ export function ArchiveFold({ items }: { items: ArchivedProperty[] }) {
           </span>
         </div>
         {open ? (
-          <ChevronDown className="h-3 w-3 text-steel-soft" strokeWidth={1.5} />
+          <ChevronDownIcon size={12} className="text-steel-soft" />
         ) : (
           <ChevronRight className="h-3 w-3 text-steel-soft" strokeWidth={1.5} />
         )}

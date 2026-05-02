@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
-import { Snowflake } from 'lucide-react'
+import { SnowflakeIcon } from '@/components/icons/icons'
 import type { CoolingLead } from '@/lib/queries/dashboard'
 import { CoolingLeadRow } from './cooling-lead-row'
 
@@ -13,7 +13,7 @@ export async function CoolingLeadsPanel({ leads }: { leads: CoolingLead[] }) {
         <div className="border-b border-bone px-[18px] py-[14px]">
           <div className="flex items-center gap-[7px] text-[14px] font-medium text-ink">
             <span className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px] bg-signal-bg text-signal-deep">
-              <Snowflake className="h-3 w-3" strokeWidth={1.5} />
+              <SnowflakeIcon size={12} />
             </span>
             {t('title')}
           </div>
@@ -31,7 +31,7 @@ export async function CoolingLeadsPanel({ leads }: { leads: CoolingLead[] }) {
         <div className="min-w-0">
           <div className="mb-[3px] flex items-center gap-[7px] text-[14px] font-medium text-ink">
             <span className="flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded-[5px] bg-signal-bg text-signal-deep">
-              <Snowflake className="h-3 w-3" strokeWidth={1.5} />
+              <SnowflakeIcon size={12} />
             </span>
             {t('title')}
           </div>
