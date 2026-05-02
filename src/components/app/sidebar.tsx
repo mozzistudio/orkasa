@@ -46,7 +46,7 @@ export function Sidebar({
   const pathname = usePathname()
 
   return (
-    <aside className="fixed left-0 top-0 flex h-full w-60 flex-col border-r border-bone bg-paper">
+    <aside className="fixed left-0 top-0 flex h-full w-60 flex-col border-r border-bone bg-paper-warm">
       <div className="flex h-16 items-center px-5">
         <Link href="/">
           <LogoLockup className="h-9" />
@@ -62,10 +62,10 @@ export function Sidebar({
             <Link
               key={key}
               href={href}
-              className={`mb-0.5 flex items-center gap-3 rounded-[4px] px-3 py-2 text-[13px] transition-colors ${
+              className={`mb-0.5 flex items-center gap-2.5 rounded-[4px] px-2.5 py-[7px] text-[13px] transition-colors ${
                 isActive
-                  ? 'border-l-2 border-signal bg-bone/50 font-medium text-ink'
-                  : 'text-steel hover:bg-bone/50 hover:text-ink'
+                  ? 'bg-ink font-medium text-paper'
+                  : 'text-steel hover:bg-bone-soft hover:text-ink'
               }`}
             >
               <Icon className="h-4 w-4" strokeWidth={1.5} />
@@ -77,7 +77,7 @@ export function Sidebar({
 
       <div className="border-t border-bone p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-[4px] bg-bone font-mono text-[11px] text-ink">
+          <div className="flex h-[26px] w-[26px] items-center justify-center rounded-full bg-ink font-sans text-[11px] font-medium text-paper">
             {initials(user.fullName)}
           </div>
           <div className="flex-1 min-w-0">

@@ -53,8 +53,8 @@ function breadcrumbForPath(pathname: string): string {
   if (pathname.startsWith('/app/compliance')) return 'Compliance'
   if (pathname.startsWith('/app/integrations')) return 'Integraciones'
   if (pathname.startsWith('/app/settings')) return 'Configuración'
-  if (pathname === '/app') return 'Dashboard'
-  return 'Dashboard'
+  if (pathname === '/app') return 'Inicio'
+  return 'Inicio'
 }
 
 function mobileTitleForPath(pathname: string): string {
@@ -71,7 +71,7 @@ function mobileTitleForPath(pathname: string): string {
   if (pathname.startsWith('/app/compliance')) return 'Compliance'
   if (pathname.startsWith('/app/integrations')) return 'Integraciones'
   if (pathname.startsWith('/app/settings')) return 'Configuración'
-  return 'Orkasa'
+  return 'Inicio'
 }
 
 function openCommandPalette() {
@@ -112,8 +112,20 @@ export function Topbar() {
       </div>
 
       {/* Desktop: breadcrumb */}
-      <div className="hidden md:block font-mono text-[12px] text-steel">
-        {breadcrumbForPath(pathname)}
+      <div className="hidden md:flex items-center gap-2 text-[12px]">
+        <span className="text-ink">{breadcrumbForPath(pathname)}</span>
+        {isApp && (
+          <>
+            <span className="text-steel-soft">·</span>
+            <span className="font-mono text-[10px] uppercase tracking-[1.2px] text-steel">
+              {new Date().toLocaleDateString('es-PA', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+              })}
+            </span>
+          </>
+        )}
       </div>
 
       <div className="flex items-center gap-1 md:gap-4">
@@ -139,16 +151,25 @@ export function Topbar() {
           <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-signal" />
         </button>
 
-        {/* Primary CTA — only on Dashboard root (other pages have their own) */}
+        {/* CTAs — only on home root */}
         {isApp && (
-          <Link
-            href="/app/properties/new"
-            className="inline-flex items-center gap-1.5 rounded-[4px] bg-ink px-3 py-2 text-[13px] font-medium text-paper hover:bg-coal active:bg-coal transition-colors md:px-4"
-            aria-label={t('uploadProperty')}
-          >
-            <Plus className="h-4 w-4 md:h-3.5 md:w-3.5" strokeWidth={1.5} />
-            <span className="hidden md:inline">{t('uploadProperty')}</span>
-          </Link>
+          <>
+            <Link
+              href="/app/leads/new"
+              className="hidden md:inline-flex items-center gap-1.5 rounded-[4px] border border-bone bg-paper px-3 py-2 text-[12px] font-medium text-ink hover:border-steel-soft transition-colors"
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="5" r="2.5"/><path d="M3 14c0-2.8 2.2-5 5-5s5 2.2 5 5"/><path d="M11 3l1.5 1.5M12.5 3L11 4.5"/></svg>
+              {t('newLead')}
+            </Link>
+            <Link
+              href="/app/properties/new"
+              className="inline-flex items-center gap-1.5 rounded-[4px] bg-ink px-3 py-2 text-[13px] font-medium text-paper hover:bg-coal active:bg-coal transition-colors md:px-4"
+              aria-label={t('uploadProperty')}
+            >
+              <Plus className="h-4 w-4 md:h-3.5 md:w-3.5" strokeWidth={1.5} />
+              <span className="hidden md:inline">{t('uploadProperty')}</span>
+            </Link>
+          </>
         )}
       </div>
     </header>

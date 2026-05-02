@@ -122,7 +122,7 @@
     "testimonialRole": "Founder, Vásquez Bienes Raíces"
   },
   "dashboard": {
-    "title": "Dashboard",
+    "title": "Inicio",
     "inventory": "Inventario",
     "leads": "Leads",
     "agents": "Agentes",
@@ -130,8 +130,9 @@
     "compliance": "Compliance",
     "integrations": "Integraciones",
     "settings": "Configuración",
-    "search": "Buscar...",
+    "search": "Buscar cliente, propiedad...",
     "uploadProperty": "Cargar propiedad",
+    "newLead": "Lead",
     "recentLeads": "Últimos leads",
     "featuredProperties": "Propiedades destacadas",
     "lead": "Lead",
@@ -141,9 +142,69 @@
     "action": "Acción",
     "view": "Ver",
     "emptyTitle": "Tu brokerage está vacío",
-    "emptyDescription": "Cargá una propiedad o sembramos datos demo para que veas cómo funciona el dashboard.",
+    "emptyDescription": "Cargá una propiedad o sembramos datos demo para que veas cómo funciona.",
     "seedDemo": "Sembrar datos demo",
-    "seeding": "Sembrando..."
+    "seeding": "Sembrando...",
+    "pipeline": {
+      "label": "Pipeline · este mes",
+      "readyToSign": "listos para firmar",
+      "closedAlready": "cerrados ya",
+      "estimatedCommission": "comisión estimada",
+      "closedMonth": "Cerrados mes",
+      "closeRate": "Tasa cierre",
+      "visits7d": "Visitas 7d",
+      "vsLastMonth": "vs {period}",
+      "pts": "pts"
+    },
+    "today": {
+      "title": "Hoy hay que · {count} acciones",
+      "potential": "potencial {amount} en juego",
+      "openLead": "Abrir lead",
+      "assign": "Asignar",
+      "reactivate": "Reactivar",
+      "noUrgency": "Sin urgencia"
+    },
+    "cooling": {
+      "title": "Leads que se enfrían",
+      "subtitle": "{count} leads sin contacto reciente — relanzá antes de perderlos",
+      "daysSilent": "{days} días sin contacto",
+      "reactivate": "Reactivar",
+      "viewPipeline": "Ver pipeline",
+      "empty": "Ningún lead se enfría. Buen seguimiento"
+    },
+    "properties": {
+      "title": "Propiedades a revisar",
+      "subtitle": "{count} propiedades que requieren tu atención",
+      "viewInventory": "Inventario",
+      "empty": "Tu inventario está al día. Sin alertas.",
+      "boost": "Boostear publicación",
+      "viewLeads": "Ver leads",
+      "notifyLeads": "Notificar leads",
+      "renewListing": "Renovar listing"
+    },
+    "team": {
+      "title": "Mi equipo · esta semana",
+      "fullReport": "Reporte completo",
+      "pipeline": "Pipeline",
+      "avgResponse": "Resp. media",
+      "deals": "Deals",
+      "dealsOpen": "{count} abiertos",
+      "uncontacted": "Sin contactar",
+      "uncontactedLeads": "{count} leads",
+      "viewProfile": "Ver perfil",
+      "help": "Ayudar",
+      "empty": "Invitá a tu primer agente",
+      "yourMetrics": "Tus métricas · esta semana"
+    },
+    "empty": {
+      "title": "Bienvenido a Orkasa",
+      "cta1": "Cargar propiedad",
+      "cta2": "Crear lead"
+    },
+    "error": {
+      "block": "No pude cargar este bloque.",
+      "retry": "Reintentar"
+    }
   },
   "integrations": {
     "title": "Integraciones",
