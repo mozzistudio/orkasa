@@ -15,6 +15,7 @@ import { PropertiesControls } from '@/components/properties/properties-controls'
 import { PropertyCard } from '@/components/properties/property-card'
 import { DraftRow } from '@/components/properties/draft-row'
 import { ArchiveFold } from '@/components/properties/archive-fold'
+import { PropertiesTableView } from '@/components/properties/properties-table-view'
 
 const KNOWN_LISTING: readonly string[] = ['all', 'sale', 'rent']
 const KNOWN_OWNER: readonly string[] = ['all', 'mine', 'team']
@@ -137,62 +138,74 @@ export default async function PropertiesPage({
         view={view}
       />
 
-      {/* ACTIVAS */}
-      <SectionHeader
-        emoji="🟢"
-        title="Activas"
-        count={`${active.length} propiedad${active.length === 1 ? '' : 'es'}`}
-        meta={
-          active.length > 1 ? (
-            <>
-              ordenadas por <span className="text-ink">actividad reciente</span>
-            </>
-          ) : null
-        }
-      />
-
-      {active.length === 0 ? (
-        <div className="rounded-[10px] border border-dashed border-bone bg-paper-warm p-8 text-center text-[13px] text-steel">
-          {q || listing !== 'all' || owner !== 'all'
-            ? 'No encontramos propiedades con esos filtros.'
-            : 'No tenés propiedades publicadas todavía. Completá tus borradores para empezar a recibir leads.'}
-        </div>
-      ) : (
+      {view === 'table' ? (
         <Suspense fallback={null}>
-          <div className="grid grid-cols-1 gap-[14px] md:grid-cols-2 lg:grid-cols-3">
-            {active.map((p, i) => (
-              <PropertyCard key={p.id} property={p} fallbackIndex={i} />
-            ))}
-          </div>
+          <PropertiesTableView
+            active={active}
+            drafts={drafts}
+            archived={archived}
+          />
         </Suspense>
-      )}
-
-      {/* EN PROCESO */}
-      {drafts.length > 0 && (
+      ) : (
         <>
+          {/* ACTIVAS */}
           <SectionHeader
-            emoji="📝"
-            title="En proceso"
-            count={`${drafts.length} borrador${drafts.length === 1 ? '' : 'es'}`}
-            meta="completá para publicar"
+            emoji="🟢"
+            title="Activas"
+            count={`${active.length} propiedad${active.length === 1 ? '' : 'es'}`}
+            meta={
+              active.length > 1 ? (
+                <>
+                  ordenadas por <span className="text-ink">actividad reciente</span>
+                </>
+              ) : null
+            }
           />
-          <div className="overflow-hidden rounded-[10px] border border-bone bg-paper">
-            {drafts.map((d, i) => (
-              <DraftRow key={d.id} draft={d} fallbackIndex={i} />
-            ))}
-          </div>
-        </>
-      )}
 
-      {/* ARCHIVO */}
-      {archived.length > 0 && (
-        <>
-          <SectionHeader
-            emoji="📦"
-            title="Archivo"
-            count={`${archived.length} propiedad${archived.length === 1 ? '' : 'es'}`}
-          />
-          <ArchiveFold items={archived} />
+          {active.length === 0 ? (
+            <div className="rounded-[10px] border border-dashed border-bone bg-paper-warm p-8 text-center text-[13px] text-steel">
+              {q || listing !== 'all' || owner !== 'all'
+                ? 'No encontramos propiedades con esos filtros.'
+                : 'No tenés propiedades publicadas todavía. Completá tus borradores para empezar a recibir leads.'}
+            </div>
+          ) : (
+            <Suspense fallback={null}>
+              <div className="grid grid-cols-1 gap-[14px] md:grid-cols-2 lg:grid-cols-3">
+                {active.map((p, i) => (
+                  <PropertyCard key={p.id} property={p} fallbackIndex={i} />
+                ))}
+              </div>
+            </Suspense>
+          )}
+
+          {/* EN PROCESO */}
+          {drafts.length > 0 && (
+            <>
+              <SectionHeader
+                emoji="📝"
+                title="En proceso"
+                count={`${drafts.length} borrador${drafts.length === 1 ? '' : 'es'}`}
+                meta="completá para publicar"
+              />
+              <div className="overflow-hidden rounded-[10px] border border-bone bg-paper">
+                {drafts.map((d, i) => (
+                  <DraftRow key={d.id} draft={d} fallbackIndex={i} />
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* ARCHIVO */}
+          {archived.length > 0 && (
+            <>
+              <SectionHeader
+                emoji="📦"
+                title="Archivo"
+                count={`${archived.length} propiedad${archived.length === 1 ? '' : 'es'}`}
+              />
+              <ArchiveFold items={archived} />
+            </>
+          )}
         </>
       )}
     </div>
