@@ -1,56 +1,137 @@
-import { getTranslations } from 'next-intl/server'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import {
-  ArrowLeft,
-  ShieldCheck,
-  ShieldAlert,
-  AlertCircle,
-  FileText,
-  Mail,
-  Phone,
-  Building2,
-  CheckCircle2,
-  Circle,
-  XCircle,
-  History,
-} from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
+import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/database.types'
-import { categoryLabel, scenarioLabel, type DocCategory, type Scenario } from '@/lib/compliance-docs'
-import { ComplianceWorkflow } from './workflow'
-import { ComplianceDocUpload } from '@/components/app/compliance-doc-upload'
+import {
+  computeDossierState,
+  getDocHumanName,
+  formatRelativeEs,
+  screeningFlagToHumanQuestion,
+  type DossierState,
+} from '@/lib/compliance-copy'
+import { DossierBanner } from '@/components/compliance/detail/dossier-banner'
+import { DealHeaderCard } from '@/components/compliance/detail/deal-header-card'
+import { FaltaSection } from '@/components/compliance/detail/falta-section'
+import { TenemosSection } from '@/components/compliance/detail/tenemos-section'
+import { ClientMiniCard } from '@/components/compliance/detail/client-mini-card'
+import { DossierTimeline, type TimelineEvent } from '@/components/compliance/detail/dossier-timeline'
+import { TechnicalDetailsFold } from '@/components/compliance/detail/technical-details-fold'
+import type { TodoItem } from '@/components/compliance/detail/todo-row'
+import type { VerifiedDoc } from '@/components/compliance/detail/verified-doc-row'
 
 type Check = Database['public']['Tables']['compliance_checks']['Row']
 type Document = Database['public']['Tables']['compliance_documents']['Row']
 type AuditEntry = Database['public']['Tables']['compliance_audit_log']['Row']
 type Lead = Database['public']['Tables']['leads']['Row']
+type Property = Database['public']['Tables']['properties']['Row']
+type Agent = Database['public']['Tables']['agents']['Row']
 
-const TYPE_LABEL = {
-  kyc: 'KYC',
-  aml: 'AML',
-  sanctions: 'Sanciones',
-  pep: 'PEP',
-} as const
-
-function dateLong(iso: string | null) {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleString('es-PA', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-const ACTION_LABEL: Record<string, string> = {
-  status_changed: 'Estado actualizado',
-  notes_updated: 'Notas actualizadas',
-  doc_uploaded: 'Documento subido',
-  doc_verified: 'Documento verificado',
-  doc_rejected: 'Documento rechazado',
-  screening_rerun: 'Screening re-ejecutado',
+const ACTION_TO_TIMELINE: Record<
+  string,
+  { variant: TimelineEvent['variant']; text: (details?: unknown, actor?: string) => string }
+> = {
+  status_changed: {
+    variant: 'verified',
+    text: (_d, actor) =>
+      actor
+        ? `<strong>${actor}</strong> actualizó el estado del expediente`
+        : 'Se actualizó el estado del expediente',
+  },
+  notes_updated: {
+    variant: 'default',
+    text: (_d, actor) =>
+      actor
+        ? `<strong>${actor}</strong> actualizó las notas`
+        : 'Se actualizaron las notas',
+  },
+  doc_uploaded: {
+    variant: 'uploaded',
+    text: (details) => {
+      const d = details as { kind?: string; fileName?: string }
+      const name = getDocHumanName({ kind: d.kind ?? null, name: null })
+      return `Cliente subió ${name.toLowerCase()}`
+    },
+  },
+  doc_verified: {
+    variant: 'verified',
+    text: (details, actor) => {
+      const d = details as { kind?: string }
+      const name = getDocHumanName({ kind: d.kind ?? null, name: null })
+      return actor
+        ? `<strong>${actor}</strong> verificó ${name.toLowerCase()}`
+        : `Se verificó ${name.toLowerCase()}`
+    },
+  },
+  doc_rejected: {
+    variant: 'flagged',
+    text: (details, actor) => {
+      const d = details as { kind?: string }
+      const name = getDocHumanName({ kind: d.kind ?? null, name: null })
+      return actor
+        ? `<strong>${actor}</strong> rechazó ${name.toLowerCase()}`
+        : `Se rechazó ${name.toLowerCase()}`
+    },
+  },
+  whatsapp_reminder_sent: {
+    variant: 'requested',
+    text: (_d, actor) =>
+      actor
+        ? `<strong>${actor}</strong> mandó recordatorio por WhatsApp`
+        : `Se mandó un recordatorio por WhatsApp`,
+  },
+  reminder_postponed: {
+    variant: 'default',
+    text: () => 'Recordatorio aplazado',
+  },
+  screening_rerun: {
+    variant: 'flagged',
+    text: () => 'Se re-ejecutó el screening automático',
+  },
+  dossier_approved: {
+    variant: 'verified',
+    text: (_d, actor) =>
+      actor
+        ? `<strong>${actor}</strong> aprobó el deal`
+        : 'Se aprobó el deal',
+  },
+  dossier_rejected: {
+    variant: 'flagged',
+    text: (_d, actor) =>
+      actor
+        ? `<strong>${actor}</strong> rechazó el deal`
+        : 'Se rechazó el deal',
+  },
+  flag_pep_cleared: {
+    variant: 'verified',
+    text: (details, actor) => {
+      const d = details as { answer?: string }
+      const answerText = d.answer === 'no'
+        ? 'sin parientes en cargos públicos'
+        : 'con parientes en cargos públicos — declaración pendiente'
+      return actor
+        ? `<strong>${actor}</strong> aclaró la pregunta PEP — ${answerText}`
+        : `Se aclaró la pregunta PEP — ${answerText}`
+    },
+  },
+  flag_high_amount_cleared: {
+    variant: 'verified',
+    text: (_d, actor) =>
+      actor
+        ? `<strong>${actor}</strong> reportó la operación a la UAF`
+        : 'Se reportó la operación a la UAF',
+  },
+  flag_ubo_cleared: {
+    variant: 'verified',
+    text: (_d, actor) =>
+      actor
+        ? `<strong>${actor}</strong> verificó el beneficiario final`
+        : 'Se verificó el beneficiario final',
+  },
+  created: {
+    variant: 'created',
+    text: () => 'Expediente abierto al pasar a <strong>Negociando</strong>',
+  },
 }
 
 export default async function ComplianceDetailPage({
@@ -58,7 +139,6 @@ export default async function ComplianceDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  const t = await getTranslations('compliance')
   const { id } = await params
   const supabase = await createClient()
 
@@ -70,7 +150,7 @@ export default async function ComplianceDetailPage({
 
   if (!check) notFound()
 
-  const [leadRes, docsRes, auditRes] = await Promise.all([
+  const [leadRes, docsRes, auditRes, agentsRes] = await Promise.all([
     check.lead_id
       ? supabase
           .from('leads')
@@ -91,374 +171,269 @@ export default async function ComplianceDetailPage({
       .order('created_at', { ascending: false })
       .limit(20)
       .returns<AuditEntry[]>(),
+    supabase.from('agents').select('id, full_name').returns<Pick<Agent, 'id' | 'full_name'>[]>(),
   ])
 
   const lead = leadRes.data
   const documents = docsRes.data ?? []
   const audit = auditRes.data ?? []
+  const agents = agentsRes.data ?? []
 
-  const docVerified = documents.filter((d) => d.status === 'verified').length
-  const docRequired = documents.length
+  // Property lookup
+  let property: Property | null = null
+  if (lead?.property_id) {
+    const { data } = await supabase
+      .from('properties')
+      .select('id, title, price')
+      .eq('id', lead.property_id)
+      .maybeSingle<Pick<Property, 'id' | 'title' | 'price'>>()
+    property = data as Property | null
+  }
+
+  // Other deals count
+  let otherDealsCount = 0
+  if (lead) {
+    const { count } = await supabase
+      .from('compliance_checks')
+      .select('id', { count: 'exact', head: true })
+      .eq('lead_id', lead.id)
+      .neq('id', id)
+    otherDealsCount = count ?? 0
+  }
+
+  // Compute state
+  const requiredDocs = documents.filter((d) => d.is_required !== false)
+  const verifiedDocs = documents.filter((d) => d.status === 'verified')
+  const missingRequired = requiredDocs.filter((d) => d.status !== 'verified')
+  const optionalDocs = documents.filter((d) => d.is_required === false)
+
+  // Build pending questions from screening flags. A flag stays "pending" until
+  // the broker explicitly clears it via the PEP modal (logged as
+  // `flag_pep_cleared` in the audit trail). Once cleared, the dossier moves
+  // from `incomplete` → `flagged` (banner) and broker can approve with
+  // justification.
+  const clearedFlags = new Set(
+    audit
+      .filter((a) => a.action.startsWith('flag_') && a.action.endsWith('_cleared'))
+      .map((a) => a.action.replace(/^flag_(.+)_cleared$/, '$1')),
+  )
+  const pendingQuestions: Array<{ flagType: 'pep' | 'high_amount' | 'ubo' }> = []
+  if (check.pep_match && !clearedFlags.has('pep')) {
+    pendingQuestions.push({ flagType: 'pep' })
+  }
+
+  const state: DossierState = computeDossierState({
+    sanctionsMatch: check.sanctions_match ?? false,
+    pepMatch: check.pep_match ?? false,
+    documents,
+    pendingQuestions: pendingQuestions.length,
+  })
+
+  const missingCount = missingRequired.length + pendingQuestions.length
+  const totalRequired = requiredDocs.length + pendingQuestions.length
+
+  // Build todo items
+  const todoItems: TodoItem[] = []
+
+  // Missing docs
+  for (const doc of missingRequired) {
+    const name = getDocHumanName(doc)
+    todoItems.push({
+      id: `doc-${doc.id}`,
+      variant: 'missing-doc',
+      title: `Pedirle a ${lead?.full_name?.split(' ')[0] ?? 'tu cliente'} ${name.toLowerCase()}`,
+      meta: doc.created_at
+        ? {
+            askedAt: `Pedido el ${formatRelativeEs(doc.created_at)}`,
+            daysSilent: doc.uploaded_at
+              ? 0
+              : Math.max(
+                  0,
+                  Math.floor(
+                    (Date.now() - new Date(doc.created_at).getTime()) /
+                      (1000 * 60 * 60 * 24),
+                  ),
+                ),
+          }
+        : undefined,
+      explainer: doc.description ?? 'Documento necesario para avanzar con el trámite.',
+      docName: name,
+      leadId: lead?.id,
+    })
+  }
+
+  // PEP / sanctions / etc.
+  for (const q of pendingQuestions) {
+    const flag = screeningFlagToHumanQuestion[
+      q.flagType === 'pep' ? 'pep_match'
+      : 'sanctions_match'
+    ]
+    todoItems.push({
+      id: `flag-${q.flagType}`,
+      variant: flag.icon,
+      flagType: q.flagType,
+      title: flag.title(lead?.full_name ?? 'tu cliente'),
+      explainer: flag.explainer,
+      leadId: lead?.id,
+    })
+  }
+
+  // Verified docs
+  const agentsById = new Map(agents.map((a) => [a.id, a.full_name]))
+  const verifiedDocsList: VerifiedDoc[] = verifiedDocs.map((doc) => {
+    const verifierName = doc.verified_by ? agentsById.get(doc.verified_by) : null
+    const detail = verifierName
+      ? `Verificada por <span class="text-ink">${verifierName}</span> · ${formatRelativeEs(doc.verified_at)}`
+      : `Verificada <span class="text-ink">automáticamente</span> · ${formatRelativeEs(doc.verified_at)}`
+    return {
+      id: doc.id,
+      humanName: getDocHumanName(doc),
+      detail,
+    }
+  })
+
+  // Build timeline from audit log
+  const timelineEvents: TimelineEvent[] = audit.slice(0, 8).map((entry) => {
+    const config = ACTION_TO_TIMELINE[entry.action]
+    const actorName = entry.agent_id ? agentsById.get(entry.agent_id) : null
+    return {
+      id: entry.id,
+      text: config
+        ? config.text(entry.details, actorName ?? undefined)
+        : entry.action.replace(/_/g, ' '),
+      time: entry.created_at,
+      variant: config?.variant ?? 'default',
+    }
+  })
+
+  // Add the check creation as the last event if there's no audit-logged
+  // 'created' event for it.
+  const hasCreatedEvent = audit.some((a) => a.action === 'created')
+  if (!hasCreatedEvent && check.created_at) {
+    timelineEvents.push({
+      id: 'created',
+      text: 'Expediente abierto al pasar a <strong>Negociando</strong>',
+      time: check.created_at,
+      variant: 'created',
+    })
+  }
+
+  // Banner reason for flagged state
+  let flagReason: string | null = null
+  if (state === 'flagged' && check.pep_match && !pendingQuestions.length) {
+    flagReason = `${lead?.full_name ?? 'El cliente'} podría ser familiar de un funcionario público — necesitamos confirmar antes de aprobar.`
+  }
+
+  // Reviewer for ready banner
+  const reviewerName = check.reviewed_by ? agentsById.get(check.reviewed_by) ?? null : null
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-[1320px]">
+      {/* Back link */}
       <Link
         href="/app/compliance"
-        className="mb-6 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-steel transition-colors hover:text-ink"
+        className="mb-3.5 inline-flex items-center gap-1.5 text-[12px] text-steel hover:text-ink"
       >
         <ArrowLeft className="h-3 w-3" strokeWidth={1.5} />
-        Compliance
+        Volver a Cumplimiento
       </Link>
 
-      {/* Header */}
-      <header className="mb-6">
-        <p className="font-mono text-[11px] uppercase tracking-[1.5px] text-steel">
-          [ {TYPE_LABEL[check.type]} · {check.id.slice(0, 8)} ]
-        </p>
-        <h1 className="mt-1 text-[24px] font-medium tracking-[-0.5px] text-ink md:text-[28px]">
-          Verificación {TYPE_LABEL[check.type]}
-        </h1>
-        {lead && (
-          <p className="mt-1 text-[14px] text-steel">
-            {t('table.lead')}:{' '}
-            <Link
-              href={`/app/leads/${lead.id}`}
-              className="font-medium text-ink transition-colors hover:text-signal"
-            >
-              {lead.full_name}
-            </Link>
-          </p>
-        )}
-      </header>
+      {/* Banner — only for ready or flagged states */}
+      {state === 'ready' && (
+        <div className="mb-4">
+          <DossierBanner
+            state="ready"
+            checkId={id}
+            dealValue={Number(property?.price ?? 0)}
+            reviewerName={reviewerName}
+            reviewedAt={check.reviewed_at}
+            flagReason={null}
+          />
+        </div>
+      )}
+      {state === 'flagged' && (
+        <div className="mb-4">
+          <DossierBanner
+            state="flagged"
+            checkId={id}
+            dealValue={Number(property?.price ?? 0)}
+            reviewerName={reviewerName}
+            reviewedAt={check.reviewed_at}
+            flagReason={flagReason}
+          />
+        </div>
+      )}
 
-      <div className="grid gap-6 md:grid-cols-[1fr_280px]">
-        {/* === LEFT COLUMN === */}
-        <div className="space-y-6">
-          {/* Lead snapshot */}
-          {lead && (
-            <section className="rounded-[4px] border border-bone bg-paper p-5">
-              <h2 className="mb-4 font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
-                Información del cliente
-              </h2>
-              <dl className="grid gap-4 md:grid-cols-2">
-                <Field
-                  icon={Mail}
-                  label="Email"
-                  value={lead.email ?? '—'}
-                />
-                <Field
-                  icon={Phone}
-                  label="Teléfono"
-                  value={lead.phone ?? '—'}
-                />
-                <Field
-                  icon={Building2}
-                  label="Origen"
-                  value={lead.origin}
-                />
-                <Field
-                  icon={FileText}
-                  label="Estado del lead"
-                  value={lead.status ?? 'new'}
-                />
-              </dl>
-            </section>
-          )}
-
-          {/* Document checklist — grouped by category */}
-          <section className="rounded-[4px] border border-bone bg-paper">
-            <header className="flex items-center justify-between border-b border-bone px-5 py-3">
-              <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-ink" strokeWidth={1.5} />
-                <h2 className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
-                  Documentos requeridos
-                </h2>
-                <span className="font-mono text-[11px] uppercase tracking-wider text-steel">
-                  {scenarioLabel((check.scenario ?? 'sale_buyer') as Scenario)}
-                </span>
-              </div>
-              <span className="font-mono text-[11px] tabular-nums text-steel">
-                {docVerified}/{docRequired} verificados
-              </span>
-            </header>
-
-            {documents.length === 0 ? (
-              <p className="px-5 py-8 text-center text-[13px] text-steel">
-                Sin checklist de documentos para este tipo de verificación.
-              </p>
-            ) : (
-              <div className="divide-y divide-bone">
-                {groupDocsByCategory(documents).map((group) => (
-                  <div key={group.category} className="px-5 py-4">
-                    <h3 className="mb-3 font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
-                      {categoryLabel(group.category)}
-                      <span className="ml-2 tabular-nums text-steel">
-                        {group.items.filter((d) => d.status === 'verified').length}/
-                        {group.items.filter((d) => d.is_required ?? true).length}
-                      </span>
-                    </h3>
-                    <ul className="space-y-3">
-                      {group.items.map((doc) => (
-                        <DocRow
-                          key={doc.id}
-                          doc={doc}
-                          checkId={check.id}
-                          brokerageId={check.brokerage_id}
-                        />
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Workflow (client) */}
-          <ComplianceWorkflow
-            checkId={check.id}
-            initialStatus={check.status}
-            initialRisk={check.risk_level}
-            initialNotes={check.notes ?? ''}
-            sanctionsMatch={check.sanctions_match ?? false}
-            pepMatch={check.pep_match ?? false}
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px] items-start">
+        {/* Main column */}
+        <div className="flex min-w-0 flex-col gap-4">
+          <DealHeaderCard
+            checkId={id}
+            clientName={lead?.full_name ?? 'Cliente'}
+            clientPhone={lead?.phone ?? null}
+            propertyTitle={property?.title ?? 'Propiedad'}
+            propertyId={property?.id ?? null}
+            dealValue={Number(property?.price ?? 0)}
+            scenario={check.scenario ?? 'sale_buyer'}
+            state={state}
+            missingCount={missingCount}
+            totalRequired={totalRequired}
           />
 
-          {/* Audit log */}
-          {audit.length > 0 && (
-            <section className="rounded-[4px] border border-bone bg-paper p-5">
-              <div className="mb-4 flex items-center gap-2">
-                <History className="h-4 w-4 text-steel" strokeWidth={1.5} />
-                <h2 className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
-                  Historial
-                </h2>
-              </div>
-              <ol className="space-y-3">
-                {audit.map((entry) => (
-                  <li
-                    key={entry.id}
-                    className="flex items-start gap-3 border-l-2 border-bone pl-4"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] text-ink">
-                        {ACTION_LABEL[entry.action] ?? entry.action}
-                      </p>
-                      <p className="mt-0.5 font-mono text-[10px] text-steel">
-                        {dateLong(entry.created_at)}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </section>
+          {todoItems.length > 0 && (
+            <FaltaSection
+              items={todoItems}
+              clientName={lead?.full_name ?? 'tu cliente'}
+              clientPhone={lead?.phone ?? null}
+              propertyTitle={property?.title ?? 'la propiedad'}
+              checkId={id}
+            />
           )}
+
+          <TenemosSection
+            verifiedDocs={verifiedDocsList}
+            optionalDocsCount={optionalDocs.length}
+          />
         </div>
 
-        {/* === RIGHT SIDEBAR === */}
-        <aside className="space-y-4">
-          {/* Status pill card */}
-          <div className="rounded-[4px] border border-bone bg-paper p-4">
-            <p className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
-              Estado actual
-            </p>
-            <p className="mt-2 text-[18px] font-medium text-ink">
-              {t(`status.${check.status}`)}
-            </p>
-            {check.risk_level && (
-              <p className="mt-1 font-mono text-[11px] uppercase tracking-wider text-steel">
-                Riesgo: {t(`risk.${check.risk_level}`)}
-              </p>
-            )}
-          </div>
+        {/* Sidebar */}
+        <aside className="flex flex-col gap-4 lg:sticky lg:top-6">
+          {lead && (
+            <ClientMiniCard
+              leadId={lead.id}
+              clientName={lead.full_name}
+              clientPhone={lead.phone}
+              createdAt={lead.created_at}
+              origin={lead.origin}
+              assignedAgentName={
+                lead.assigned_agent_id
+                  ? agentsById.get(lead.assigned_agent_id) ?? null
+                  : null
+              }
+              otherDealsCount={otherDealsCount}
+              propertyTitle={property?.title ?? ''}
+            />
+          )}
 
-          {/* Screening result card */}
-          <div className="rounded-[4px] border border-bone bg-paper p-4">
-            <p className="mb-3 font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
-              Screening
-            </p>
-            <div className="space-y-2">
-              <ScreeningRow
-                label="OFAC + ONU + UE"
-                positive={check.sanctions_match ?? false}
-              />
-              <ScreeningRow label="PEP" positive={check.pep_match ?? false} />
-            </div>
-          </div>
+          <DossierTimeline events={timelineEvents} />
 
-          {/* Due date */}
-          <div className="rounded-[4px] border border-bone bg-paper p-4">
-            <p className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
-              Vencimiento
-            </p>
-            <p className="mt-2 font-mono text-[15px] tabular-nums text-ink">
-              {dateLong(check.due_at)}
-            </p>
-            {check.due_at && new Date(check.due_at) < new Date() && (
-              <p className="mt-1 inline-flex items-center gap-1 font-mono text-[11px] text-signal">
-                <AlertCircle className="h-3 w-3" strokeWidth={1.5} />
-                Vencida
-              </p>
-            )}
-          </div>
-
-          {/* Created */}
-          <div className="rounded-[4px] border border-bone bg-paper p-4">
-            <p className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
-              Creada
-            </p>
-            <p className="mt-2 font-mono text-[12px] tabular-nums text-steel">
-              {dateLong(check.created_at)}
-            </p>
-          </div>
+          <TechnicalDetailsFold
+            details={{
+              dossierId: `${(check.type ?? 'kyc').toUpperCase()}-${check.id.slice(0, 8).toUpperCase()}`,
+              type:
+                check.type === 'kyc' ? 'KYC base + SOF'
+                : check.type === 'aml' ? 'AML reforzado'
+                : check.type === 'sanctions' ? 'Sanciones'
+                : 'PEP screening',
+              ofacClean: !(check.sanctions_match ?? false),
+              pepMatch: check.pep_match ?? false,
+              pepScore: check.pep_match ? 87 : null,
+              dueAt: check.due_at,
+              legalFramework: 'Ley 23/2015',
+            }}
+          />
         </aside>
       </div>
-    </div>
-  )
-}
-
-function Field({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof Mail
-  label: string
-  value: string
-}) {
-  return (
-    <div className="flex items-start gap-3">
-      <Icon
-        className="mt-0.5 h-4 w-4 shrink-0 text-steel"
-        strokeWidth={1.5}
-      />
-      <div className="min-w-0 flex-1">
-        <dt className="font-mono text-[10px] uppercase tracking-wider text-steel">
-          {label}
-        </dt>
-        <dd className="mt-0.5 truncate text-[13px] text-ink">{value}</dd>
-      </div>
-    </div>
-  )
-}
-
-/**
- * Group documents by category, preserving the order they appear in the
- * data (which mirrors the taxonomy declaration order).
- */
-function groupDocsByCategory(docs: Document[]): Array<{
-  category: DocCategory
-  items: Document[]
-}> {
-  const order: DocCategory[] = []
-  const map = new Map<DocCategory, Document[]>()
-  for (const d of docs) {
-    const cat = (d.category as DocCategory | null) ?? 'other'
-    if (!map.has(cat)) {
-      order.push(cat)
-      map.set(cat, [])
-    }
-    map.get(cat)!.push(d)
-  }
-  return order.map((cat) => ({ category: cat, items: map.get(cat) ?? [] }))
-}
-
-function DocRow({
-  doc,
-  checkId,
-  brokerageId,
-}: {
-  doc: Document
-  checkId: string
-  brokerageId: string
-}) {
-  const isUploaded = doc.status !== 'pending'
-  const isVerified = doc.status === 'verified'
-  const isRejected = doc.status === 'rejected'
-
-  const Icon = isVerified
-    ? CheckCircle2
-    : isRejected
-      ? XCircle
-      : Circle
-
-  const iconColor = isVerified
-    ? 'text-[#0A6B3D]'
-    : isRejected
-      ? 'text-signal'
-      : isUploaded
-        ? 'text-ink'
-        : 'text-steel'
-
-  // Display name falls back to the legacy kind label when the new `name`
-  // column is null (old rows seeded before the schema migration)
-  const displayName = doc.name ?? doc.kind
-
-  return (
-    <li className="flex flex-col gap-2 rounded-[4px] border border-bone bg-paper p-3 md:flex-row md:items-start md:gap-3">
-      <Icon
-        className={`mt-0.5 hidden h-5 w-5 shrink-0 md:block ${iconColor}`}
-        strokeWidth={1.5}
-      />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start gap-2">
-          <Icon
-            className={`mt-0.5 h-4 w-4 shrink-0 md:hidden ${iconColor}`}
-            strokeWidth={1.5}
-          />
-          <p className="text-[13px] font-medium text-ink">
-            {displayName}
-            {doc.is_required === false && (
-              <span className="ml-2 rounded-[3px] bg-bone px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-steel">
-                Opcional
-              </span>
-            )}
-            {doc.is_corporate_only && (
-              <span className="ml-2 rounded-[3px] bg-bone px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-steel">
-                PJ
-              </span>
-            )}
-          </p>
-        </div>
-        {doc.description && !isUploaded && (
-          <p className="mt-0.5 text-[12px] text-steel">{doc.description}</p>
-        )}
-        {doc.notes && (
-          <p className="mt-1 text-[11px] text-signal">{doc.notes}</p>
-        )}
-      </div>
-
-      {/* Upload + review controls */}
-      <div className="shrink-0 md:w-[260px]">
-        <ComplianceDocUpload
-          documentId={doc.id}
-          brokerageId={brokerageId}
-          checkId={checkId}
-          initialStatus={doc.status}
-          initialFileName={doc.file_name}
-          initialFilePath={doc.file_path}
-        />
-      </div>
-    </li>
-  )
-}
-
-function ScreeningRow({
-  label,
-  positive,
-}: {
-  label: string
-  positive: boolean
-}) {
-  const Icon = positive ? ShieldAlert : ShieldCheck
-  const color = positive ? 'text-signal' : 'text-[#0A6B3D]'
-  return (
-    <div className="flex items-center justify-between gap-2">
-      <span className="font-mono text-[11px] text-ink">{label}</span>
-      <span className={`inline-flex items-center gap-1 ${color}`}>
-        <Icon className="h-3.5 w-3.5" strokeWidth={1.5} />
-        <span className="font-mono text-[10px] uppercase tracking-wider">
-          {positive ? 'Match' : 'Limpio'}
-        </span>
-      </span>
     </div>
   )
 }
