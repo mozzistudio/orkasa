@@ -6,26 +6,26 @@ import { Link } from '@/i18n/navigation'
 import { LogoLockup } from '@/components/ui/logo'
 import { logout } from '@/app/[locale]/(auth)/login/actions'
 import {
-  LayoutDashboard,
-  Building2,
-  Users,
-  UserCheck,
-  BarChart3,
-  Shield,
-  Settings,
-  Plug,
-  LogOut,
-} from 'lucide-react'
+  HomeIcon,
+  BuildingIcon,
+  PeopleIcon,
+  AgentIcon,
+  AnalyticsIcon,
+  ShieldIcon,
+  SettingsIcon,
+  PlugIcon,
+  LogoutIcon,
+} from '@/components/icons/icons'
 
 const navItems = [
-  { key: 'title',        href: '/app',              icon: LayoutDashboard, match: 'exact' as const },
-  { key: 'inventory',    href: '/app/properties',   icon: Building2,       match: 'prefix' as const },
-  { key: 'leads',        href: '/app/leads',        icon: Users,           match: 'prefix' as const },
-  { key: 'agents',       href: '/app/agents',       icon: UserCheck,       match: 'prefix' as const },
-  { key: 'analytics',    href: '/app/analytics',    icon: BarChart3,       match: 'prefix' as const },
-  { key: 'compliance',   href: '/app/compliance',   icon: Shield,          match: 'prefix' as const },
-  { key: 'integrations', href: '/app/integrations', icon: Plug,            match: 'prefix' as const },
-  { key: 'settings',     href: '/app/settings',     icon: Settings,        match: 'prefix' as const },
+  { key: 'title',        href: '/app',              icon: HomeIcon,      match: 'exact' as const },
+  { key: 'inventory',    href: '/app/properties',   icon: BuildingIcon,  match: 'prefix' as const },
+  { key: 'leads',        href: '/app/leads',        icon: PeopleIcon,    match: 'prefix' as const },
+  { key: 'agents',       href: '/app/agents',       icon: AgentIcon,     match: 'prefix' as const },
+  { key: 'analytics',    href: '/app/analytics',    icon: AnalyticsIcon, match: 'prefix' as const },
+  { key: 'compliance',   href: '/app/compliance',   icon: ShieldIcon,    match: 'prefix' as const },
+  { key: 'integrations', href: '/app/integrations', icon: PlugIcon,      match: 'prefix' as const },
+  { key: 'settings',     href: '/app/settings',     icon: SettingsIcon,  match: 'prefix' as const },
 ] as const
 
 function initials(name: string): string {
@@ -68,7 +68,7 @@ export function Sidebar({
                   : 'text-steel hover:bg-bone-soft hover:text-ink'
               }`}
             >
-              <Icon className="h-4 w-4" strokeWidth={1.5} />
+              <Icon size={16} className="flex-shrink-0" />
               {t(key)}
             </Link>
           )
@@ -94,7 +94,7 @@ export function Sidebar({
               className="text-steel hover:text-ink transition-colors"
               aria-label="Log out"
             >
-              <LogOut className="h-4 w-4" strokeWidth={1.5} />
+              <LogoutIcon size={16} />
             </button>
           </form>
         </div>

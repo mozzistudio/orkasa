@@ -2,7 +2,12 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTransition, useState, useEffect } from 'react'
-import { Search, SlidersHorizontal, LayoutGrid, Rows3 } from 'lucide-react'
+import {
+  SearchIcon,
+  SlidersIcon,
+  GridViewIcon,
+  ListViewIcon,
+} from '@/components/icons/icons'
 import type { CountsByListing, CountsByOwner } from '@/lib/queries/properties'
 
 type Props = {
@@ -96,7 +101,7 @@ export function PropertiesControls({
       {/* Right: search + filters btn + view toggle */}
       <div className="flex items-center gap-[10px]">
         <div className="flex items-center gap-[6px] rounded-[5px] border border-bone bg-paper px-[10px] py-[6px] focus-within:border-steel-soft">
-          <Search className="h-3 w-3 text-steel" strokeWidth={1.5} />
+          <SearchIcon size={12} className="text-steel" />
           <input
             type="text"
             value={searchValue}
@@ -112,7 +117,7 @@ export function PropertiesControls({
           className="inline-flex items-center gap-[5px] rounded-[5px] border border-bone bg-paper px-[11px] py-[6px] text-[12px] text-ink opacity-60 cursor-not-allowed"
           title="Filtros avanzados (próximamente)"
         >
-          <SlidersHorizontal className="h-3 w-3" strokeWidth={1.5} />
+          <SlidersIcon size={12} />
           Filtros
         </button>
 
@@ -121,14 +126,14 @@ export function PropertiesControls({
             active={view === 'cards'}
             onClick={() => setParam('view', null)}
           >
-            <LayoutGrid className="h-3 w-3" strokeWidth={1.5} />
+            <GridViewIcon size={12} />
             Cards
           </ViewBtn>
           <ViewBtn
             active={view === 'table'}
             onClick={() => setParam('view', 'table')}
           >
-            <Rows3 className="h-3 w-3" strokeWidth={1.5} />
+            <ListViewIcon size={12} />
             Tabla
           </ViewBtn>
         </div>

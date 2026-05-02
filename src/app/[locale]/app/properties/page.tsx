@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { Link } from '@/i18n/navigation'
-import { Plus, Upload } from 'lucide-react'
+import { PlusIcon, UploadIcon } from '@/components/icons/icons'
 import {
   getActiveProperties,
   getArchivedProperties,
@@ -101,7 +101,7 @@ export default async function PropertiesPage({
               href="/app/properties/new"
               className="inline-flex items-center gap-2 rounded-[4px] bg-ink px-4 py-2 text-[13px] font-medium text-paper transition-colors hover:bg-coal"
             >
-              <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+              <PlusIcon size={14} />
               Nueva propiedad
             </Link>
             <button
@@ -110,7 +110,7 @@ export default async function PropertiesPage({
               className="inline-flex items-center gap-2 rounded-[4px] border border-bone bg-paper px-4 py-2 text-[13px] font-medium text-steel opacity-60 cursor-not-allowed"
               title="Próximamente"
             >
-              <Upload className="h-3.5 w-3.5" strokeWidth={1.5} />
+              <UploadIcon size={14} />
               Importar de portal
             </button>
           </div>
@@ -267,14 +267,14 @@ function PageHeader({
           className="inline-flex items-center gap-[6px] rounded-[4px] border border-bone bg-paper px-3 py-[7px] text-[12px] font-medium text-steel opacity-60 cursor-not-allowed"
           title="Próximamente"
         >
-          <Upload className="h-3 w-3" strokeWidth={1.5} />
+          <UploadIcon size={12} />
           Importar
         </button>
         <Link
           href="/app/properties/new"
           className="inline-flex items-center gap-[6px] rounded-[4px] bg-ink px-[14px] py-[7px] text-[12px] font-medium text-paper transition-colors hover:bg-coal"
         >
-          <Plus className="h-3 w-3" strokeWidth={1.5} />
+          <PlusIcon size={12} />
           Nueva propiedad
         </Link>
       </div>

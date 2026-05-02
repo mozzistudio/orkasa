@@ -1,13 +1,22 @@
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
-import { Star, Eye, Bell, RefreshCw, Building2 } from 'lucide-react'
+import {
+  StarIcon,
+  EyeIcon,
+  BellIcon,
+  RefreshIcon,
+  BuildingIcon,
+} from '@/components/icons/icons'
+import type { ComponentType, SVGProps } from 'react'
 import type { PropertyAlert } from '@/lib/queries/dashboard'
 
-const ACTION_ICONS: Record<string, typeof Star> = {
-  boost: Star,
-  'view-leads': Eye,
-  notify: Bell,
-  renew: RefreshCw,
+type IconComp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>
+
+const ACTION_ICONS: Record<string, IconComp> = {
+  boost: StarIcon,
+  'view-leads': EyeIcon,
+  notify: BellIcon,
+  renew: RefreshIcon,
 }
 
 const THUMB_GRADIENTS = [
@@ -30,7 +39,7 @@ export async function PropertiesAttentionPanel({
         <div className="border-b border-bone px-[18px] py-[14px]">
           <div className="flex items-center gap-[7px] text-[14px] font-medium text-ink">
             <span className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px] bg-bone-soft text-ink">
-              <Building2 className="h-3 w-3" strokeWidth={1.5} />
+              <BuildingIcon size={12} />
             </span>
             {t('title')}
           </div>
@@ -65,7 +74,7 @@ export async function PropertiesAttentionPanel({
       </div>
 
       {alerts.map((alert, i) => {
-        const Icon = ACTION_ICONS[alert.actionType] ?? Eye
+        const Icon = ACTION_ICONS[alert.actionType] ?? EyeIcon
         const gradient = THUMB_GRADIENTS[i % THUMB_GRADIENTS.length]
         return (
           <div
@@ -118,7 +127,7 @@ export async function PropertiesAttentionPanel({
                 : t('renewListing')
               }
             >
-              <Icon className="h-[13px] w-[13px]" strokeWidth={1.5} />
+              <Icon size={13} />
             </button>
           </div>
         )

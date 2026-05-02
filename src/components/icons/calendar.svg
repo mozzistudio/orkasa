@@ -1,0 +1,18 @@
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <!-- Main calendar body - slightly off-axis quadrilateral -->
+  <path d="M4 4 L20 5 L19 20 L3 19 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+
+  <!-- Header separator line (top part for month/year) -->
+  <line x1="3.5" y1="8.5" x2="19.5" y2="9.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+
+  <!-- Horizontal grid lines -->
+  <line x1="3.5" y1="12.5" x2="19.5" y2="13.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  <line x1="3.5" y1="16.5" x2="19.5" y2="17.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+
+  <!-- Vertical grid lines -->
+  <line x1="8" y1="4.5" x2="7" y2="19.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  <line x1="14" y1="5" x2="13" y2="20" stroke="currentColor" stroke-width="1.5" fill="none"/>
+
+  <!-- Orange accent - selected day -->
+  <rect x="9.5" y="14.5" width="4" height="4" fill="#FF4F1F"/>
+</svg>
