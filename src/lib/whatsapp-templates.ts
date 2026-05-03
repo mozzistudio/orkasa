@@ -91,3 +91,122 @@ export function getReminderMessage(
       return readyToSign(clientName, propertyTitle)
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// Task Engine Templates (Steps 1–34)
+// ═══════════════════════════════════════════════════════════════════
+
+export function firstContact(clientName: string, agentName: string, propertyTitle?: string): string {
+  const propLine = propertyTitle
+    ? ` Vi que te interesa el ${propertyTitle}.`
+    : ''
+  return `Hola ${clientName}, soy ${agentName} de Orkasa.${propLine} Estoy para ayudarte con lo que necesitás — ¿tenés un momento para conversar?`
+}
+
+export function sendPropertyOptions(clientName: string, propertyTitles: string[]): string {
+  const list = propertyTitles.map((t) => `• ${t}`).join('\n')
+  return `Hola ${clientName}! Te seleccioné estas ${propertyTitles.length} opciones que creo que te van a gustar:\n\n${list}\n\nFijate y me contás cuál te llama la atención. Cualquier duda me escribís!`
+}
+
+export function noResponseReminder48h(clientName: string, propertyTitle?: string): string {
+  const propLine = propertyTitle
+    ? ` sobre el ${propertyTitle}`
+    : ''
+  return `Hola ${clientName}, ¿cómo vas? Te escribí hace unos días${propLine} y quería saber si pudiste revisar las opciones. Estoy pendiente por si tenés alguna pregunta!`
+}
+
+export function visitInvitation(clientName: string, propertyTitle: string, timeSlots?: string): string {
+  const slotsLine = timeSlots
+    ? `\n\nHorarios disponibles:\n${timeSlots}`
+    : '\n\n¿Qué día y hora te queda bien?'
+  return `Hola ${clientName}! Me encantaría mostrarte el ${propertyTitle} en persona. Creo que te va a gustar mucho.${slotsLine}\n\nAvisame y te confirmo!`
+}
+
+export function postVisitFollowUp(clientName: string, propertyTitle: string): string {
+  return `Hola ${clientName}, ¿qué tal te pareció el ${propertyTitle}? Estoy para aclararte cualquier duda que te haya quedado. ¿Querés que avancemos con algo?`
+}
+
+export function offerPresentation(clientName: string, propertyTitle: string, amount: string): string {
+  return `Hola ${clientName}, ya presenté tu oferta de ${amount} por el ${propertyTitle} al propietario. Te aviso apenas tenga respuesta. ¡Crucemos los dedos!`
+}
+
+export function offerAccepted(clientName: string, propertyTitle: string): string {
+  return `Hola ${clientName}, buenísima noticia — el propietario aceptó tu oferta por el ${propertyTitle}! 🎉 Ahora vamos a necesitar algunos documentos para formalizar. Te explico todo en los próximos mensajes.`
+}
+
+export function requestIdentityDocs(clientName: string, propertyTitle: string): string {
+  return `Hola ${clientName}, para avanzar con la compra del ${propertyTitle} necesitamos:\n\n• Copia de tu cédula panameña vigente (o pasaporte si sos extranjero)\n• Un comprobante de domicilio reciente (recibo de luz o agua de menos de 3 meses)\n\n¿Me los podés enviar por acá? Gracias!`
+}
+
+export function requestBankStatements(clientName: string, propertyTitle: string): string {
+  return `Hola ${clientName}, te escribo de Orkasa. Para completar el expediente del ${propertyTitle}, necesitamos tus estados bancarios de los últimos 6 meses. ¿Me los podés enviar por acá? Gracias!`
+}
+
+export function requestSellerDocs(sellerName: string, propertyTitle: string): string {
+  return `Hola ${sellerName}, para avanzar con la venta del ${propertyTitle} necesitamos los siguientes documentos:\n\n• Certificado de paz y salvo nacional\n• Certificado de paz y salvo municipal\n• Certificado del Registro Público libre de gravámenes (con menos de 30 días)\n• Recibos de servicios públicos al día (luz, agua, gas)\n\nSi el inmueble es PH, también necesitamos el certificado de cuotas de mantenimiento al día.\n\n¿Podemos coordinar? Gracias!`
+}
+
+export function promesaDraft(clientName: string, propertyTitle: string): string {
+  return `Hola ${clientName}, el abogado ya preparó el borrador de la promesa de compraventa del ${propertyTitle}. Te lo envío por email para que lo revises. Si tenés comentarios o dudas, me escribís y se los paso al abogado. Gracias!`
+}
+
+export function thankYouAndReview(clientName: string, propertyTitle: string): string {
+  return `Hola ${clientName}, felicidades por tu nuevo hogar! 🏠 Fue un placer acompañarte en todo el proceso del ${propertyTitle}. Si tenés un minuto, me ayudaría mucho que dejes una reseña en Google — tu experiencia ayuda a otros compradores a confiar en nosotros. Gracias de corazón!`
+}
+
+export function escrituraRegistered(clientName: string, propertyTitle: string): string {
+  return `Hola ${clientName}, te cuento que tu escritura del ${propertyTitle} ya está registrada en el Registro Público! 🎉 Te envío la copia certificada por email. Si tenés alguna pregunta, acá estoy.`
+}
+
+export function welcomeNewOwner(clientName: string, propertyTitle: string): string {
+  return `Hola ${clientName}! Bienvenido oficialmente a tu nuevo hogar en ${propertyTitle}. Si necesitás contactos de confianza para la mudanza, plomero, electricista o cualquier servicio, avisame que te paso mi lista. Estoy para lo que necesités!`
+}
+
+export function followUp1Month(clientName: string): string {
+  return `Hola ${clientName}, ¿cómo te estás instalando? Espero que todo bien con el nuevo hogar! ¿Necesitás contactos de algún servicio? Plomero, electricista, cerrajero — tengo una lista que te puede servir. Avisame!`
+}
+
+export function followUp3Months(clientName: string): string {
+  return `Hola ${clientName}! ¿Cómo va todo con la propiedad? Espero que ya te sientas como en casa. Si conocés a alguien que esté buscando comprar o alquilar, sería genial que me lo refieras — voy a cuidarlo igual que a vos.`
+}
+
+export function followUp6Months(clientName: string): string {
+  return `Hola ${clientName}, ya van 6 meses! ¿Cómo te ha ido con todo? Me encantaría saber tu opinión sobre la experiencia de compra — ¿del 1 al 5, cómo calificarías el proceso? Tu feedback me ayuda a mejorar.`
+}
+
+export function anniversary1Year(clientName: string, agentName: string): string {
+  return `Hola ${clientName}! 🎉 Hoy se cumple un año desde que recibiste las llaves. Espero que hayas disfrutado muchísimo tu hogar. Fue un placer para mí, ${agentName}, acompañarte. Si algún día necesitás algo relacionado con propiedades, ya sabés dónde encontrarme!`
+}
+
+export function annualCheckIn(clientName: string): string {
+  return `Hola ${clientName}, espero que todo bien con la propiedad! Solo paso a saludar y recordarte que si necesitás algo relacionado con bienes raíces, estoy siempre disponible. Un abrazo!`
+}
+
+export function requestReferral(clientName: string, agentName: string): string {
+  return `Hola ${clientName}, soy ${agentName} de Orkasa. Si conocés a alguien que esté buscando propiedad, me encantaría que me lo refieras. Voy a darle la misma atención y dedicación que tuvimos en tu proceso. Gracias!`
+}
+
+export type TaskWhatsAppTemplate =
+  | 'firstContact'
+  | 'sendPropertyOptions'
+  | 'noResponseReminder48h'
+  | 'visitInvitation'
+  | 'preVisitReminder'
+  | 'postVisitFollowUp'
+  | 'offerPresentation'
+  | 'offerAccepted'
+  | 'requestIdentityDocs'
+  | 'requestPayslips'
+  | 'requestBankStatements'
+  | 'askPepRelationship'
+  | 'requestSellerDocs'
+  | 'promesaDraft'
+  | 'thankYouAndReview'
+  | 'escrituraRegistered'
+  | 'welcomeNewOwner'
+  | 'followUp1Month'
+  | 'followUp3Months'
+  | 'followUp6Months'
+  | 'anniversary1Year'
+  | 'annualCheckIn'
+  | 'requestReferral'

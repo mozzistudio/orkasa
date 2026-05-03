@@ -7,8 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '14.1'
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
@@ -21,7 +23,7 @@ export type Database = {
           full_name: string
           id: string
           phone: string | null
-          role: Database['public']['Enums']['agent_role'] | null
+          role: Database["public"]["Enums"]["agent_role"] | null
           updated_at: string | null
         }
         Insert: {
@@ -32,7 +34,7 @@ export type Database = {
           full_name: string
           id: string
           phone?: string | null
-          role?: Database['public']['Enums']['agent_role'] | null
+          role?: Database["public"]["Enums"]["agent_role"] | null
           updated_at?: string | null
         }
         Update: {
@@ -43,16 +45,16 @@ export type Database = {
           full_name?: string
           id?: string
           phone?: string | null
-          role?: Database['public']['Enums']['agent_role'] | null
+          role?: Database["public"]["Enums"]["agent_role"] | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: 'agents_brokerage_id_fkey'
-            columns: ['brokerage_id']
+            foreignKeyName: "agents_brokerage_id_fkey"
+            columns: ["brokerage_id"]
             isOneToOne: false
-            referencedRelation: 'brokerages'
-            referencedColumns: ['id']
+            referencedRelation: "brokerages"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -86,157 +88,6 @@ export type Database = {
         }
         Relationships: []
       }
-      compliance_checks: {
-        Row: {
-          brokerage_id: string
-          created_at: string | null
-          document_country: string | null
-          document_id: string | null
-          document_type: string | null
-          due_at: string | null
-          id: string
-          lead_id: string | null
-          notes: string | null
-          pep_match: boolean | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          risk_level: Database['public']['Enums']['compliance_risk'] | null
-          sanctions_match: boolean | null
-          scenario: Database['public']['Enums']['compliance_check_scenario'] | null
-          status: Database['public']['Enums']['compliance_status']
-          type: Database['public']['Enums']['compliance_check_type']
-          updated_at: string | null
-        }
-        Insert: {
-          brokerage_id: string
-          created_at?: string | null
-          document_country?: string | null
-          document_id?: string | null
-          document_type?: string | null
-          due_at?: string | null
-          id?: string
-          lead_id?: string | null
-          notes?: string | null
-          pep_match?: boolean | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          risk_level?: Database['public']['Enums']['compliance_risk'] | null
-          sanctions_match?: boolean | null
-          scenario?: Database['public']['Enums']['compliance_check_scenario'] | null
-          status?: Database['public']['Enums']['compliance_status']
-          type: Database['public']['Enums']['compliance_check_type']
-          updated_at?: string | null
-        }
-        Update: {
-          brokerage_id?: string
-          created_at?: string | null
-          document_country?: string | null
-          document_id?: string | null
-          document_type?: string | null
-          due_at?: string | null
-          id?: string
-          lead_id?: string | null
-          notes?: string | null
-          pep_match?: boolean | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          risk_level?: Database['public']['Enums']['compliance_risk'] | null
-          sanctions_match?: boolean | null
-          scenario?: Database['public']['Enums']['compliance_check_scenario'] | null
-          status?: Database['public']['Enums']['compliance_status']
-          type?: Database['public']['Enums']['compliance_check_type']
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'compliance_checks_brokerage_id_fkey'
-            columns: ['brokerage_id']
-            isOneToOne: false
-            referencedRelation: 'brokerages'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'compliance_checks_lead_id_fkey'
-            columns: ['lead_id']
-            isOneToOne: false
-            referencedRelation: 'leads'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'compliance_checks_reviewed_by_fkey'
-            columns: ['reviewed_by']
-            isOneToOne: false
-            referencedRelation: 'agents'
-            referencedColumns: ['id']
-          },
-        ]
-      }
-      compliance_documents: {
-        Row: {
-          brokerage_id: string
-          category: string | null
-          check_id: string
-          code: string | null
-          created_at: string | null
-          description: string | null
-          file_name: string | null
-          file_path: string | null
-          id: string
-          is_corporate_only: boolean | null
-          is_required: boolean | null
-          kind: Database['public']['Enums']['compliance_doc_kind']
-          name: string | null
-          notes: string | null
-          status: Database['public']['Enums']['compliance_doc_status']
-          updated_at: string | null
-          uploaded_at: string | null
-          verified_at: string | null
-          verified_by: string | null
-        }
-        Insert: {
-          brokerage_id: string
-          category?: string | null
-          check_id: string
-          code?: string | null
-          created_at?: string | null
-          description?: string | null
-          file_name?: string | null
-          file_path?: string | null
-          id?: string
-          is_corporate_only?: boolean | null
-          is_required?: boolean | null
-          kind: Database['public']['Enums']['compliance_doc_kind']
-          name?: string | null
-          notes?: string | null
-          status?: Database['public']['Enums']['compliance_doc_status']
-          updated_at?: string | null
-          uploaded_at?: string | null
-          verified_at?: string | null
-          verified_by?: string | null
-        }
-        Update: {
-          brokerage_id?: string
-          category?: string | null
-          check_id?: string
-          code?: string | null
-          created_at?: string | null
-          description?: string | null
-          file_name?: string | null
-          file_path?: string | null
-          id?: string
-          is_corporate_only?: boolean | null
-          is_required?: boolean | null
-          kind?: Database['public']['Enums']['compliance_doc_kind']
-          name?: string | null
-          notes?: string | null
-          status?: Database['public']['Enums']['compliance_doc_status']
-          updated_at?: string | null
-          uploaded_at?: string | null
-          verified_at?: string | null
-          verified_by?: string | null
-        }
-        Relationships: []
-      }
       compliance_alerts: {
         Row: {
           brokerage_id: string
@@ -246,14 +97,14 @@ export type Database = {
           details: Json | null
           document_id: string | null
           id: string
-          kind: Database['public']['Enums']['compliance_alert_kind']
+          kind: Database["public"]["Enums"]["compliance_alert_kind"]
           lead_id: string | null
           property_id: string | null
           resolution_note: string | null
           resolved_at: string | null
           resolved_by: string | null
-          severity: Database['public']['Enums']['compliance_alert_severity']
-          status: Database['public']['Enums']['compliance_alert_status']
+          severity: Database["public"]["Enums"]["compliance_alert_severity"]
+          status: Database["public"]["Enums"]["compliance_alert_status"]
           title: string
           updated_at: string | null
         }
@@ -265,14 +116,14 @@ export type Database = {
           details?: Json | null
           document_id?: string | null
           id?: string
-          kind: Database['public']['Enums']['compliance_alert_kind']
+          kind: Database["public"]["Enums"]["compliance_alert_kind"]
           lead_id?: string | null
           property_id?: string | null
           resolution_note?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
-          severity?: Database['public']['Enums']['compliance_alert_severity']
-          status?: Database['public']['Enums']['compliance_alert_status']
+          severity?: Database["public"]["Enums"]["compliance_alert_severity"]
+          status?: Database["public"]["Enums"]["compliance_alert_status"]
           title: string
           updated_at?: string | null
         }
@@ -284,18 +135,61 @@ export type Database = {
           details?: Json | null
           document_id?: string | null
           id?: string
-          kind?: Database['public']['Enums']['compliance_alert_kind']
+          kind?: Database["public"]["Enums"]["compliance_alert_kind"]
           lead_id?: string | null
           property_id?: string | null
           resolution_note?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
-          severity?: Database['public']['Enums']['compliance_alert_severity']
-          status?: Database['public']['Enums']['compliance_alert_status']
+          severity?: Database["public"]["Enums"]["compliance_alert_severity"]
+          status?: Database["public"]["Enums"]["compliance_alert_status"]
           title?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "compliance_alerts_brokerage_id_fkey"
+            columns: ["brokerage_id"]
+            isOneToOne: false
+            referencedRelation: "brokerages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_alerts_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_checks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_alerts_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_alerts_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_alerts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_alerts_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       compliance_audit_log: {
         Row: {
@@ -325,7 +219,282 @@ export type Database = {
           details?: Json | null
           id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "compliance_audit_log_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_audit_log_brokerage_id_fkey"
+            columns: ["brokerage_id"]
+            isOneToOne: false
+            referencedRelation: "brokerages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_audit_log_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_checks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compliance_checks: {
+        Row: {
+          brokerage_id: string
+          created_at: string | null
+          document_country: string | null
+          document_id: string | null
+          document_type: string | null
+          due_at: string | null
+          id: string
+          lead_id: string | null
+          notes: string | null
+          pep_match: boolean | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          risk_level: Database["public"]["Enums"]["compliance_risk"] | null
+          sanctions_match: boolean | null
+          scenario:
+            | Database["public"]["Enums"]["compliance_check_scenario"]
+            | null
+          status: Database["public"]["Enums"]["compliance_status"]
+          type: Database["public"]["Enums"]["compliance_check_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          brokerage_id: string
+          created_at?: string | null
+          document_country?: string | null
+          document_id?: string | null
+          document_type?: string | null
+          due_at?: string | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          pep_match?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_level?: Database["public"]["Enums"]["compliance_risk"] | null
+          sanctions_match?: boolean | null
+          scenario?:
+            | Database["public"]["Enums"]["compliance_check_scenario"]
+            | null
+          status?: Database["public"]["Enums"]["compliance_status"]
+          type: Database["public"]["Enums"]["compliance_check_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          brokerage_id?: string
+          created_at?: string | null
+          document_country?: string | null
+          document_id?: string | null
+          document_type?: string | null
+          due_at?: string | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          pep_match?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_level?: Database["public"]["Enums"]["compliance_risk"] | null
+          sanctions_match?: boolean | null
+          scenario?:
+            | Database["public"]["Enums"]["compliance_check_scenario"]
+            | null
+          status?: Database["public"]["Enums"]["compliance_status"]
+          type?: Database["public"]["Enums"]["compliance_check_type"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_checks_brokerage_id_fkey"
+            columns: ["brokerage_id"]
+            isOneToOne: false
+            referencedRelation: "brokerages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_checks_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_checks_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compliance_documents: {
+        Row: {
+          brokerage_id: string
+          category: string | null
+          check_id: string
+          code: string | null
+          created_at: string | null
+          description: string | null
+          file_name: string | null
+          file_path: string | null
+          id: string
+          is_corporate_only: boolean | null
+          is_required: boolean | null
+          kind: Database["public"]["Enums"]["compliance_doc_kind"]
+          name: string | null
+          notes: string | null
+          status: Database["public"]["Enums"]["compliance_doc_status"]
+          updated_at: string | null
+          uploaded_at: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          brokerage_id: string
+          category?: string | null
+          check_id: string
+          code?: string | null
+          created_at?: string | null
+          description?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          is_corporate_only?: boolean | null
+          is_required?: boolean | null
+          kind: Database["public"]["Enums"]["compliance_doc_kind"]
+          name?: string | null
+          notes?: string | null
+          status?: Database["public"]["Enums"]["compliance_doc_status"]
+          updated_at?: string | null
+          uploaded_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          brokerage_id?: string
+          category?: string | null
+          check_id?: string
+          code?: string | null
+          created_at?: string | null
+          description?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          is_corporate_only?: boolean | null
+          is_required?: boolean | null
+          kind?: Database["public"]["Enums"]["compliance_doc_kind"]
+          name?: string | null
+          notes?: string | null
+          status?: Database["public"]["Enums"]["compliance_doc_status"]
+          updated_at?: string | null
+          uploaded_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_documents_brokerage_id_fkey"
+            columns: ["brokerage_id"]
+            isOneToOne: false
+            referencedRelation: "brokerages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_documents_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_checks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_documents_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deals: {
+        Row: {
+          agent_id: string | null
+          amount: number | null
+          brokerage_id: string
+          closed_at: string | null
+          created_at: string
+          currency: string
+          id: string
+          lead_id: string
+          metadata: Json
+          property_id: string | null
+          stage: string
+          updated_at: string
+        }
+        Insert: {
+          agent_id?: string | null
+          amount?: number | null
+          brokerage_id: string
+          closed_at?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          lead_id: string
+          metadata?: Json
+          property_id?: string | null
+          stage?: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string | null
+          amount?: number | null
+          brokerage_id?: string
+          closed_at?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          lead_id?: string
+          metadata?: Json
+          property_id?: string | null
+          stage?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deals_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_brokerage_id_fkey"
+            columns: ["brokerage_id"]
+            isOneToOne: false
+            referencedRelation: "brokerages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       integrations: {
         Row: {
@@ -338,8 +507,8 @@ export type Database = {
           id: string
           last_error: string | null
           last_synced_at: string | null
-          provider: Database['public']['Enums']['integration_provider']
-          status: Database['public']['Enums']['integration_status']
+          provider: Database["public"]["Enums"]["integration_provider"]
+          status: Database["public"]["Enums"]["integration_status"]
           updated_at: string | null
         }
         Insert: {
@@ -352,8 +521,8 @@ export type Database = {
           id?: string
           last_error?: string | null
           last_synced_at?: string | null
-          provider: Database['public']['Enums']['integration_provider']
-          status?: Database['public']['Enums']['integration_status']
+          provider: Database["public"]["Enums"]["integration_provider"]
+          status?: Database["public"]["Enums"]["integration_status"]
           updated_at?: string | null
         }
         Update: {
@@ -366,17 +535,17 @@ export type Database = {
           id?: string
           last_error?: string | null
           last_synced_at?: string | null
-          provider?: Database['public']['Enums']['integration_provider']
-          status?: Database['public']['Enums']['integration_status']
+          provider?: Database["public"]["Enums"]["integration_provider"]
+          status?: Database["public"]["Enums"]["integration_status"]
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: 'integrations_brokerage_id_fkey'
-            columns: ['brokerage_id']
+            foreignKeyName: "integrations_brokerage_id_fkey"
+            columns: ["brokerage_id"]
             isOneToOne: false
-            referencedRelation: 'brokerages'
-            referencedColumns: ['id']
+            referencedRelation: "brokerages"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -410,18 +579,73 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'lead_interactions_agent_id_fkey'
-            columns: ['agent_id']
+            foreignKeyName: "lead_interactions_agent_id_fkey"
+            columns: ["agent_id"]
             isOneToOne: false
-            referencedRelation: 'agents'
-            referencedColumns: ['id']
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'lead_interactions_lead_id_fkey'
-            columns: ['lead_id']
+            foreignKeyName: "lead_interactions_lead_id_fkey"
+            columns: ["lead_id"]
             isOneToOne: false
-            referencedRelation: 'leads'
-            referencedColumns: ['id']
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_properties: {
+        Row: {
+          brokerage_id: string
+          created_at: string
+          id: string
+          lead_id: string
+          property_id: string
+          role: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          brokerage_id: string
+          created_at?: string
+          id?: string
+          lead_id: string
+          property_id: string
+          role?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          brokerage_id?: string
+          created_at?: string
+          id?: string
+          lead_id?: string
+          property_id?: string
+          role?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_properties_brokerage_id_fkey"
+            columns: ["brokerage_id"]
+            isOneToOne: false
+            referencedRelation: "brokerages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_properties_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -436,10 +660,10 @@ export type Database = {
           id: string
           metadata: Json | null
           notes: string | null
-          origin: Database['public']['Enums']['lead_origin']
+          origin: Database["public"]["Enums"]["lead_origin"]
           phone: string | null
           property_id: string | null
-          status: Database['public']['Enums']['lead_status'] | null
+          status: Database["public"]["Enums"]["lead_status"] | null
           updated_at: string | null
         }
         Insert: {
@@ -452,10 +676,10 @@ export type Database = {
           id?: string
           metadata?: Json | null
           notes?: string | null
-          origin: Database['public']['Enums']['lead_origin']
+          origin: Database["public"]["Enums"]["lead_origin"]
           phone?: string | null
           property_id?: string | null
-          status?: Database['public']['Enums']['lead_status'] | null
+          status?: Database["public"]["Enums"]["lead_status"] | null
           updated_at?: string | null
         }
         Update: {
@@ -468,65 +692,152 @@ export type Database = {
           id?: string
           metadata?: Json | null
           notes?: string | null
-          origin?: Database['public']['Enums']['lead_origin']
+          origin?: Database["public"]["Enums"]["lead_origin"]
           phone?: string | null
           property_id?: string | null
-          status?: Database['public']['Enums']['lead_status'] | null
+          status?: Database["public"]["Enums"]["lead_status"] | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: 'leads_assigned_agent_id_fkey'
-            columns: ['assigned_agent_id']
+            foreignKeyName: "leads_assigned_agent_id_fkey"
+            columns: ["assigned_agent_id"]
             isOneToOne: false
-            referencedRelation: 'agents'
-            referencedColumns: ['id']
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'leads_brokerage_id_fkey'
-            columns: ['brokerage_id']
+            foreignKeyName: "leads_brokerage_id_fkey"
+            columns: ["brokerage_id"]
             isOneToOne: false
-            referencedRelation: 'brokerages'
-            referencedColumns: ['id']
+            referencedRelation: "brokerages"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'leads_property_id_fkey'
-            columns: ['property_id']
+            foreignKeyName: "leads_property_id_fkey"
+            columns: ["property_id"]
             isOneToOne: false
-            referencedRelation: 'properties'
-            referencedColumns: ['id']
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
           },
         ]
       }
       neighborhoods: {
         Row: {
-          id: string
-          name: string
           city: string
           country_code: string
+          created_at: string | null
           district: string | null
-          sort_order: number
-          created_at: string
+          id: string
+          name: string
+          sort_order: number | null
         }
         Insert: {
-          id?: string
-          name: string
           city: string
           country_code?: string
+          created_at?: string | null
           district?: string | null
-          sort_order?: number
-          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number | null
         }
         Update: {
-          id?: string
-          name?: string
           city?: string
           country_code?: string
+          created_at?: string | null
           district?: string | null
-          sort_order?: number
-          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number | null
         }
         Relationships: []
+      }
+      offers: {
+        Row: {
+          agent_id: string | null
+          amount: number
+          brokerage_id: string
+          conditions: string | null
+          created_at: string
+          currency: string
+          deal_id: string | null
+          id: string
+          lead_id: string
+          metadata: Json
+          notes: string | null
+          property_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agent_id?: string | null
+          amount: number
+          brokerage_id: string
+          conditions?: string | null
+          created_at?: string
+          currency?: string
+          deal_id?: string | null
+          id?: string
+          lead_id: string
+          metadata?: Json
+          notes?: string | null
+          property_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string | null
+          amount?: number
+          brokerage_id?: string
+          conditions?: string | null
+          created_at?: string
+          currency?: string
+          deal_id?: string | null
+          id?: string
+          lead_id?: string
+          metadata?: Json
+          notes?: string | null
+          property_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_brokerage_id_fkey"
+            columns: ["brokerage_id"]
+            isOneToOne: false
+            referencedRelation: "brokerages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       properties: {
         Row: {
@@ -549,13 +860,13 @@ export type Database = {
           is_boosted: boolean
           latitude: number | null
           listing_expires_at: string | null
-          listing_type: Database['public']['Enums']['listing_type']
+          listing_type: Database["public"]["Enums"]["listing_type"]
           longitude: number | null
           neighborhood: string | null
           price: number | null
           price_history: Json
-          property_type: Database['public']['Enums']['property_type']
-          status: Database['public']['Enums']['property_status'] | null
+          property_type: Database["public"]["Enums"]["property_type"]
+          status: Database["public"]["Enums"]["property_status"] | null
           title: string
           updated_at: string | null
         }
@@ -579,13 +890,13 @@ export type Database = {
           is_boosted?: boolean
           latitude?: number | null
           listing_expires_at?: string | null
-          listing_type: Database['public']['Enums']['listing_type']
+          listing_type: Database["public"]["Enums"]["listing_type"]
           longitude?: number | null
           neighborhood?: string | null
           price?: number | null
           price_history?: Json
-          property_type: Database['public']['Enums']['property_type']
-          status?: Database['public']['Enums']['property_status'] | null
+          property_type: Database["public"]["Enums"]["property_type"]
+          status?: Database["public"]["Enums"]["property_status"] | null
           title: string
           updated_at?: string | null
         }
@@ -609,30 +920,30 @@ export type Database = {
           is_boosted?: boolean
           latitude?: number | null
           listing_expires_at?: string | null
-          listing_type?: Database['public']['Enums']['listing_type']
+          listing_type?: Database["public"]["Enums"]["listing_type"]
           longitude?: number | null
           neighborhood?: string | null
           price?: number | null
           price_history?: Json
-          property_type?: Database['public']['Enums']['property_type']
-          status?: Database['public']['Enums']['property_status'] | null
+          property_type?: Database["public"]["Enums"]["property_type"]
+          status?: Database["public"]["Enums"]["property_status"] | null
           title?: string
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: 'properties_agent_id_fkey'
-            columns: ['agent_id']
+            foreignKeyName: "properties_agent_id_fkey"
+            columns: ["agent_id"]
             isOneToOne: false
-            referencedRelation: 'agents'
-            referencedColumns: ['id']
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'properties_brokerage_id_fkey'
-            columns: ['brokerage_id']
+            foreignKeyName: "properties_brokerage_id_fkey"
+            columns: ["brokerage_id"]
             isOneToOne: false
-            referencedRelation: 'brokerages'
-            referencedColumns: ['id']
+            referencedRelation: "brokerages"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -649,9 +960,9 @@ export type Database = {
           failure_reason: string | null
           id: string
           property_id: string
-          provider: Database['public']['Enums']['integration_provider']
+          provider: Database["public"]["Enums"]["integration_provider"]
           published_at: string | null
-          status: Database['public']['Enums']['publication_status']
+          status: Database["public"]["Enums"]["publication_status"]
           updated_at: string | null
           validated_at: string | null
         }
@@ -667,9 +978,9 @@ export type Database = {
           failure_reason?: string | null
           id?: string
           property_id: string
-          provider: Database['public']['Enums']['integration_provider']
+          provider: Database["public"]["Enums"]["integration_provider"]
           published_at?: string | null
-          status?: Database['public']['Enums']['publication_status']
+          status?: Database["public"]["Enums"]["publication_status"]
           updated_at?: string | null
           validated_at?: string | null
         }
@@ -685,26 +996,213 @@ export type Database = {
           failure_reason?: string | null
           id?: string
           property_id?: string
-          provider?: Database['public']['Enums']['integration_provider']
+          provider?: Database["public"]["Enums"]["integration_provider"]
           published_at?: string | null
-          status?: Database['public']['Enums']['publication_status']
+          status?: Database["public"]["Enums"]["publication_status"]
           updated_at?: string | null
           validated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: 'property_publications_brokerage_id_fkey'
-            columns: ['brokerage_id']
+            foreignKeyName: "property_publications_brokerage_id_fkey"
+            columns: ["brokerage_id"]
             isOneToOne: false
-            referencedRelation: 'brokerages'
-            referencedColumns: ['id']
+            referencedRelation: "brokerages"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'property_publications_property_id_fkey'
-            columns: ['property_id']
+            foreignKeyName: "property_publications_property_id_fkey"
+            columns: ["property_id"]
             isOneToOne: false
-            referencedRelation: 'properties'
-            referencedColumns: ['id']
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_audit_log: {
+        Row: {
+          action: string
+          agent_id: string | null
+          brokerage_id: string
+          created_at: string
+          details: Json
+          id: string
+          task_id: string
+        }
+        Insert: {
+          action: string
+          agent_id?: string | null
+          brokerage_id: string
+          created_at?: string
+          details?: Json
+          id?: string
+          task_id: string
+        }
+        Update: {
+          action?: string
+          agent_id?: string | null
+          brokerage_id?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_audit_log_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_audit_log_brokerage_id_fkey"
+            columns: ["brokerage_id"]
+            isOneToOne: false
+            referencedRelation: "brokerages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_audit_log_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          agent_id: string | null
+          auto_complete_on: string | null
+          brokerage_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          cta_action: string
+          cta_metadata: Json
+          deal_id: string | null
+          description: string | null
+          due_at: string | null
+          escalation_at: string | null
+          id: string
+          lead_id: string
+          offer_id: string | null
+          phase: string
+          property_id: string | null
+          status: string
+          step_number: number
+          title: string
+          trigger_reason: Json
+          updated_at: string
+          viewing_id: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          auto_complete_on?: string | null
+          brokerage_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          cta_action: string
+          cta_metadata?: Json
+          deal_id?: string | null
+          description?: string | null
+          due_at?: string | null
+          escalation_at?: string | null
+          id?: string
+          lead_id: string
+          offer_id?: string | null
+          phase: string
+          property_id?: string | null
+          status?: string
+          step_number: number
+          title: string
+          trigger_reason?: Json
+          updated_at?: string
+          viewing_id?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          auto_complete_on?: string | null
+          brokerage_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          cta_action?: string
+          cta_metadata?: Json
+          deal_id?: string | null
+          description?: string | null
+          due_at?: string | null
+          escalation_at?: string | null
+          id?: string
+          lead_id?: string
+          offer_id?: string | null
+          phase?: string
+          property_id?: string | null
+          status?: string
+          step_number?: number
+          title?: string
+          trigger_reason?: Json
+          updated_at?: string
+          viewing_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_brokerage_id_fkey"
+            columns: ["brokerage_id"]
+            isOneToOne: false
+            referencedRelation: "brokerages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_viewing_id_fkey"
+            columns: ["viewing_id"]
+            isOneToOne: false
+            referencedRelation: "viewings"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -744,139 +1242,436 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'viewings_agent_id_fkey'
-            columns: ['agent_id']
+            foreignKeyName: "viewings_agent_id_fkey"
+            columns: ["agent_id"]
             isOneToOne: false
-            referencedRelation: 'agents'
-            referencedColumns: ['id']
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'viewings_lead_id_fkey'
-            columns: ['lead_id']
+            foreignKeyName: "viewings_lead_id_fkey"
+            columns: ["lead_id"]
             isOneToOne: false
-            referencedRelation: 'leads'
-            referencedColumns: ['id']
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'viewings_property_id_fkey'
-            columns: ['property_id']
+            foreignKeyName: "viewings_property_id_fkey"
+            columns: ["property_id"]
             isOneToOne: false
-            referencedRelation: 'properties'
-            referencedColumns: ['id']
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
           },
         ]
       }
     }
-    Views: { [_ in never]: never }
+    Views: {
+      integrations_public: {
+        Row: {
+          account_label: string | null
+          brokerage_id: string | null
+          config: Json | null
+          created_at: string | null
+          error_count: number | null
+          has_credentials: boolean | null
+          id: string | null
+          last_error: string | null
+          last_synced_at: string | null
+          provider: Database["public"]["Enums"]["integration_provider"] | null
+          status: Database["public"]["Enums"]["integration_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_label?: string | null
+          brokerage_id?: string | null
+          config?: Json | null
+          created_at?: string | null
+          error_count?: number | null
+          has_credentials?: never
+          id?: string | null
+          last_error?: string | null
+          last_synced_at?: string | null
+          provider?: Database["public"]["Enums"]["integration_provider"] | null
+          status?: Database["public"]["Enums"]["integration_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          account_label?: string | null
+          brokerage_id?: string | null
+          config?: Json | null
+          created_at?: string | null
+          error_count?: number | null
+          has_credentials?: never
+          id?: string | null
+          last_error?: string | null
+          last_synced_at?: string | null
+          provider?: Database["public"]["Enums"]["integration_provider"] | null
+          status?: Database["public"]["Enums"]["integration_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integrations_brokerage_id_fkey"
+            columns: ["brokerage_id"]
+            isOneToOne: false
+            referencedRelation: "brokerages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
     Functions: {
       current_brokerage_id: { Args: never; Returns: string }
       seed_demo_data: { Args: never; Returns: undefined }
       slugify: { Args: { input: string }; Returns: string }
     }
     Enums: {
-      agent_role: 'owner' | 'admin' | 'agent'
-      compliance_check_scenario:
-        | 'sale_buyer'
-        | 'sale_seller'
-        | 'rental_tenant'
-        | 'rental_landlord'
-        | 'broker_sale'
-        | 'broker_rental'
-      compliance_check_type: 'kyc' | 'aml' | 'sanctions' | 'pep'
-      compliance_doc_kind:
-        | 'identity'
-        | 'address_proof'
-        | 'income_proof'
-        | 'funds_origin'
-        | 'company_existence'
-        | 'company_ubo'
-        | 'pep_declaration'
-        | 'other'
-      compliance_doc_status:
-        | 'pending'
-        | 'uploaded'
-        | 'verified'
-        | 'rejected'
-        | 'expired'
+      agent_role: "owner" | "admin" | "agent"
       compliance_alert_kind:
-        | 'sanctions_match'
-        | 'pep_match'
-        | 'doc_expiring'
-        | 'doc_expired'
-        | 'transaction_threshold'
-        | 'suspicious_activity'
-        | 'kyc_overdue'
-        | 'review_due'
-      compliance_alert_severity:
-        | 'info'
-        | 'low'
-        | 'medium'
-        | 'high'
-        | 'critical'
+        | "sanctions_match"
+        | "pep_match"
+        | "doc_expiring"
+        | "doc_expired"
+        | "transaction_threshold"
+        | "suspicious_activity"
+        | "kyc_overdue"
+        | "review_due"
+      compliance_alert_severity: "info" | "low" | "medium" | "high" | "critical"
       compliance_alert_status:
-        | 'open'
-        | 'acknowledged'
-        | 'resolved'
-        | 'false_positive'
-        | 'escalated'
-      compliance_risk: 'low' | 'medium' | 'high' | 'critical'
+        | "open"
+        | "acknowledged"
+        | "resolved"
+        | "false_positive"
+        | "escalated"
+      compliance_check_scenario:
+        | "sale_buyer"
+        | "sale_seller"
+        | "rental_tenant"
+        | "rental_landlord"
+        | "broker_sale"
+        | "broker_rental"
+      compliance_check_type: "kyc" | "aml" | "sanctions" | "pep"
+      compliance_doc_kind:
+        | "identity"
+        | "address_proof"
+        | "income_proof"
+        | "funds_origin"
+        | "company_existence"
+        | "company_ubo"
+        | "pep_declaration"
+        | "other"
+      compliance_doc_status:
+        | "pending"
+        | "uploaded"
+        | "verified"
+        | "rejected"
+        | "expired"
+      compliance_risk: "low" | "medium" | "high" | "critical"
       compliance_status:
-        | 'pending'
-        | 'in_review'
-        | 'approved'
-        | 'rejected'
-        | 'requires_action'
+        | "pending"
+        | "in_review"
+        | "approved"
+        | "rejected"
+        | "requires_action"
       integration_provider:
-        | 'encuentra24'
-        | 'compreoalquile'
-        | 'inmuebles24'
-        | 'mercadolibre_inmuebles'
-        | 'properati'
-        | 'idealista'
-        | 'zonaprop'
-        | 'casas'
-        | 'facebook_marketplace'
-        | 'instagram_business'
-        | 'whatsapp_business'
-        | 'webhook_custom'
-        | 'acobir_mls'
-        | 'whatsapp_status'
-        | 'agency_website'
-        | 'email_matches'
+        | "encuentra24"
+        | "compreoalquile"
+        | "inmuebles24"
+        | "mercadolibre_inmuebles"
+        | "properati"
+        | "idealista"
+        | "zonaprop"
+        | "casas"
+        | "facebook_marketplace"
+        | "instagram_business"
+        | "whatsapp_business"
+        | "webhook_custom"
+        | "acobir_mls"
+        | "whatsapp_status"
+        | "agency_website"
+        | "email_matches"
       integration_status:
-        | 'disconnected'
-        | 'connecting'
-        | 'connected'
-        | 'error'
-        | 'expired'
-      lead_origin: 'portal' | 'web' | 'referido' | 'whatsapp' | 'walk_in' | 'other'
+        | "disconnected"
+        | "connecting"
+        | "connected"
+        | "error"
+        | "expired"
+      lead_origin:
+        | "portal"
+        | "web"
+        | "referido"
+        | "whatsapp"
+        | "walk_in"
+        | "other"
       lead_status:
-        | 'new'
-        | 'contacted'
-        | 'qualified'
-        | 'viewing_scheduled'
-        | 'negotiating'
-        | 'closed_won'
-        | 'closed_lost'
-      listing_type: 'sale' | 'rent'
+        | "new"
+        | "contacted"
+        | "qualified"
+        | "viewing_scheduled"
+        | "negotiating"
+        | "closed_won"
+        | "closed_lost"
+      listing_type: "sale" | "rent"
       property_status:
-        | 'draft'
-        | 'active'
-        | 'pending'
-        | 'sold'
-        | 'rented'
-        | 'archived'
-      property_type: 'apartment' | 'house' | 'condo' | 'land' | 'commercial'
+        | "draft"
+        | "active"
+        | "pending"
+        | "sold"
+        | "rented"
+        | "archived"
+      property_type: "apartment" | "house" | "condo" | "land" | "commercial"
       publication_status:
-        | 'draft'
-        | 'generating'
-        | 'validated'
-        | 'queued'
-        | 'publishing'
-        | 'published'
-        | 'failed'
-        | 'paused'
+        | "draft"
+        | "generating"
+        | "validated"
+        | "queued"
+        | "publishing"
+        | "published"
+        | "failed"
+        | "paused"
     }
-    CompositeTypes: { [_ in never]: never }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
 }
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      agent_role: ["owner", "admin", "agent"],
+      compliance_alert_kind: [
+        "sanctions_match",
+        "pep_match",
+        "doc_expiring",
+        "doc_expired",
+        "transaction_threshold",
+        "suspicious_activity",
+        "kyc_overdue",
+        "review_due",
+      ],
+      compliance_alert_severity: ["info", "low", "medium", "high", "critical"],
+      compliance_alert_status: [
+        "open",
+        "acknowledged",
+        "resolved",
+        "false_positive",
+        "escalated",
+      ],
+      compliance_check_scenario: [
+        "sale_buyer",
+        "sale_seller",
+        "rental_tenant",
+        "rental_landlord",
+        "broker_sale",
+        "broker_rental",
+      ],
+      compliance_check_type: ["kyc", "aml", "sanctions", "pep"],
+      compliance_doc_kind: [
+        "identity",
+        "address_proof",
+        "income_proof",
+        "funds_origin",
+        "company_existence",
+        "company_ubo",
+        "pep_declaration",
+        "other",
+      ],
+      compliance_doc_status: [
+        "pending",
+        "uploaded",
+        "verified",
+        "rejected",
+        "expired",
+      ],
+      compliance_risk: ["low", "medium", "high", "critical"],
+      compliance_status: [
+        "pending",
+        "in_review",
+        "approved",
+        "rejected",
+        "requires_action",
+      ],
+      integration_provider: [
+        "encuentra24",
+        "compreoalquile",
+        "inmuebles24",
+        "mercadolibre_inmuebles",
+        "properati",
+        "idealista",
+        "zonaprop",
+        "casas",
+        "facebook_marketplace",
+        "instagram_business",
+        "whatsapp_business",
+        "webhook_custom",
+        "acobir_mls",
+        "whatsapp_status",
+        "agency_website",
+        "email_matches",
+      ],
+      integration_status: [
+        "disconnected",
+        "connecting",
+        "connected",
+        "error",
+        "expired",
+      ],
+      lead_origin: [
+        "portal",
+        "web",
+        "referido",
+        "whatsapp",
+        "walk_in",
+        "other",
+      ],
+      lead_status: [
+        "new",
+        "contacted",
+        "qualified",
+        "viewing_scheduled",
+        "negotiating",
+        "closed_won",
+        "closed_lost",
+      ],
+      listing_type: ["sale", "rent"],
+      property_status: [
+        "draft",
+        "active",
+        "pending",
+        "sold",
+        "rented",
+        "archived",
+      ],
+      property_type: ["apartment", "house", "condo", "land", "commercial"],
+      publication_status: [
+        "draft",
+        "generating",
+        "validated",
+        "queued",
+        "publishing",
+        "published",
+        "failed",
+        "paused",
+      ],
+    },
+  },
+} as const
+
