@@ -95,7 +95,7 @@ export function SignForm({
         />
         <span className="text-[13px] text-ink leading-snug">
           Confirmo que soy <strong>{name || '[escribí tu nombre]'}</strong> y
-          acepto el contenido del documento "{documentTitle}". Acepto que
+          acepto el contenido del documento &ldquo;{documentTitle}&rdquo;. Acepto que
           esta firma electrónica tiene la misma validez que una firma
           manuscrita.
         </span>
