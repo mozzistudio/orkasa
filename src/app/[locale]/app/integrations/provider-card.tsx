@@ -199,6 +199,16 @@ export function ProviderCard({
               <X className="h-3 w-3" strokeWidth={1.5} />
               {t('disconnect')}
             </button>
+          ) : meta.authMethod === 'oauth' &&
+            (meta.id === 'google_calendar' ||
+              meta.id === 'outlook_calendar') ? (
+            <a
+              href={`/api/calendar/connect?provider=${meta.id}`}
+              className="inline-flex items-center gap-1.5 rounded-[4px] bg-ink px-3 py-1.5 text-[12px] font-medium text-paper hover:bg-coal transition-colors"
+            >
+              <Plug className="h-3 w-3" strokeWidth={1.5} />
+              {t('connect')}
+            </a>
           ) : (
             <button
               type="button"

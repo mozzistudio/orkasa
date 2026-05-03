@@ -8,6 +8,7 @@ import { CurrentDealsPanel } from '@/components/dashboard/current-deals-panel'
 import { CoolingLeadsPanel } from '@/components/dashboard/cooling-leads-panel'
 import { PropertiesAttentionPanel } from '@/components/dashboard/properties-attention-panel'
 import { TeamPerformanceTable } from '@/components/dashboard/team-performance-table'
+import { PipelinePredictions } from '@/components/dashboard/pipeline-predictions'
 import {
   getPipelineSnapshot,
   getUpcomingViewings,
@@ -17,6 +18,7 @@ import {
   getTeamPerformance,
   getDashboardUser,
 } from '@/lib/queries/dashboard'
+import { getPipelineForecast } from '@/lib/automation/predictions'
 
 function SectionSkeleton({ height = 'h-40' }: { height?: string }) {
   return (
@@ -50,6 +52,21 @@ export default async function HomePage() {
       getTeamPerformance(),
     ])
 
+  const { data: agentRow } = await supabase
+    .from('agents')
+    .select('brokerage_id')
+    .eq('id', (await supabase.auth.getUser()).data.user?.id ?? '')
+    .maybeSingle<{ brokerage_id: string | null }>()
+  const forecast = agentRow?.brokerage_id
+    ? await getPipelineForecast(agentRow.brokerage_id)
+    : {
+        predictions: [],
+        totalPipelineValue: 0,
+        weightedForecast: 0,
+        atRiskCount: 0,
+        atRiskValue: 0,
+      }
+
   return (
     <div className="max-w-[1340px]">
       {/* Greeting */}
@@ -64,6 +81,13 @@ export default async function HomePage() {
       <Suspense fallback={<SectionSkeleton height="h-52" />}>
         <PipelineHero data={pipeline} />
       </Suspense>
+
+      {/* AI Pipeline Predictions */}
+      <div className="mb-7">
+        <Suspense fallback={<SectionSkeleton height="h-72" />}>
+          <PipelinePredictions forecast={forecast} />
+        </Suspense>
+      </div>
 
       {/* Action Panels */}
       <div className="mb-7 grid gap-4 lg:grid-cols-2">

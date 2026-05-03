@@ -5,7 +5,6 @@ import { getTranslations } from 'next-intl/server'
 import {
   ArrowLeft,
   Phone,
-  Calendar,
   ChevronDown,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
@@ -14,6 +13,8 @@ import { Composer } from './composer'
 import { LeadTabs } from './lead-tabs'
 import { LeadDeleteButton } from './delete-button'
 import { TaskList } from './task-list'
+import { ScheduleVisitButton } from './schedule-visit-button'
+import { ConversationPanel } from './conversation-panel'
 import { getOpenTasksForLead } from '@/lib/tasks/trigger-engine'
 import type { Database } from '@/lib/database.types'
 
@@ -105,7 +106,7 @@ export default async function LeadDetailPage({
   const { id } = await params
   const supabase = await createClient()
 
-  const [leadRes, propertiesRes, agentsRes, interactionsRes] =
+  const [leadRes, propertiesRes, agentsRes, interactionsRes, messagesRes] =
     await Promise.all([
       supabase
         .from('leads')
@@ -128,6 +129,32 @@ export default async function LeadDetailPage({
         .eq('lead_id', id)
         .order('created_at', { ascending: false })
         .returns<Interaction[]>(),
+      supabase
+        .from('messages')
+        .select(
+          'id, channel, direction, status, subject, body, template_code, from_address, to_address, sent_at, delivered_at, read_at, failed_at, error_message, created_at',
+        )
+        .eq('lead_id', id)
+        .order('created_at', { ascending: true })
+        .returns<
+          Array<{
+            id: string
+            channel: 'whatsapp' | 'email' | 'sms' | 'internal'
+            direction: 'inbound' | 'outbound'
+            status: string
+            subject: string | null
+            body: string | null
+            template_code: string | null
+            from_address: string | null
+            to_address: string | null
+            sent_at: string | null
+            delivered_at: string | null
+            read_at: string | null
+            failed_at: string | null
+            error_message: string | null
+            created_at: string
+          }>
+        >(),
     ])
 
   const lead = leadRes.data
@@ -148,6 +175,7 @@ export default async function LeadDetailPage({
     : null
 
   const interactions = interactionsRes.data ?? []
+  const conversationMessages = messagesRes.data ?? []
 
   // Compute days since last contact
   const lastInteraction = interactions[0]
@@ -281,22 +309,22 @@ export default async function LeadDetailPage({
                     Llamar
                   </a>
                 )}
-                <button
-                  type="button"
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-[8px] bg-white text-ink border border-bone text-[13px] font-medium hover:border-steel-soft transition-colors"
-                >
-                  <Calendar
-                    className="h-[13px] w-[13px]"
-                    strokeWidth={1.5}
-                  />
-                  Agendar visita
-                </button>
+                <ScheduleVisitButton
+                  leadId={lead.id}
+                  propertyId={property?.id}
+                />
               </div>
             </div>
           </section>
 
           {/* Composer */}
           <Composer leadId={lead.id} />
+
+          {/* Conversaciones (multi-canal) */}
+          <ConversationPanel
+            leadId={lead.id}
+            initialMessages={conversationMessages}
+          />
 
           {/* Main Tabs (Historia / Propiedades) */}
           <LeadTabs
@@ -338,6 +366,8 @@ export default async function LeadDetailPage({
                 tasks={tasks}
                 leadName={lead.full_name}
                 agentName={assignedAgent?.full_name}
+                phone={lead.phone ?? undefined}
+                propertyPrice={property?.price ? Number(property.price) : undefined}
               />
             </div>
           </section>

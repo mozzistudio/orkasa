@@ -201,6 +201,14 @@ export async function processTaskEvent(
           'created',
           { stepNumber: entry.stepNumber, event: payload.event },
         )
+        const { notifyTaskCreated } = await import('@/lib/notifications')
+        notifyTaskCreated({
+          taskId: data.id,
+          leadId: payload.leadId,
+          brokerageId: payload.brokerageId,
+          agentId: payload.agentId,
+          title,
+        }).catch(() => {})
       }
     } catch {
       // unique constraint violation = duplicate, skip silently

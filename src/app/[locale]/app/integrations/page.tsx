@@ -30,7 +30,14 @@ export default async function IntegrationsPage() {
     (connectedRaw ?? []).map((r) => [r.provider, r]),
   )
 
-  const categories = ['portal', 'social', 'messaging', 'custom'] as const
+  const categories = [
+    'messaging',
+    'email',
+    'calendar',
+    'portal',
+    'social',
+    'custom',
+  ] as const
 
   return (
     <div>

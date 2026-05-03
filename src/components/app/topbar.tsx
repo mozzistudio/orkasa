@@ -1,10 +1,11 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { Bell, ChevronLeft, Plus, Search } from 'lucide-react'
+import { ChevronLeft, Plus, Search } from 'lucide-react'
 import { Link, usePathname } from '@/i18n/navigation'
 import { CommandPaletteTrigger } from './command-palette'
 import { LogoMark } from '@/components/ui/logo'
+import { NotificationBell } from './notification-bell'
 
 const ROOT_TABS = [
   '/app',
@@ -145,14 +146,7 @@ export function Topbar() {
           <CommandPaletteTrigger />
         </div>
 
-        {/* Notification bell */}
-        <button
-          className="relative flex h-10 w-10 items-center justify-center rounded-[4px] text-steel hover:text-ink active:bg-bone/30 transition-colors"
-          aria-label="Notificaciones"
-        >
-          <Bell className="h-5 w-5" strokeWidth={1.5} />
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-signal" />
-        </button>
+        <NotificationBell />
 
         {/* CTAs — only on home root */}
         {isApp && (

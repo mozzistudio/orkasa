@@ -1,6 +1,6 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Phone,
@@ -17,11 +17,17 @@ import { completeTask, skipTask } from '../actions'
 import { executeCtaAction, getCtaLabel, getCtaIcon } from '@/lib/tasks/cta-handlers'
 import type { CtaCallbacks } from '@/lib/tasks/cta-handlers'
 import type { TaskRow, CtaAction } from '@/lib/tasks/types'
+import { ScheduleVisitModal } from '@/components/app/modals/schedule-visit-modal'
+import { OfferFormModal } from '@/components/app/modals/offer-form-modal'
+import { RequestDocModal } from '@/components/app/modals/request-doc-modal'
+import { FinancingSimModal } from '@/components/app/modals/financing-sim-modal'
 
 type Props = {
   tasks: TaskRow[]
   leadName: string
   agentName?: string
+  phone?: string
+  propertyPrice?: number
 }
 
 function urgencyFromDueAt(dueAt: string | null, status: string) {
@@ -101,11 +107,16 @@ const PHASE_LABELS: Record<string, string> = {
   post_cierre: 'Post cierre',
 }
 
-export function TaskList({ tasks, leadName, agentName }: Props) {
+export function TaskList({ tasks, leadName, agentName, phone, propertyPrice }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [activeModal, setActiveModal] = useState<{
+    type: string
+    props: Record<string, unknown>
+  } | null>(null)
 
   const callbacks: CtaCallbacks = {
+    openModal: (modal, props) => setActiveModal({ type: modal, props }),
     navigate: (path) => router.push(path),
     onComplete: (taskId) => {
       startTransition(async () => {
@@ -162,73 +173,106 @@ export function TaskList({ tasks, leadName, agentName }: Props) {
     group.items.push(task)
   }
 
-  return (
-    <div className={isPending ? 'opacity-60 pointer-events-none' : ''}>
-      {grouped.map((group) => (
-        <div key={group.phase}>
-          {grouped.length > 1 && (
-            <p className="font-mono text-[9px] tracking-[1px] uppercase text-steel mt-3 mb-1 px-0.5">
-              {group.label}
-            </p>
-          )}
-          {group.items.map((task) => {
-            const urgency = urgencyFromDueAt(task.due_at, task.status)
-            const icon = getCtaIcon(task.cta_action as CtaAction)
-            const label = getCtaLabel(task.cta_action as CtaAction)
+  const firstLeadId = tasks[0]?.lead_id ?? ''
 
-            return (
-              <div
-                key={task.id}
-                className="flex items-start justify-between gap-4 py-3.5 border-b border-bone-soft last:border-b-0"
-              >
-                <div className="min-w-0">
-                  <p className="text-[13px] text-ink leading-normal">
-                    {task.title}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <span className="font-mono text-[9px] tracking-[0.7px] uppercase px-1.5 py-0.5 rounded-full bg-bone-soft text-steel font-medium">
-                      Auto
-                    </span>
-                    <span
-                      className={`font-mono text-[9px] tracking-[0.7px] uppercase px-1.5 py-0.5 rounded-full font-medium ${urgency.style}`}
-                    >
-                      {urgency.label}
-                    </span>
+  return (
+    <>
+      <div className={isPending ? 'opacity-60 pointer-events-none' : ''}>
+        {grouped.map((group) => (
+          <div key={group.phase}>
+            {grouped.length > 1 && (
+              <p className="font-mono text-[9px] tracking-[1px] uppercase text-steel mt-3 mb-1 px-0.5">
+                {group.label}
+              </p>
+            )}
+            {group.items.map((task) => {
+              const urgency = urgencyFromDueAt(task.due_at, task.status)
+              const icon = getCtaIcon(task.cta_action as CtaAction)
+              const label = getCtaLabel(task.cta_action as CtaAction)
+
+              return (
+                <div
+                  key={task.id}
+                  className="flex items-start justify-between gap-4 py-3.5 border-b border-bone-soft last:border-b-0"
+                >
+                  <div className="min-w-0">
+                    <p className="text-[13px] text-ink leading-normal">
+                      {task.title}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <span className="font-mono text-[9px] tracking-[0.7px] uppercase px-1.5 py-0.5 rounded-full bg-bone-soft text-steel font-medium">
+                        Auto
+                      </span>
+                      <span
+                        className={`font-mono text-[9px] tracking-[0.7px] uppercase px-1.5 py-0.5 rounded-full font-medium ${urgency.style}`}
+                      >
+                        {urgency.label}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <div className="shrink-0 flex items-center gap-1.5">
-                  <button
-                    onClick={() => handleCta(task)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] bg-ink text-white text-[12px] font-medium hover:bg-coal transition-colors"
-                  >
-                    <CtaIcon icon={icon} />
-                    {label}
-                  </button>
-                  <div className="relative group">
-                    <button className="p-1.5 rounded-[6px] text-steel hover:bg-bone-soft transition-colors">
-                      <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  <div className="shrink-0 flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleCta(task)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] bg-ink text-white text-[12px] font-medium hover:bg-coal transition-colors"
+                    >
+                      <CtaIcon icon={icon} />
+                      {label}
                     </button>
-                    <div className="absolute right-0 top-full mt-1 z-10 hidden group-focus-within:block bg-white border border-bone rounded-[8px] shadow-sm py-1 min-w-[120px]">
-                      <button
-                        onClick={() => handleComplete(task.id)}
-                        className="w-full text-left px-3 py-1.5 text-[12px] text-ink hover:bg-bone-soft transition-colors"
-                      >
-                        Marcar lista
+                    <div className="relative group">
+                      <button className="p-1.5 rounded-[6px] text-steel hover:bg-bone-soft transition-colors">
+                        <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
                       </button>
-                      <button
-                        onClick={() => handleSkip(task.id)}
-                        className="w-full text-left px-3 py-1.5 text-[12px] text-steel hover:bg-bone-soft transition-colors"
-                      >
-                        Saltar
-                      </button>
+                      <div className="absolute right-0 top-full mt-1 z-10 hidden group-focus-within:block bg-white border border-bone rounded-[8px] shadow-sm py-1 min-w-[120px]">
+                        <button
+                          onClick={() => handleComplete(task.id)}
+                          className="w-full text-left px-3 py-1.5 text-[12px] text-ink hover:bg-bone-soft transition-colors"
+                        >
+                          Marcar lista
+                        </button>
+                        <button
+                          onClick={() => handleSkip(task.id)}
+                          className="w-full text-left px-3 py-1.5 text-[12px] text-steel hover:bg-bone-soft transition-colors"
+                        >
+                          Saltar
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
-      ))}
-    </div>
+              )
+            })}
+          </div>
+        ))}
+      </div>
+
+      <ScheduleVisitModal
+        open={activeModal?.type === 'schedule_visit'}
+        onClose={() => setActiveModal(null)}
+        leadId={activeModal?.props.leadId as string ?? firstLeadId}
+        propertyId={activeModal?.props.propertyId as string}
+      />
+      <OfferFormModal
+        open={activeModal?.type === 'offer_form'}
+        onClose={() => setActiveModal(null)}
+        leadId={activeModal?.props.leadId as string ?? firstLeadId}
+        propertyId={activeModal?.props.propertyId as string}
+      />
+      <RequestDocModal
+        open={activeModal?.type === 'request_doc'}
+        onClose={() => setActiveModal(null)}
+        leadId={activeModal?.props.leadId as string ?? firstLeadId}
+        docCodes={activeModal?.props.docCodes as string[]}
+        target={activeModal?.props.target as string}
+        phone={phone}
+        clientName={leadName.split(' ')[0]}
+      />
+      <FinancingSimModal
+        open={activeModal?.type === 'financing_sim'}
+        onClose={() => setActiveModal(null)}
+        propertyPrice={propertyPrice}
+        phone={phone}
+        clientName={leadName.split(' ')[0]}
+      />
+    </>
   )
 }

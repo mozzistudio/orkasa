@@ -1,10 +1,12 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { usePathname } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
 import { LogoLockup } from '@/components/ui/logo'
 import { logout } from '@/app/[locale]/(auth)/login/actions'
+import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import {
   HomeIcon,
   BuildingIcon,
@@ -16,13 +18,28 @@ import {
   SettingsIcon,
   PlugIcon,
   LogoutIcon,
+  DocumentIcon,
+  StarIcon,
 } from '@/components/icons/icons'
+import { GitBranch, Inbox as InboxLucide } from 'lucide-react'
+
+function PipelineIcon({ size = 16, className }: { size?: number; className?: string }) {
+  return <GitBranch width={size} height={size} className={className} strokeWidth={1.5} />
+}
+
+function InboxIcon({ size = 16, className }: { size?: number; className?: string }) {
+  return <InboxLucide width={size} height={size} className={className} strokeWidth={1.5} />
+}
 
 const navItems = [
   { key: 'title',        href: '/app',              icon: HomeIcon,      match: 'exact' as const },
   { key: 'inventory',    href: '/app/properties',   icon: BuildingIcon,  match: 'prefix' as const },
   { key: 'leads',        href: '/app/leads',        icon: PeopleIcon,    match: 'prefix' as const },
+  { key: 'tasks',        href: '/app/tasks',        icon: DocumentIcon,  match: 'prefix' as const },
+  { key: 'inbox',        href: '/app/inbox',        icon: InboxIcon,     match: 'prefix' as const },
   { key: 'calendar',     href: '/app/calendar',     icon: CalendarIcon,  match: 'prefix' as const },
+  { key: 'offers',       href: '/app/offers',       icon: StarIcon,      match: 'prefix' as const },
+  { key: 'deals',        href: '/app/deals',        icon: PipelineIcon,  match: 'prefix' as const },
   { key: 'agents',       href: '/app/agents',       icon: AgentIcon,     match: 'prefix' as const },
   { key: 'analytics',    href: '/app/analytics',    icon: AnalyticsIcon, match: 'prefix' as const },
   { key: 'compliance',   href: '/app/compliance',   icon: ShieldIcon,    match: 'prefix' as const },
@@ -46,6 +63,60 @@ export function Sidebar({
 }) {
   const t = useTranslations('dashboard')
   const pathname = usePathname()
+  const [inboxUnread, setInboxUnread] = useState(0)
+
+  useEffect(() => {
+    const supabase = createBrowserClient()
+    let cancelled = false
+    let agentId: string | null = null
+
+    async function loadAndSubscribe() {
+      const {
+        data: { user: u },
+      } = await supabase.auth.getUser()
+      if (!u || cancelled) return
+      agentId = u.id
+
+      const { count } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('agent_id', u.id)
+        .eq('is_read', false)
+      if (!cancelled) setInboxUnread(count ?? 0)
+
+      const channel = supabase
+        .channel(`sidebar-notifications:${u.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'notifications',
+            filter: `agent_id=eq.${u.id}`,
+          },
+          async () => {
+            if (!agentId) return
+            const { count: c } = await supabase
+              .from('notifications')
+              .select('*', { count: 'exact', head: true })
+              .eq('agent_id', agentId)
+              .eq('is_read', false)
+            if (!cancelled) setInboxUnread(c ?? 0)
+          },
+        )
+        .subscribe()
+
+      return channel
+    }
+
+    const channelPromise = loadAndSubscribe()
+    return () => {
+      cancelled = true
+      channelPromise.then((channel) => {
+        if (channel) supabase.removeChannel(channel)
+      })
+    }
+  }, [])
 
   return (
     <aside className="fixed left-0 top-0 flex h-full w-60 flex-col border-r border-bone bg-paper-warm">
@@ -60,6 +131,7 @@ export function Sidebar({
           let isActive = false
           if (match === 'exact') isActive = pathname === href
           else if (match === 'prefix') isActive = pathname.startsWith(href)
+          const showBadge = key === 'inbox' && inboxUnread > 0
           return (
             <Link
               key={key}
@@ -71,7 +143,16 @@ export function Sidebar({
               }`}
             >
               <Icon size={16} className="flex-shrink-0" />
-              {t(key)}
+              <span className="flex-1">{t(key)}</span>
+              {showBadge && (
+                <span
+                  className={`flex min-w-[18px] h-[16px] items-center justify-center rounded-[3px] px-1 font-mono text-[9px] font-medium tabular-nums ${
+                    isActive ? 'bg-paper text-ink' : 'bg-signal text-paper'
+                  }`}
+                >
+                  {inboxUnread > 99 ? '99+' : inboxUnread}
+                </span>
+              )}
             </Link>
           )
         })}

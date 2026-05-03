@@ -176,7 +176,7 @@ function LeadCard({
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      onDoubleClick={() => router.push(`/app/leads/${lead.id}`)}
+      onClick={() => { if (!isDragging) router.push(`/app/leads/${lead.id}`) }}
       className={`group cursor-grab rounded-[4px] border border-bone bg-paper p-3 active:cursor-grabbing ${
         isDragging || dragging
           ? 'opacity-90 shadow-lg'

@@ -27,10 +27,18 @@ export async function GET(request: NextRequest) {
   // ── 1. Escalate overdue tasks ──────────────────────────────────────
   const { data: overdue } = await supabase
     .from('tasks')
-    .select('id, brokerage_id')
+    .select('id, brokerage_id, agent_id, lead_id, title')
     .eq('status', 'open')
     .lt('escalation_at', now)
-    .returns<Array<{ id: string; brokerage_id: string }>>()
+    .returns<
+      Array<{
+        id: string
+        brokerage_id: string
+        agent_id: string | null
+        lead_id: string
+        title: string
+      }>
+    >()
 
   if (overdue?.length) {
     await supabase
@@ -48,6 +56,17 @@ export async function GET(request: NextRequest) {
         agent_id: null,
         action: 'escalated',
         details: { reason: 'cron_escalation' },
+      })
+
+      await supabase.from('notifications').insert({
+        brokerage_id: task.brokerage_id,
+        agent_id: task.agent_id,
+        type: 'task_escalated',
+        title: `Tarea escalada · ${task.title}`,
+        body: 'Una tarea sobrepasó el plazo de escalación',
+        entity_type: 'task',
+        entity_id: task.id,
+        metadata: { leadId: task.lead_id },
       })
     }
     results.escalated = overdue.length
