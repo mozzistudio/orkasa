@@ -5,6 +5,7 @@ import { getGeminiClient, GEMINI_IMAGE_MODEL } from '@/lib/gemini'
 import { buildDocPrompt } from '@/lib/compliance-doc-prompts'
 import { createClient } from '@/lib/supabase/server'
 import type { Database, Json } from '@/lib/database.types'
+import { checkAutoComplete } from '@/lib/tasks/auto-complete'
 
 type ComplianceStatus = Database['public']['Enums']['compliance_status']
 type ComplianceRisk = Database['public']['Enums']['compliance_risk']
@@ -134,7 +135,6 @@ export async function markDocumentUploaded(
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  // Look up the check_id so we can audit-log
   const { data: doc } = await supabase
     .from('compliance_documents')
     .select('check_id, kind')
@@ -155,6 +155,22 @@ export async function markDocumentUploaded(
 
   if (doc) {
     await logAudit(doc.check_id, 'doc_uploaded', { kind: doc.kind, fileName })
+
+    const { data: check } = await supabase
+      .from('compliance_checks')
+      .select('lead_id, brokerage_id')
+      .eq('id', doc.check_id)
+      .maybeSingle<{ lead_id: string | null; brokerage_id: string }>()
+
+    if (check?.lead_id) {
+      checkAutoComplete({
+        event: 'document_uploaded',
+        leadId: check.lead_id,
+        brokerageId: check.brokerage_id,
+        agentId: user.id,
+        documentCode: doc.kind,
+      }).catch(() => {})
+    }
   }
 
   revalidatePath(`/app/compliance/${doc?.check_id ?? ''}`)
@@ -199,6 +215,24 @@ export async function setDocumentStatus(
 
   if (doc) {
     await logAudit(doc.check_id, `doc_${status}`, { kind: doc.kind })
+
+    if (status === 'verified') {
+      const { data: check } = await supabase
+        .from('compliance_checks')
+        .select('lead_id, brokerage_id')
+        .eq('id', doc.check_id)
+        .maybeSingle<{ lead_id: string | null; brokerage_id: string }>()
+
+      if (check?.lead_id) {
+        checkAutoComplete({
+          event: 'document_verified',
+          leadId: check.lead_id,
+          brokerageId: check.brokerage_id,
+          agentId: user.id,
+          documentCode: doc.kind,
+        }).catch(() => {})
+      }
+    }
   }
 
   revalidatePath(`/app/compliance/${doc?.check_id ?? ''}`)

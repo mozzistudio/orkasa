@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   Phone,
   Calendar,
-  MoreHorizontal,
   ChevronDown,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
@@ -14,6 +13,8 @@ import { formatPrice } from '@/lib/utils'
 import { Composer } from './composer'
 import { LeadTabs } from './lead-tabs'
 import { LeadDeleteButton } from './delete-button'
+import { TaskList } from './task-list'
+import { getOpenTasksForLead } from '@/lib/tasks/trigger-engine'
 import type { Database } from '@/lib/database.types'
 
 type Lead = Database['public']['Tables']['leads']['Row']
@@ -166,8 +167,8 @@ export default async function LeadDetailPage({
   )
   const statusDisplay = STATUS_DISPLAY[status] ?? STATUS_DISPLAY.new
 
-  // Compute smart tasks
-  const tasks = computeTasks(lead, interactions, property, daysSinceContact)
+  // Fetch DB-backed tasks
+  const tasks = await getOpenTasksForLead(id)
 
   const dateLong = (iso: string | null) =>
     iso
@@ -333,83 +334,11 @@ export default async function LeadDetailPage({
             </div>
 
             <div className="px-5 py-2 pb-5">
-              {tasks.length === 0 ? (
-                <p className="py-6 text-center text-[13px] text-steel">
-                  Sin tareas pendientes.
-                </p>
-              ) : (
-                <div>
-                  {tasks.map((task, i) => (
-                    <div
-                      key={i}
-                      className="flex items-start justify-between gap-4 py-3.5 border-b border-bone-soft last:border-b-0"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-[13px] text-ink leading-normal">
-                          {task.title}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          {task.auto && (
-                            <span className="font-mono text-[9px] tracking-[0.7px] uppercase px-1.5 py-0.5 rounded-full bg-bone-soft text-steel font-medium">
-                              Auto
-                            </span>
-                          )}
-                          <span
-                            className={`font-mono text-[9px] tracking-[0.7px] uppercase px-1.5 py-0.5 rounded-full font-medium ${task.urgencyStyle}`}
-                          >
-                            {task.urgencyLabel}
-                          </span>
-                          {task.reason && (
-                            <span className="text-[11px] text-steel">
-                              · {task.reason}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      {task.cta && (
-                        <a
-                          href={task.cta.href}
-                          target={
-                            task.cta.href.startsWith('http')
-                              ? '_blank'
-                              : undefined
-                          }
-                          rel={
-                            task.cta.href.startsWith('http')
-                              ? 'noopener noreferrer'
-                              : undefined
-                          }
-                          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] bg-ink text-white text-[12px] font-medium hover:bg-coal transition-colors"
-                        >
-                          {task.cta.icon === 'phone' && (
-                            <Phone
-                              className="h-3 w-3"
-                              strokeWidth={1.5}
-                            />
-                          )}
-                          {task.cta.icon === 'calendar' && (
-                            <Calendar
-                              className="h-3 w-3"
-                              strokeWidth={1.5}
-                            />
-                          )}
-                          {task.cta.icon === 'whatsapp' && (
-                            <svg
-                              width="12"
-                              height="12"
-                              viewBox="0 0 24 24"
-                              fill="currentColor"
-                            >
-                              <path d="M17.5 14.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.1-1.3-.5-2.5-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6.1-.1.3-.4.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.4-.2.3-1 1-1 2.4 0 1.4 1 2.8 1.2 3 .1.2 2 3.1 4.9 4.3 2.9 1.2 2.9.8 3.4.8.5 0 1.6-.7 1.9-1.3.2-.7.2-1.2.2-1.3-.1-.1-.3-.2-.6-.4zM12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.3c1.4.8 3 1.2 4.8 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2z" />
-                            </svg>
-                          )}
-                          {task.cta.label}
-                        </a>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+              <TaskList
+                tasks={tasks}
+                leadName={lead.full_name}
+                agentName={assignedAgent?.full_name}
+              />
             </div>
           </section>
         </div>
@@ -546,81 +475,3 @@ function AboutRow({
   )
 }
 
-// ── Helper: Compute smart tasks from lead data ──
-
-type SmartTask = {
-  title: string
-  auto: boolean
-  urgencyLabel: string
-  urgencyStyle: string
-  reason?: string
-  cta?: { label: string; href: string; icon: string }
-}
-
-function computeTasks(
-  lead: Lead,
-  interactions: Interaction[],
-  property: Property | null,
-  daysSinceContact: number | null,
-): SmartTask[] {
-  const tasks: SmartTask[] = []
-
-  if (daysSinceContact !== null && daysSinceContact > 7 && lead.phone) {
-    tasks.push({
-      title: `Llamar a ${lead.full_name.split(' ')[0]} para retomar contacto`,
-      auto: true,
-      urgencyLabel:
-        daysSinceContact > 14
-          ? `Vencida hace ${daysSinceContact - 7} días`
-          : 'Esta semana',
-      urgencyStyle:
-        daysSinceContact > 14
-          ? 'bg-signal-bg text-signal-deep'
-          : 'bg-amber-bg text-amber-text',
-      reason: 'generada porque está cooling',
-      cta: { label: 'Llamar', href: `tel:${lead.phone}`, icon: 'phone' },
-    })
-  }
-
-  if (
-    property &&
-    lead.status !== 'viewing_scheduled' &&
-    lead.status !== 'negotiating' &&
-    lead.status !== 'closed_won' &&
-    lead.status !== 'closed_lost'
-  ) {
-    const hasVisit = interactions.some((i) => i.type === 'visit')
-    if (!hasVisit) {
-      tasks.push({
-        title: `Agendar visita a ${property.title}`,
-        auto: false,
-        urgencyLabel: 'Pendiente',
-        urgencyStyle: 'bg-paper-warm text-steel',
-        reason: 'cliente mostró interés',
-        cta: { label: 'Agendar', href: '#', icon: 'calendar' },
-      })
-    }
-  }
-
-  if (
-    daysSinceContact !== null &&
-    daysSinceContact > 3 &&
-    daysSinceContact <= 7 &&
-    lead.phone
-  ) {
-    tasks.push({
-      title: `Enviar seguimiento por WhatsApp`,
-      auto: true,
-      urgencyLabel: 'Esta semana',
-      urgencyStyle: 'bg-amber-bg text-amber-text',
-      reason: `${daysSinceContact} días sin respuesta`,
-      cta: {
-        label: 'WhatsApp',
-        href: `https://wa.me/${lead.phone.replace(/[^0-9+]/g, '')}`,
-        icon: 'whatsapp',
-      },
-    })
-  }
-
-  return tasks
-}
