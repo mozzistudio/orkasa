@@ -13,6 +13,8 @@ import { PropertyHero } from './property-hero'
 import { PropertyComposer } from './property-composer'
 import { PropertyTabs } from './property-tabs'
 import type { LeadSummary, TimelineEvent } from './property-tabs'
+import { OwnerDocuments } from './owner-documents'
+import type { SignatureDocument } from '@/lib/signatures/types'
 import type { Database } from '@/lib/database.types'
 import type {
   PropertyWithMetrics,
@@ -55,30 +57,38 @@ export default async function PropertyDetailPage({
   const supabase = await createClient()
 
   // ── Parallel data fetching ──
-  const [propertyRes, leadsRes, publicationsRes] = await Promise.all([
-    supabase
-      .from('properties')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle<Property>(),
-    supabase
-      .from('leads')
-      .select('*')
-      .eq('property_id', id)
-      .order('created_at', { ascending: false })
-      .returns<Lead[]>(),
-    supabase
-      .from('property_publications')
-      .select('*')
-      .eq('property_id', id)
-      .returns<Publication[]>(),
-  ])
+  const [propertyRes, leadsRes, publicationsRes, signaturesRes] =
+    await Promise.all([
+      supabase
+        .from('properties')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle<Property>(),
+      supabase
+        .from('leads')
+        .select('*')
+        .eq('property_id', id)
+        .order('created_at', { ascending: false })
+        .returns<Lead[]>(),
+      supabase
+        .from('property_publications')
+        .select('*')
+        .eq('property_id', id)
+        .returns<Publication[]>(),
+      supabase
+        .from('signature_documents')
+        .select('*')
+        .eq('property_id', id)
+        .order('created_at', { ascending: false })
+        .returns<SignatureDocument[]>(),
+    ])
 
   const property = propertyRes.data
   if (!property) notFound()
 
   const leads = leadsRes.data ?? []
   const publications = publicationsRes.data ?? []
+  const signatures = signaturesRes.data ?? []
 
   // Fetch interactions for all leads of this property
   const leadIds = leads.map((l) => l.id)
@@ -609,6 +619,15 @@ export default async function PropertyDetailPage({
               </div>
             </section>
           )}
+
+          {/* Owner documents (signature) */}
+          <OwnerDocuments
+            propertyId={property.id}
+            signatures={signatures}
+            ownerName={property.owner_name}
+            ownerPhone={property.owner_phone}
+            propertyTitle={property.title}
+          />
 
           {/* Listing card */}
           <section className="rounded-[12px] border border-bone bg-paper overflow-hidden">

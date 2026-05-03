@@ -1194,6 +1194,106 @@ export type Database = {
           },
         ]
       }
+      signature_documents: {
+        Row: {
+          agent_id: string | null
+          brokerage_id: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          pdf_path: string | null
+          property_id: string
+          sent_at: string | null
+          signature_ip: string | null
+          signature_typed: string | null
+          signature_user_agent: string | null
+          signed_at: string | null
+          signed_pdf_path: string | null
+          signer_email: string | null
+          signer_name: string
+          signer_phone: string | null
+          signing_token: string
+          status: Database["public"]["Enums"]["signature_document_status"]
+          template_data: Json | null
+          template_type: Database["public"]["Enums"]["signature_document_template"]
+          title: string
+          updated_at: string | null
+          viewed_at: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          brokerage_id: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          pdf_path?: string | null
+          property_id: string
+          sent_at?: string | null
+          signature_ip?: string | null
+          signature_typed?: string | null
+          signature_user_agent?: string | null
+          signed_at?: string | null
+          signed_pdf_path?: string | null
+          signer_email?: string | null
+          signer_name: string
+          signer_phone?: string | null
+          signing_token: string
+          status?: Database["public"]["Enums"]["signature_document_status"]
+          template_data?: Json | null
+          template_type: Database["public"]["Enums"]["signature_document_template"]
+          title: string
+          updated_at?: string | null
+          viewed_at?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          brokerage_id?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          pdf_path?: string | null
+          property_id?: string
+          sent_at?: string | null
+          signature_ip?: string | null
+          signature_typed?: string | null
+          signature_user_agent?: string | null
+          signed_at?: string | null
+          signed_pdf_path?: string | null
+          signer_email?: string | null
+          signer_name?: string
+          signer_phone?: string | null
+          signing_token?: string
+          status?: Database["public"]["Enums"]["signature_document_status"]
+          template_data?: Json | null
+          template_type?: Database["public"]["Enums"]["signature_document_template"]
+          title?: string
+          updated_at?: string | null
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signature_documents_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signature_documents_brokerage_id_fkey"
+            columns: ["brokerage_id"]
+            isOneToOne: false
+            referencedRelation: "brokerages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signature_documents_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_audit_log: {
         Row: {
           action: string
@@ -1689,6 +1789,17 @@ export type Database = {
         | "published"
         | "failed"
         | "paused"
+      signature_document_status:
+        | "draft"
+        | "sent"
+        | "viewed"
+        | "signed"
+        | "expired"
+        | "cancelled"
+      signature_document_template:
+        | "autorizacion_venta"
+        | "promesa_compraventa"
+        | "addendum"
       viewing_status:
         | "scheduled"
         | "confirmed"
@@ -1968,6 +2079,19 @@ export const Constants = {
         "published",
         "failed",
         "paused",
+      ],
+      signature_document_status: [
+        "draft",
+        "sent",
+        "viewed",
+        "signed",
+        "expired",
+        "cancelled",
+      ],
+      signature_document_template: [
+        "autorizacion_venta",
+        "promesa_compraventa",
+        "addendum",
       ],
       viewing_status: [
         "scheduled",
