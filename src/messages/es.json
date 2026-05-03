@@ -180,6 +180,12 @@
       "viewAll": "Ver compliance",
       "empty": "Todo al día. Sin pendientes."
     },
+    "currentDeals": {
+      "title": "Deals en curso",
+      "subtitle": "{count, plural, =1 {1 deal con documentos pendientes} other {# deals con documentos pendientes}}",
+      "viewAll": "Ver compliance",
+      "empty": "Sin deals en curso. Todo cerrado."
+    },
     "cooling": {
       "title": "Leads que se enfrían",
       "subtitle": "{count} leads sin contacto reciente — relanzá antes de perderlos",

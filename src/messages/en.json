@@ -172,6 +172,12 @@
       "viewPipeline": "View pipeline",
       "empty": "No cooling leads. Great follow-up"
     },
+    "currentDeals": {
+      "title": "Current deals",
+      "subtitle": "{count, plural, =1 {1 deal with pending docs} other {# deals with pending docs}}",
+      "viewAll": "View compliance",
+      "empty": "No active deals. All closed."
+    },
     "properties": {
       "title": "Properties to review",
       "subtitle": "{count} properties need your attention",
