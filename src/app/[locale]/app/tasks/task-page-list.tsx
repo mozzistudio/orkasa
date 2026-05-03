@@ -12,6 +12,7 @@ import {
   Shield,
   Check,
   ArrowRight,
+  X,
 } from 'lucide-react'
 import { completeTask, skipTask } from '../leads/actions'
 import { executeCtaAction, getCtaLabel, getCtaIcon } from '@/lib/tasks/cta-handlers'
@@ -190,10 +191,19 @@ export function TaskPageList({ tasks }: { tasks: TaskWithContext[] }) {
                   </button>
                   <button
                     onClick={() => handleComplete(task.id)}
-                    className="p-1.5 rounded-[6px] text-steel hover:text-green-text hover:bg-green-bg transition-colors"
-                    title="Marcar lista"
+                    className="inline-flex items-center gap-1 px-2 py-1.5 rounded-[6px] border border-bone text-steel hover:text-green-text hover:border-green-mark transition-colors text-[11px]"
+                    title="Marcar como hecho sin enviar"
                   >
-                    <Check className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    <Check className="h-3 w-3" strokeWidth={1.5} />
+                    Hecho
+                  </button>
+                  <button
+                    onClick={() => handleSkip(task.id)}
+                    className="inline-flex items-center gap-1 px-2 py-1.5 rounded-[6px] border border-bone text-steel hover:text-signal-deep hover:border-signal/30 transition-colors text-[11px]"
+                    title="Ignorar esta tarea"
+                  >
+                    <X className="h-3 w-3" strokeWidth={1.5} />
+                    Ignorar
                   </button>
                 </div>
               </div>

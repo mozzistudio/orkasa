@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/database.types'
 
 const ACTIVE_LEAD_STATUSES = [
   'new',
@@ -15,10 +17,16 @@ type AssignableAgent = {
   last_assigned_at: string | null
 }
 
+/**
+ * Round-robin agent picker. Pass an explicit client (e.g. service-role)
+ * when calling from a webhook or cron — otherwise the cookie-bound
+ * default is used.
+ */
 export async function pickNextAgent(
   brokerageId: string,
+  client?: SupabaseClient<Database>,
 ): Promise<{ id: string; full_name: string } | null> {
-  const supabase = await createClient()
+  const supabase = client ?? (await createClient())
 
   const { data: agents } = await supabase
     .from('agents')
