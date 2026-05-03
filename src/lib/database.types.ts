@@ -432,10 +432,13 @@ export type Database = {
           currency: string
           id: string
           lead_id: string
+          lost_reason: string | null
           metadata: Json
           property_id: string | null
           stage: Database["public"]["Enums"]["deal_stage"]
+          title: string | null
           updated_at: string
+          winning_property_id: string | null
         }
         Insert: {
           agent_id?: string | null
@@ -446,10 +449,13 @@ export type Database = {
           currency?: string
           id?: string
           lead_id: string
+          lost_reason?: string | null
           metadata?: Json
           property_id?: string | null
           stage?: Database["public"]["Enums"]["deal_stage"]
+          title?: string | null
           updated_at?: string
+          winning_property_id?: string | null
         }
         Update: {
           agent_id?: string | null
@@ -460,10 +466,13 @@ export type Database = {
           currency?: string
           id?: string
           lead_id?: string
+          lost_reason?: string | null
           metadata?: Json
           property_id?: string | null
           stage?: Database["public"]["Enums"]["deal_stage"]
+          title?: string | null
           updated_at?: string
+          winning_property_id?: string | null
         }
         Relationships: [
           {
@@ -598,8 +607,10 @@ export type Database = {
         Row: {
           brokerage_id: string
           created_at: string
+          deal_id: string | null
           id: string
           lead_id: string
+          lost_reason: string | null
           property_id: string
           role: Database["public"]["Enums"]["lead_property_role"]
           status: Database["public"]["Enums"]["lead_property_status"]
@@ -608,8 +619,10 @@ export type Database = {
         Insert: {
           brokerage_id: string
           created_at?: string
+          deal_id?: string | null
           id?: string
           lead_id: string
+          lost_reason?: string | null
           property_id: string
           role?: Database["public"]["Enums"]["lead_property_role"]
           status?: Database["public"]["Enums"]["lead_property_status"]
@@ -618,8 +631,10 @@ export type Database = {
         Update: {
           brokerage_id?: string
           created_at?: string
+          deal_id?: string | null
           id?: string
           lead_id?: string
+          lost_reason?: string | null
           property_id?: string
           role?: Database["public"]["Enums"]["lead_property_role"]
           status?: Database["public"]["Enums"]["lead_property_status"]
