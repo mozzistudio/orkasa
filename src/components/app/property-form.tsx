@@ -70,6 +70,9 @@ export type PropertyFormDefaults = {
   city?: string | null
   external_id?: string | null
   images?: StoredImage[]
+  owner_name?: string | null
+  owner_phone?: string | null
+  owner_email?: string | null
 }
 
 export function PropertyForm({
@@ -359,11 +362,61 @@ export function PropertyForm({
         </div>
       </section>
 
-      {/* === SECTION 4: IMAGES === */}
+      {/* === SECTION 4: OWNER === */}
+      <section className="space-y-3 md:space-y-4">
+        <header className="border-b border-bone pb-1.5 md:pb-2">
+          <h2 className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
+            04 · Propietario
+          </h2>
+        </header>
+
+        <div className="space-y-1.5 md:space-y-2">
+          <Label htmlFor="owner_name" className="text-[13px] text-ink">
+            Nombre
+          </Label>
+          <Input
+            id="owner_name"
+            name="owner_name"
+            defaultValue={defaults.owner_name ?? ''}
+            placeholder="Juan Pérez"
+            className="h-11 rounded-[4px] border-bone md:h-9 text-[13px] focus:border-ink focus:ring-0"
+          />
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 md:gap-4">
+          <div className="space-y-1.5 md:space-y-2">
+            <Label htmlFor="owner_phone" className="text-[13px] text-ink">
+              Teléfono / WhatsApp
+            </Label>
+            <Input
+              id="owner_phone"
+              name="owner_phone"
+              type="tel"
+              defaultValue={defaults.owner_phone ?? ''}
+              placeholder="+507 6000-0000"
+              className="h-11 rounded-[4px] border-bone md:h-9 font-mono text-[13px] focus:border-ink focus:ring-0"
+            />
+          </div>
+          <div className="space-y-1.5 md:space-y-2">
+            <Label htmlFor="owner_email" className="text-[13px] text-ink">
+              Email
+            </Label>
+            <Input
+              id="owner_email"
+              name="owner_email"
+              type="email"
+              defaultValue={defaults.owner_email ?? ''}
+              placeholder="juan@email.com"
+              className="h-11 rounded-[4px] border-bone md:h-9 text-[13px] focus:border-ink focus:ring-0"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* === SECTION 5: IMAGES === */}
       <section className="space-y-3 md:space-y-4">
         <header className="flex items-baseline justify-between border-b border-bone pb-1.5 md:pb-2">
           <h2 className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
-            04 · Imágenes
+            05 · Imágenes
           </h2>
           {/* AI review only available on edit flow — needs persisted property
               with images and form data already filled. */}
@@ -388,7 +441,7 @@ export function PropertyForm({
       <section className="space-y-3 md:space-y-4">
         <header className="flex items-baseline justify-between border-b border-bone pb-1.5 md:pb-2">
           <h2 className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
-            05 · Descripción
+            06 · Descripción
           </h2>
           {/* Voice dictation: mobile-only — fast for an agent walking the property,
               awkward on desktop where typing is faster. */}

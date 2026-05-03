@@ -1029,6 +1029,9 @@ export type Database = {
           listing_type: Database["public"]["Enums"]["listing_type"]
           longitude: number | null
           neighborhood: string | null
+          owner_email: string | null
+          owner_name: string | null
+          owner_phone: string | null
           price: number | null
           price_history: Json
           property_type: Database["public"]["Enums"]["property_type"]
@@ -1059,6 +1062,9 @@ export type Database = {
           listing_type: Database["public"]["Enums"]["listing_type"]
           longitude?: number | null
           neighborhood?: string | null
+          owner_email?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
           price?: number | null
           price_history?: Json
           property_type: Database["public"]["Enums"]["property_type"]
@@ -1089,6 +1095,9 @@ export type Database = {
           listing_type?: Database["public"]["Enums"]["listing_type"]
           longitude?: number | null
           neighborhood?: string | null
+          owner_email?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
           price?: number | null
           price_history?: Json
           property_type?: Database["public"]["Enums"]["property_type"]

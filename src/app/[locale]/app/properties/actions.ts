@@ -36,6 +36,9 @@ const propertySchema = z.object({
   neighborhood: z.string().max(120).nullable().optional(),
   city: z.string().max(120).nullable().optional(),
   external_id: z.string().max(60).nullable().optional(),
+  owner_name: z.string().max(200).nullable().optional(),
+  owner_phone: z.string().max(30).nullable().optional(),
+  owner_email: z.string().email().max(200).nullable().optional(),
   images: z
     .string()
     .optional()
