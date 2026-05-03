@@ -67,67 +67,15 @@ export async function POST(request: NextRequest) {
     received_at: new Date().toISOString(),
   })
 
+  // Inbound messages are NOT tracked — the team handles incoming WhatsApp
+  // manually on their phones. We only care about outbound delivery status
+  // updates here.
   for (const entry of payload.entry ?? []) {
     for (const change of entry.changes ?? []) {
       const value = change.value
       if (!value) continue
-      const phoneNumberId = value.metadata?.phone_number_id
 
-      // Resolve brokerage by phone_number_id (lookup integrations.config)
-      let brokerageId: string | null = null
-      if (phoneNumberId) {
-        const { data: integration } = await supabase
-          .from('integrations')
-          .select('brokerage_id, config')
-          .eq('provider', 'whatsapp_business')
-          .returns<
-            Array<{
-              brokerage_id: string
-              config: { phone_number_id?: string } | null
-            }>
-          >()
-        const match = integration?.find(
-          (i) => i.config?.phone_number_id === phoneNumberId,
-        )
-        brokerageId = match?.brokerage_id ?? null
-      }
-
-      // Inbound messages
-      for (const m of value.messages ?? []) {
-        if (!brokerageId) continue
-        const phone = m.from
-
-        // Try to match an existing lead by phone
-        const { data: lead } = await supabase
-          .from('leads')
-          .select('id')
-          .eq('brokerage_id', brokerageId)
-          .ilike('phone', `%${phone.slice(-8)}%`)
-          .limit(1)
-          .maybeSingle<{ id: string }>()
-
-        await supabase.from('messages').insert({
-          brokerage_id: brokerageId,
-          lead_id: lead?.id ?? null,
-          channel: 'whatsapp',
-          direction: 'inbound',
-          status: 'received',
-          external_id: m.id,
-          from_address: phone,
-          body: m.text?.body ?? null,
-          metadata: { type: m.type, timestamp: m.timestamp } as Json,
-        })
-
-        if (lead?.id) {
-          await supabase.from('lead_interactions').insert({
-            lead_id: lead.id,
-            type: 'whatsapp_inbound',
-            content: m.text?.body ?? '(media)',
-          })
-        }
-      }
-
-      // Status updates
+      // Status updates for outbound messages
       for (const s of value.statuses ?? []) {
         const ts = new Date(parseInt(s.timestamp) * 1000).toISOString()
         const update: Database['public']['Tables']['messages']['Update'] = {

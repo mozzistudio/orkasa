@@ -11,7 +11,7 @@ import {
   Shield,
   Check,
   ArrowRight,
-  MoreHorizontal,
+  X,
 } from 'lucide-react'
 import { completeTask, skipTask } from '../actions'
 import { executeCtaAction, getCtaLabel, getCtaIcon } from '@/lib/tasks/cta-handlers'
@@ -218,25 +218,22 @@ export function TaskList({ tasks, leadName, agentName, phone, propertyPrice }: P
                       <CtaIcon icon={icon} />
                       {label}
                     </button>
-                    <div className="relative group">
-                      <button className="p-1.5 rounded-[6px] text-steel hover:bg-bone-soft transition-colors">
-                        <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
-                      </button>
-                      <div className="absolute right-0 top-full mt-1 z-10 hidden group-focus-within:block bg-white border border-bone rounded-[8px] shadow-sm py-1 min-w-[120px]">
-                        <button
-                          onClick={() => handleComplete(task.id)}
-                          className="w-full text-left px-3 py-1.5 text-[12px] text-ink hover:bg-bone-soft transition-colors"
-                        >
-                          Marcar lista
-                        </button>
-                        <button
-                          onClick={() => handleSkip(task.id)}
-                          className="w-full text-left px-3 py-1.5 text-[12px] text-steel hover:bg-bone-soft transition-colors"
-                        >
-                          Saltar
-                        </button>
-                      </div>
-                    </div>
+                    <button
+                      onClick={() => handleComplete(task.id)}
+                      className="inline-flex items-center gap-1 px-2 py-1.5 rounded-[6px] border border-bone text-steel hover:text-green-text hover:border-green-mark transition-colors text-[11px]"
+                      title="Marcar como hecho sin enviar"
+                    >
+                      <Check className="h-3 w-3" strokeWidth={1.5} />
+                      Hecho
+                    </button>
+                    <button
+                      onClick={() => handleSkip(task.id)}
+                      className="inline-flex items-center gap-1 px-2 py-1.5 rounded-[6px] border border-bone text-steel hover:text-signal-deep hover:border-signal/30 transition-colors text-[11px]"
+                      title="Ignorar esta tarea"
+                    >
+                      <X className="h-3 w-3" strokeWidth={1.5} />
+                      Ignorar
+                    </button>
                   </div>
                 </div>
               )

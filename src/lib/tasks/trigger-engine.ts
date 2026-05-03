@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { TASK_CATALOG } from './task-catalog'
+import { matchSimilarProperties } from '@/lib/properties/match'
 import type {
   TaskEventPayload,
   TaskContext,
@@ -222,6 +223,30 @@ export async function processTaskEvent(
     // overwrite it; otherwise fall back to the lead's phone.
     if (ctaMetadata.phone == null && ctx.lead.phone) {
       ctaMetadata.phone = ctx.lead.phone
+    }
+
+    // Step 3 (sendPropertyOptions) needs similar properties pre-computed
+    // from the lead's property of interest. We do it here so the catalog
+    // entry stays declarative.
+    if (
+      entry.stepNumber === 3 &&
+      ctx.property &&
+      payload.propertyId
+    ) {
+      try {
+        const matches = await matchSimilarProperties(
+          supabase,
+          payload.propertyId,
+          payload.brokerageId,
+          3,
+        )
+        if (matches.length > 0) {
+          ctaMetadata.propertyTitles = matches.map((m) => m.title)
+          ctaMetadata.suggestedPropertyIds = matches.map((m) => m.id)
+        }
+      } catch {
+        // best-effort
+      }
     }
 
     const row: TaskInsert = {
