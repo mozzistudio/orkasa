@@ -20,6 +20,6 @@ export const config = {
   // Match all paths except: api routes, Next.js internals, static files,
   // Next.js metadata routes, and public no-locale routes (auth, sign).
   matcher: [
-    '/((?!api|_next|_vercel|auth|sign|icon|icon0|apple-icon|opengraph-image|twitter-image|sitemap|robots|.*\\..*).*)',
+    '/((?!api|_next|_vercel|auth|sign|offer|icon|icon0|apple-icon|opengraph-image|twitter-image|sitemap|robots|.*\\..*).*)',
   ],
 }

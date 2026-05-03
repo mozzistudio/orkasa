@@ -14,6 +14,7 @@ import { PropertyComposer } from './property-composer'
 import { PropertyTabs } from './property-tabs'
 import type { LeadSummary, TimelineEvent } from './property-tabs'
 import { OwnerDocuments } from './owner-documents'
+import { PropertyOffers } from './property-offers'
 import type { SignatureDocument } from '@/lib/signatures/types'
 import type { Database } from '@/lib/database.types'
 import type {
@@ -29,6 +30,7 @@ type Lead = Database['public']['Tables']['leads']['Row']
 type Interaction = Database['public']['Tables']['lead_interactions']['Row']
 type Publication =
   Database['public']['Tables']['property_publications']['Row']
+type Offer = Database['public']['Tables']['offers']['Row']
 
 const DAY_MS = 86_400_000
 
@@ -57,8 +59,13 @@ export default async function PropertyDetailPage({
   const supabase = await createClient()
 
   // ── Parallel data fetching ──
-  const [propertyRes, leadsRes, publicationsRes, signaturesRes] =
-    await Promise.all([
+  const [
+    propertyRes,
+    leadsRes,
+    publicationsRes,
+    signaturesRes,
+    offersRes,
+  ] = await Promise.all([
       supabase
         .from('properties')
         .select('*')
@@ -81,6 +88,12 @@ export default async function PropertyDetailPage({
         .eq('property_id', id)
         .order('created_at', { ascending: false })
         .returns<SignatureDocument[]>(),
+      supabase
+        .from('offers')
+        .select('*')
+        .eq('property_id', id)
+        .order('created_at', { ascending: false })
+        .returns<Offer[]>(),
     ])
 
   const property = propertyRes.data
@@ -89,6 +102,7 @@ export default async function PropertyDetailPage({
   const leads = leadsRes.data ?? []
   const publications = publicationsRes.data ?? []
   const signatures = signaturesRes.data ?? []
+  const offers = offersRes.data ?? []
 
   // Fetch interactions for all leads of this property
   const leadIds = leads.map((l) => l.id)
@@ -511,6 +525,18 @@ export default async function PropertyDetailPage({
               noBorder
             />
           </section>
+
+          {/* Ofertas */}
+          <PropertyOffers
+            offers={offers}
+            leadNames={
+              new Map(leads.map((l) => [l.id, l.full_name]))
+            }
+            propertyTitle={property.title}
+            ownerName={property.owner_name}
+            ownerPhone={property.owner_phone}
+            propertyPrice={property.price ? Number(property.price) : null}
+          />
 
           {/* Composer */}
           <PropertyComposer propertyId={property.id} />

@@ -130,6 +130,16 @@ export function offerPresentation(clientName: string, propertyTitle: string, amo
   return `Hola ${clientName}, ya presenté tu oferta de ${amount} por el ${propertyTitle} al propietario. Te aviso apenas tenga respuesta. ¡Crucemos los dedos!`
 }
 
+export function transmitOfferToOwner(
+  ownerName: string,
+  propertyTitle: string,
+  buyerName: string,
+  amount: string,
+  offerLink: string,
+): string {
+  return `Hola ${ownerName}, te escribo de Orkasa. Recibimos una oferta formal de ${amount} por el ${propertyTitle} de parte de ${buyerName}.\n\nTe paso la carta de oferta acá: ${offerLink}\n\n¿Cuándo te queda bien que conversemos para revisar las condiciones?`
+}
+
 export function offerAccepted(clientName: string, propertyTitle: string): string {
   return `Hola ${clientName}, buenísima noticia — el propietario aceptó tu oferta por el ${propertyTitle}! 🎉 Ahora vamos a necesitar algunos documentos para formalizar. Te explico todo en los próximos mensajes.`
 }

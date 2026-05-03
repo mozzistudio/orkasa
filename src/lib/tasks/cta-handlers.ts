@@ -7,6 +7,7 @@ import {
   preVisitReminder,
   postVisitFollowUp,
   offerPresentation,
+  transmitOfferToOwner,
   offerAccepted,
   requestIdentityDocs,
   requestPayslips,
@@ -60,6 +61,11 @@ function buildWhatsAppMessage(
       return postVisitFollowUp(clientName, propertyTitle)
     case 'offerPresentation':
       return offerPresentation(clientName, propertyTitle, amount)
+    case 'transmitOfferToOwner': {
+      const ownerName = (meta.ownerName as string) ?? 'propietario'
+      const offerLink = (meta.offerLink as string) ?? ''
+      return transmitOfferToOwner(ownerName, propertyTitle, clientName, amount, offerLink)
+    }
     case 'offerAccepted':
       return offerAccepted(clientName, propertyTitle)
     case 'requestIdentityDocs':

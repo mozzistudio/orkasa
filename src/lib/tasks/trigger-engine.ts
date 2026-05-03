@@ -84,14 +84,33 @@ async function buildTriggerContext(
   if (propId) {
     const { data } = await supabase
       .from('properties')
-      .select('title, price, property_type')
+      .select('title, price, property_type, owner_name, owner_phone')
       .eq('id', propId)
       .maybeSingle<{
         title: string
         price: number | null
         property_type: string
+        owner_name: string | null
+        owner_phone: string | null
       }>()
     property = data
+  }
+
+  let offer: TriggerContext['offer'] = null
+  if (payload.offerId) {
+    const { data } = await supabase
+      .from('offers')
+      .select('id, amount, currency, public_token')
+      .eq('id', payload.offerId)
+      .maybeSingle<{
+        id: string
+        amount: number
+        currency: string
+        public_token: string | null
+      }>()
+    offer = data
+      ? { ...data, amount: Number(data.amount) }
+      : null
   }
 
   let deal: TriggerContext['deal'] = null
@@ -127,21 +146,32 @@ async function buildTriggerContext(
     lead: leadRes.data,
     property,
     deal,
+    offer,
     existingOpenSteps: (openTasksRes.data ?? []).map((t) => t.step_number),
     daysSinceClosed,
     lastDoneStepDates,
   }
 }
 
+function getAppUrl(): string {
+  return process.env.NEXT_PUBLIC_APP_URL ?? 'https://orkasa.vercel.app'
+}
+
 function buildTaskContext(ctx: TriggerContext): TaskContext {
   const nameParts = ctx.lead.full_name.split(' ')
+  const offerAmount = ctx.offer?.amount ?? ctx.deal?.amount ?? undefined
   const base: TaskContext = {
     firstName: nameParts[0],
     leadName: ctx.lead.full_name,
     propertyTitle: ctx.property?.title,
-    amount: ctx.deal?.amount ?? undefined,
-    formattedAmount: ctx.deal?.amount
-      ? `$${Number(ctx.deal.amount).toLocaleString('es-PA')}`
+    amount: offerAmount,
+    formattedAmount: offerAmount
+      ? `$${Number(offerAmount).toLocaleString('es-PA')}`
+      : undefined,
+    ownerName: ctx.property?.owner_name ?? undefined,
+    ownerPhone: ctx.property?.owner_phone ?? undefined,
+    offerLink: ctx.offer?.public_token
+      ? `${getAppUrl()}/offer/${ctx.offer.public_token}/pdf`
       : undefined,
   }
 
@@ -188,7 +218,9 @@ export async function processTaskEvent(
     if (entry.whatsappTemplate) {
       ctaMetadata.template = entry.whatsappTemplate
     }
-    if (ctx.lead.phone) {
+    // The builder may have set a non-lead phone (e.g. property owner). Don't
+    // overwrite it; otherwise fall back to the lead's phone.
+    if (ctaMetadata.phone == null && ctx.lead.phone) {
       ctaMetadata.phone = ctx.lead.phone
     }
 

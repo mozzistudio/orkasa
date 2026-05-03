@@ -932,6 +932,7 @@ export type Database = {
           metadata: Json
           notes: string | null
           property_id: string
+          public_token: string | null
           status: Database["public"]["Enums"]["offer_status"]
           updated_at: string
         }
@@ -948,6 +949,7 @@ export type Database = {
           metadata?: Json
           notes?: string | null
           property_id: string
+          public_token?: string | null
           status?: Database["public"]["Enums"]["offer_status"]
           updated_at?: string
         }
@@ -964,6 +966,7 @@ export type Database = {
           metadata?: Json
           notes?: string | null
           property_id?: string
+          public_token?: string | null
           status?: Database["public"]["Enums"]["offer_status"]
           updated_at?: string
         }
@@ -1655,6 +1658,37 @@ export type Database = {
       current_brokerage_id: { Args: never; Returns: string }
       seed_demo_data: { Args: never; Returns: undefined }
       slugify: { Args: { input: string }; Returns: string }
+      offer_by_public_token: {
+        Args: { p_token: string }
+        Returns: Array<{
+          offer_id: string
+          offer_amount: number
+          offer_currency: string
+          offer_conditions: string | null
+          offer_notes: string | null
+          offer_created_at: string
+          offer_status: string
+          buyer_full_name: string
+          buyer_phone: string | null
+          buyer_email: string | null
+          property_title: string
+          property_address: string | null
+          property_neighborhood: string | null
+          property_city: string | null
+          property_price: number | null
+          property_currency: string | null
+          property_type: string
+          property_bedrooms: number | null
+          property_bathrooms: number | null
+          property_area_m2: number | null
+          owner_name: string | null
+          owner_phone: string | null
+          owner_email: string | null
+          brokerage_name: string | null
+          agent_full_name: string | null
+          agent_phone: string | null
+        }>
+      }
     }
     Enums: {
       agent_role: "owner" | "admin" | "agent"

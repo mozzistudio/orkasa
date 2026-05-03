@@ -640,6 +640,33 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     },
     autoCompleteOn: 'interaction:whatsapp',
   },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Phase: NEGOCIACION — Step 35 (post-Step-10)
+  // Fires immediately after an offer is created. The agent must transmit
+  // the formal offer letter (PDF) to the property owner via WhatsApp.
+  // ═══════════════════════════════════════════════════════════════════
+
+  {
+    stepNumber: 35,
+    phase: 'negociacion',
+    titleTemplate: (ctx) =>
+      `Transmitir la oferta de ${firstName(ctx)} (${ctx.formattedAmount ?? ''}) al propietario${ctx.ownerName ? ` ${ctx.ownerName}` : ''}`,
+    description:
+      'Enviar la carta de oferta formal por WhatsApp al propietario, con el link al PDF.',
+    ctaAction: 'open_whatsapp',
+    whatsappTemplate: 'transmitOfferToOwner',
+    ctaMetadataBuilder: (ctx) => ({
+      phone: ctx.ownerPhone ?? null,
+      ownerName: ctx.ownerName ?? null,
+      offerLink: ctx.offerLink ?? null,
+      propertyTitle: ctx.propertyTitle ?? null,
+      formattedAmount: ctx.formattedAmount ?? null,
+    }),
+    dueDaysOffset: 0,
+    escalationDaysOffset: 1,
+    triggerEvents: ['offer_created'],
+  },
 ]
 
 export function getCatalogEntry(stepNumber: number): TaskCatalogEntry | undefined {

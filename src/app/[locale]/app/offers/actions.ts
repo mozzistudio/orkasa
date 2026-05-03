@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { randomBytes } from 'crypto'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { processTaskEvent } from '@/lib/tasks/trigger-engine'
@@ -53,6 +54,8 @@ export async function createOffer(
   const propertyId = parsed.data.property_id ?? lead.property_id
   if (!propertyId) return { error: 'No property associated' }
 
+  const publicToken = randomBytes(24).toString('base64url')
+
   const { data: offer, error } = await supabase
     .from('offers')
     .insert({
@@ -62,9 +65,10 @@ export async function createOffer(
       agent_id: user.id,
       amount: parsed.data.amount,
       currency: parsed.data.currency,
-      status: 'draft',
+      status: 'submitted',
       conditions: parsed.data.conditions ?? null,
       notes: parsed.data.notes ?? null,
+      public_token: publicToken,
     })
     .select('id')
     .single<{ id: string }>()
@@ -91,6 +95,7 @@ export async function createOffer(
 
   revalidatePath('/app/offers')
   revalidatePath(`/app/leads/${parsed.data.lead_id}`)
+  revalidatePath(`/app/properties/${propertyId}`)
   revalidatePath('/app/tasks')
   revalidatePath('/app')
   return {}
