@@ -89,6 +89,13 @@ export type TriggerContext = TaskEventPayload & {
     metadata: Record<string, unknown> | null
   } | null
   existingOpenSteps: number[]
+  /** Days since `deal.closed_at` (null if no deal or no close date). Used by
+   *  cron-driven steps to gate creation on elapsed time. */
+  daysSinceClosed: number | null
+  /** ISO timestamp of the most recent `done` task per step number for this
+   *  lead. Used by perpetual steps (e.g. annual check-in) to enforce a
+   *  minimum gap between recurrences. */
+  lastDoneStepDates: Record<number, string>
 }
 
 export type TaskCatalogEntry = {
