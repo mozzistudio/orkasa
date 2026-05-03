@@ -9,6 +9,7 @@ import { CoolingLeadsPanel } from '@/components/dashboard/cooling-leads-panel'
 import { PropertiesAttentionPanel } from '@/components/dashboard/properties-attention-panel'
 import { TeamPerformanceTable } from '@/components/dashboard/team-performance-table'
 import { PipelinePredictions } from '@/components/dashboard/pipeline-predictions'
+import { CreateOperacionButton } from './operaciones/create-operacion-button'
 import {
   getPipelineSnapshot,
   getUpcomingViewings,
@@ -67,15 +68,54 @@ export default async function HomePage() {
         atRiskValue: 0,
       }
 
+  // Fetch leads + properties for the "+ Crear operación" picker
+  const [leadsForOpRes, propsForOpRes] = agentRow?.brokerage_id
+    ? await Promise.all([
+        supabase
+          .from('leads')
+          .select('id, full_name, phone, email, property_id')
+          .eq('brokerage_id', agentRow.brokerage_id)
+          .order('updated_at', { ascending: false })
+          .limit(500)
+          .returns<
+            Array<{
+              id: string
+              full_name: string
+              phone: string | null
+              email: string | null
+              property_id: string | null
+            }>
+          >(),
+        supabase
+          .from('properties')
+          .select('id, title')
+          .eq('brokerage_id', agentRow.brokerage_id)
+          .returns<Array<{ id: string; title: string }>>(),
+      ])
+    : [{ data: [] }, { data: [] }]
+
+  const leadsForOp = leadsForOpRes.data ?? []
+  const propsForOp = propsForOpRes.data ?? []
+
   return (
     <div className="max-w-[1340px]">
-      {/* Greeting */}
-      <DashboardGreeting
-        firstName={user.firstName}
-        totalValue={pipeline.totalValue}
-        readyToSign={pipeline.readyToSign}
-        coolingCount={cooling.length}
-      />
+      {/* Greeting + Crear operación */}
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <DashboardGreeting
+            firstName={user.firstName}
+            totalValue={pipeline.totalValue}
+            readyToSign={pipeline.readyToSign}
+            coolingCount={cooling.length}
+          />
+        </div>
+        <div className="shrink-0 hidden sm:block">
+          <CreateOperacionButton
+            leads={leadsForOp}
+            properties={propsForOp}
+          />
+        </div>
+      </div>
 
       {/* Pipeline Hero */}
       <Suspense fallback={<SectionSkeleton height="h-52" />}>
