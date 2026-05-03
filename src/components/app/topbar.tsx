@@ -6,6 +6,7 @@ import { Link, usePathname } from '@/i18n/navigation'
 import { CommandPaletteTrigger } from './command-palette'
 import { LogoMark } from '@/components/ui/logo'
 import { NotificationBell } from './notification-bell'
+import { CreateOperacionButton } from '@/app/[locale]/app/operaciones/create-operacion-button'
 
 const ROOT_TABS = [
   '/app',
@@ -151,13 +152,9 @@ export function Topbar() {
         {/* CTAs — only on home root */}
         {isApp && (
           <>
-            <Link
-              href="/app/leads/new"
-              className="hidden md:inline-flex items-center gap-1.5 rounded-[4px] border border-bone bg-paper px-3 py-2 text-[12px] font-medium text-ink hover:border-steel-soft transition-colors"
-            >
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="5" r="2.5"/><path d="M3 14c0-2.8 2.2-5 5-5s5 2.2 5 5"/><path d="M11 3l1.5 1.5M12.5 3L11 4.5"/></svg>
-              {t('newLead')}
-            </Link>
+            <div className="hidden md:block">
+              <CreateOperacionButton />
+            </div>
             <Link
               href="/app/properties/new"
               className="inline-flex items-center gap-1.5 rounded-[4px] bg-ink px-3 py-2 text-[13px] font-medium text-paper hover:bg-coal active:bg-coal transition-colors md:px-4"

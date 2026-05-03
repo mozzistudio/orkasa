@@ -374,6 +374,65 @@ export async function markDealWon(
   return {}
 }
 
+export type OperacionPickerData = {
+  leads: Array<{
+    id: string
+    full_name: string
+    phone: string | null
+    email: string | null
+    property_id: string | null
+  }>
+  properties: Array<{ id: string; title: string }>
+}
+
+/**
+ * Lazy-loaded picker data for the "Crear operación" modal so the button
+ * can live anywhere (topbar, dashboard) without forcing every parent
+ * page to fetch leads + properties up-front.
+ */
+export async function getOperacionPickerData(): Promise<OperacionPickerData> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { leads: [], properties: [] }
+
+  const { data: agent } = await supabase
+    .from('agents')
+    .select('brokerage_id')
+    .eq('id', user.id)
+    .maybeSingle<{ brokerage_id: string | null }>()
+  if (!agent?.brokerage_id) return { leads: [], properties: [] }
+
+  const [leadsRes, propsRes] = await Promise.all([
+    supabase
+      .from('leads')
+      .select('id, full_name, phone, email, property_id')
+      .eq('brokerage_id', agent.brokerage_id)
+      .order('updated_at', { ascending: false })
+      .limit(500)
+      .returns<
+        Array<{
+          id: string
+          full_name: string
+          phone: string | null
+          email: string | null
+          property_id: string | null
+        }>
+      >(),
+    supabase
+      .from('properties')
+      .select('id, title')
+      .eq('brokerage_id', agent.brokerage_id)
+      .returns<Array<{ id: string; title: string }>>(),
+  ])
+
+  return {
+    leads: leadsRes.data ?? [],
+    properties: propsRes.data ?? [],
+  }
+}
+
 export async function markDealLost(
   dealId: string,
   reason: string,

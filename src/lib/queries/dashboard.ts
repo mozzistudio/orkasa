@@ -1,5 +1,113 @@
 import { createClient } from '@/lib/supabase/server'
 
+export type DashboardTodo = {
+  id: string
+  lead_id: string
+  step_number: number
+  phase: string
+  title: string
+  cta_action: string
+  cta_metadata: Record<string, unknown>
+  due_at: string | null
+  status: 'open' | 'escalated'
+  property_id: string | null
+  deal_id: string | null
+  lead_name: string
+  lead_phone: string | null
+  property_title: string | null
+  property_price: number | null
+}
+
+export async function getMyOpenTasks(limit = 6): Promise<DashboardTodo[]> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data: agent } = await supabase
+    .from('agents')
+    .select('brokerage_id')
+    .eq('id', user.id)
+    .maybeSingle<{ brokerage_id: string | null }>()
+  if (!agent?.brokerage_id) return []
+
+  const { data: tasks } = await supabase
+    .from('tasks')
+    .select(
+      'id, lead_id, step_number, phase, title, cta_action, cta_metadata, due_at, status, property_id, deal_id',
+    )
+    .eq('brokerage_id', agent.brokerage_id)
+    .in('status', ['open', 'escalated'])
+    .order('status', { ascending: false }) // escalated first
+    .order('due_at', { ascending: true, nullsFirst: false })
+    .limit(limit)
+    .returns<
+      Array<{
+        id: string
+        lead_id: string
+        step_number: number
+        phase: string
+        title: string
+        cta_action: string
+        cta_metadata: Record<string, unknown> | null
+        due_at: string | null
+        status: 'open' | 'escalated'
+        property_id: string | null
+        deal_id: string | null
+      }>
+    >()
+
+  if (!tasks?.length) return []
+
+  const leadIds = [...new Set(tasks.map((t) => t.lead_id))]
+  const propertyIds = [
+    ...new Set(tasks.map((t) => t.property_id).filter(Boolean)),
+  ] as string[]
+
+  const [leadsRes, propsRes] = await Promise.all([
+    leadIds.length > 0
+      ? supabase
+          .from('leads')
+          .select('id, full_name, phone')
+          .in('id', leadIds)
+          .returns<Array<{ id: string; full_name: string; phone: string | null }>>()
+      : { data: [] },
+    propertyIds.length > 0
+      ? supabase
+          .from('properties')
+          .select('id, title, price')
+          .in('id', propertyIds)
+          .returns<Array<{ id: string; title: string; price: number | null }>>()
+      : { data: [] },
+  ])
+
+  const leadsById = new Map((leadsRes.data ?? []).map((l) => [l.id, l]))
+  const propsById = new Map((propsRes.data ?? []).map((p) => [p.id, p]))
+
+  return tasks.map((t) => {
+    const lead = leadsById.get(t.lead_id)
+    const prop = t.property_id ? propsById.get(t.property_id) : null
+    return {
+      id: t.id,
+      lead_id: t.lead_id,
+      step_number: t.step_number,
+      phase: t.phase,
+      title: t.title,
+      cta_action: t.cta_action,
+      cta_metadata: t.cta_metadata ?? {},
+      due_at: t.due_at,
+      status: t.status,
+      property_id: t.property_id,
+      deal_id: t.deal_id,
+      lead_name: lead?.full_name ?? 'Lead',
+      lead_phone: lead?.phone ?? null,
+      property_title: prop?.title ?? null,
+      property_price: prop?.price ?? null,
+    }
+  })
+}
+
 export type PipelineStage = {
   id: string
   name: string
