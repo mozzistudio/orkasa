@@ -144,19 +144,75 @@ export async function updateOfferStatus(
   }).catch(() => {})
 
   if (newStatus === 'accepted') {
-    const { data: deal } = await supabase
+    // Lead-engagement model: find existing OPEN deal for this lead first;
+    // create one only if none exists. The deal then aggregates all the
+    // properties this lead is considering, with the accepted offer's
+    // property as a candidate (will become winning_property_id at close).
+    const { data: openDeal } = await supabase
       .from('deals')
-      .insert({
-        lead_id: offer.lead_id,
-        property_id: offer.property_id,
-        brokerage_id: offer.brokerage_id,
-        agent_id: user.id,
-        amount: offer.amount,
-        currency: 'USD',
-        stage: 'negociacion',
-      })
-      .select('id')
-      .single<{ id: string }>()
+      .select('id, property_id')
+      .eq('lead_id', offer.lead_id)
+      .eq('brokerage_id', offer.brokerage_id)
+      .not('stage', 'in', '(closed_won,closed_lost)')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle<{ id: string; property_id: string | null }>()
+
+    let deal: { id: string } | null = openDeal
+      ? { id: openDeal.id }
+      : null
+
+    if (!deal) {
+      const { data: created } = await supabase
+        .from('deals')
+        .insert({
+          lead_id: offer.lead_id,
+          property_id: offer.property_id,
+          brokerage_id: offer.brokerage_id,
+          agent_id: user.id,
+          amount: offer.amount,
+          currency: 'USD',
+          stage: 'negociacion',
+        })
+        .select('id')
+        .single<{ id: string }>()
+      deal = created
+    } else {
+      // Existing deal — bump stage to negociacion if earlier, ensure the
+      // offered property is in lead_properties under this deal.
+      await supabase
+        .from('deals')
+        .update({
+          stage: 'negociacion',
+          amount: offer.amount,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', openDeal!.id)
+        .in('stage', ['contacto_inicial', 'visitas'])
+
+      const { data: lp } = await supabase
+        .from('lead_properties')
+        .select('id, deal_id')
+        .eq('lead_id', offer.lead_id)
+        .eq('property_id', offer.property_id)
+        .maybeSingle<{ id: string; deal_id: string | null }>()
+
+      if (lp && lp.deal_id !== openDeal!.id) {
+        await supabase
+          .from('lead_properties')
+          .update({ deal_id: openDeal!.id })
+          .eq('id', lp.id)
+      } else if (!lp) {
+        await supabase.from('lead_properties').insert({
+          lead_id: offer.lead_id,
+          property_id: offer.property_id,
+          brokerage_id: offer.brokerage_id,
+          role: 'interesada',
+          status: 'pendiente',
+          deal_id: openDeal!.id,
+        })
+      }
+    }
 
     if (deal) {
       await supabase

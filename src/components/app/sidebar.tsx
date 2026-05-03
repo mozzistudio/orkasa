@@ -39,7 +39,7 @@ const navItems = [
   { key: 'inbox',        href: '/app/inbox',        icon: InboxIcon,     match: 'prefix' as const },
   { key: 'calendar',     href: '/app/calendar',     icon: CalendarIcon,  match: 'prefix' as const },
   { key: 'offers',       href: '/app/offers',       icon: StarIcon,      match: 'prefix' as const },
-  { key: 'deals',        href: '/app/deals',        icon: PipelineIcon,  match: 'prefix' as const },
+  { key: 'deals',        href: '/app/operaciones',  icon: PipelineIcon,  match: 'prefix' as const },
   { key: 'agents',       href: '/app/agents',       icon: AgentIcon,     match: 'prefix' as const },
   { key: 'analytics',    href: '/app/analytics',    icon: AnalyticsIcon, match: 'prefix' as const },
   { key: 'compliance',   href: '/app/compliance',   icon: ShieldIcon,    match: 'prefix' as const },
