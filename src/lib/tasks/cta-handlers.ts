@@ -111,7 +111,35 @@ export function executeCtaAction(
       const message = template
         ? buildWhatsAppMessage(template, metadata)
         : ''
-      window.open(buildReminderUrl(phone, message), '_blank')
+      const leadId = metadata.leadId as string | undefined
+      const fallbackToWaMe = () =>
+        window.open(buildReminderUrl(phone, message), '_blank')
+
+      if (!leadId) {
+        fallbackToWaMe()
+        break
+      }
+
+      // Try the WhatsApp Business API first; fall back to wa.me when unconfigured
+      void fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId, body: message }),
+      })
+        .then(async (res) => {
+          if (res.ok) return
+          const payload = (await res.json().catch(() => null)) as {
+            error?: string
+          } | null
+          if (
+            !payload?.error ||
+            payload.error === 'whatsapp_not_configured' ||
+            payload.error === 'lead_missing_phone'
+          ) {
+            fallbackToWaMe()
+          }
+        })
+        .catch(() => fallbackToWaMe())
       break
     }
 

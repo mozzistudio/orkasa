@@ -170,14 +170,22 @@ export function PropertyCard({
         <div className="mt-auto flex items-center gap-[6px]">
           <button
             type="button"
-            onClick={(e) => e.preventDefault()}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              window.location.href = `/app/properties/${property.id}`
+            }}
             className={`flex-1 inline-flex items-center justify-center gap-[5px] rounded-[5px] border px-[11px] py-[6px] text-[12px] font-medium whitespace-nowrap transition-colors ${ACTION_STYLES[alert.action.type]}`}
           >
             {alert.action.label}
           </button>
           <button
             type="button"
-            onClick={(e) => e.preventDefault()}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              window.location.href = `/app/properties/${property.id}/edit`
+            }}
             className="flex h-[30px] w-[30px] flex-shrink-0 items-center justify-center rounded-[5px] border border-bone bg-paper-warm text-steel transition-colors hover:border-steel-soft hover:bg-paper hover:text-ink"
             title="Más acciones"
           >

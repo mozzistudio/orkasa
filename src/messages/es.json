@@ -125,7 +125,11 @@
     "title": "Inicio",
     "inventory": "Propiedades",
     "leads": "Leads",
+    "tasks": "Tareas",
+    "inbox": "Bandeja",
     "calendar": "Calendario",
+    "offers": "Ofertas",
+    "deals": "Pipeline",
     "agents": "Agentes",
     "analytics": "Análisis",
     "compliance": "Compliance",
@@ -236,6 +240,8 @@
       "portal": "Portales inmobiliarios",
       "social": "Redes sociales",
       "messaging": "Mensajería",
+      "calendar": "Calendario",
+      "email": "Email",
       "custom": "Personalizado"
     },
     "status": {

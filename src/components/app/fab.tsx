@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePathname } from '@/i18n/navigation'
 import Link from 'next/link'
-import { Building2, Plus, Users, X } from 'lucide-react'
+import { Building2, DollarSign, Plus, Users, X } from 'lucide-react'
 
-const SHOW_ON = ['/app/properties', '/app/leads', '/app/compliance', '/app/agents']
+const SHOW_ON = ['/app/properties', '/app/leads', '/app/compliance', '/app/agents', '/app/offers', '/app/deals', '/app/tasks']
 
 function shouldShow(pathname: string): boolean {
   return SHOW_ON.some((p) => pathname === p)
@@ -64,6 +64,14 @@ export function Fab() {
             >
               <Users className="h-4 w-4 text-steel" strokeWidth={1.5} />
               Nuevo lead
+            </Link>
+            <Link
+              href="/app/offers"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 rounded-[4px] border border-bone bg-paper px-4 py-3 text-[13px] font-medium text-ink active:bg-bone/30 transition-colors"
+            >
+              <DollarSign className="h-4 w-4 text-steel" strokeWidth={1.5} />
+              Nueva oferta
             </Link>
           </div>
         )}

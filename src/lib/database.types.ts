@@ -434,7 +434,7 @@ export type Database = {
           lead_id: string
           metadata: Json
           property_id: string | null
-          stage: string
+          stage: Database["public"]["Enums"]["deal_stage"]
           updated_at: string
         }
         Insert: {
@@ -448,7 +448,7 @@ export type Database = {
           lead_id: string
           metadata?: Json
           property_id?: string | null
-          stage?: string
+          stage?: Database["public"]["Enums"]["deal_stage"]
           updated_at?: string
         }
         Update: {
@@ -462,7 +462,7 @@ export type Database = {
           lead_id?: string
           metadata?: Json
           property_id?: string | null
-          stage?: string
+          stage?: Database["public"]["Enums"]["deal_stage"]
           updated_at?: string
         }
         Relationships: [
@@ -601,8 +601,8 @@ export type Database = {
           id: string
           lead_id: string
           property_id: string
-          role: string
-          status: string
+          role: Database["public"]["Enums"]["lead_property_role"]
+          status: Database["public"]["Enums"]["lead_property_status"]
           updated_at: string
         }
         Insert: {
@@ -611,8 +611,8 @@ export type Database = {
           id?: string
           lead_id: string
           property_id: string
-          role?: string
-          status?: string
+          role?: Database["public"]["Enums"]["lead_property_role"]
+          status?: Database["public"]["Enums"]["lead_property_status"]
           updated_at?: string
         }
         Update: {
@@ -621,8 +621,8 @@ export type Database = {
           id?: string
           lead_id?: string
           property_id?: string
-          role?: string
-          status?: string
+          role?: Database["public"]["Enums"]["lead_property_role"]
+          status?: Database["public"]["Enums"]["lead_property_status"]
           updated_at?: string
         }
         Relationships: [
@@ -652,6 +652,8 @@ export type Database = {
       leads: {
         Row: {
           ai_score: number | null
+          ai_score_factors: Json
+          ai_score_updated_at: string | null
           assigned_agent_id: string | null
           brokerage_id: string
           created_at: string | null
@@ -668,6 +670,8 @@ export type Database = {
         }
         Insert: {
           ai_score?: number | null
+          ai_score_factors?: Json
+          ai_score_updated_at?: string | null
           assigned_agent_id?: string | null
           brokerage_id: string
           created_at?: string | null
@@ -684,6 +688,8 @@ export type Database = {
         }
         Update: {
           ai_score?: number | null
+          ai_score_factors?: Json
+          ai_score_updated_at?: string | null
           assigned_agent_id?: string | null
           brokerage_id?: string
           created_at?: string | null
@@ -722,6 +728,106 @@ export type Database = {
           },
         ]
       }
+      messages: {
+        Row: {
+          agent_id: string | null
+          attachments: Json
+          body: string | null
+          brokerage_id: string
+          channel: string
+          created_at: string
+          delivered_at: string | null
+          direction: string
+          error_code: string | null
+          error_message: string | null
+          external_id: string | null
+          failed_at: string | null
+          from_address: string | null
+          id: string
+          lead_id: string | null
+          metadata: Json
+          read_at: string | null
+          sent_at: string | null
+          status: string
+          subject: string | null
+          template_code: string | null
+          thread_id: string | null
+          to_address: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          attachments?: Json
+          body?: string | null
+          brokerage_id: string
+          channel: string
+          created_at?: string
+          delivered_at?: string | null
+          direction: string
+          error_code?: string | null
+          error_message?: string | null
+          external_id?: string | null
+          failed_at?: string | null
+          from_address?: string | null
+          id?: string
+          lead_id?: string | null
+          metadata?: Json
+          read_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          template_code?: string | null
+          thread_id?: string | null
+          to_address?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          attachments?: Json
+          body?: string | null
+          brokerage_id?: string
+          channel?: string
+          created_at?: string
+          delivered_at?: string | null
+          direction?: string
+          error_code?: string | null
+          error_message?: string | null
+          external_id?: string | null
+          failed_at?: string | null
+          from_address?: string | null
+          id?: string
+          lead_id?: string | null
+          metadata?: Json
+          read_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          template_code?: string | null
+          thread_id?: string | null
+          to_address?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_brokerage_id_fkey"
+            columns: ["brokerage_id"]
+            isOneToOne: false
+            referencedRelation: "brokerages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       neighborhoods: {
         Row: {
           city: string
@@ -752,6 +858,66 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          agent_id: string | null
+          body: string | null
+          brokerage_id: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          is_read: boolean
+          metadata: Json
+          read_at: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          agent_id?: string | null
+          body?: string | null
+          brokerage_id: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean
+          metadata?: Json
+          read_at?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          agent_id?: string | null
+          body?: string | null
+          brokerage_id?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean
+          metadata?: Json
+          read_at?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_brokerage_id_fkey"
+            columns: ["brokerage_id"]
+            isOneToOne: false
+            referencedRelation: "brokerages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offers: {
         Row: {
           agent_id: string | null
@@ -766,7 +932,7 @@ export type Database = {
           metadata: Json
           notes: string | null
           property_id: string
-          status: string
+          status: Database["public"]["Enums"]["offer_status"]
           updated_at: string
         }
         Insert: {
@@ -782,7 +948,7 @@ export type Database = {
           metadata?: Json
           notes?: string | null
           property_id: string
-          status?: string
+          status?: Database["public"]["Enums"]["offer_status"]
           updated_at?: string
         }
         Update: {
@@ -798,7 +964,7 @@ export type Database = {
           metadata?: Json
           notes?: string | null
           property_id?: string
-          status?: string
+          status?: Database["public"]["Enums"]["offer_status"]
           updated_at?: string
         }
         Relationships: [
@@ -1211,34 +1377,43 @@ export type Database = {
           agent_id: string | null
           created_at: string | null
           duration_minutes: number | null
+          external_calendar_id: string | null
+          external_event_id: string | null
           id: string
+          last_synced_at: string | null
           lead_id: string | null
           notes: string | null
           property_id: string
           scheduled_at: string
-          status: string | null
+          status: Database["public"]["Enums"]["viewing_status"] | null
         }
         Insert: {
           agent_id?: string | null
           created_at?: string | null
           duration_minutes?: number | null
+          external_calendar_id?: string | null
+          external_event_id?: string | null
           id?: string
+          last_synced_at?: string | null
           lead_id?: string | null
           notes?: string | null
           property_id: string
           scheduled_at: string
-          status?: string | null
+          status?: Database["public"]["Enums"]["viewing_status"] | null
         }
         Update: {
           agent_id?: string | null
           created_at?: string | null
           duration_minutes?: number | null
+          external_calendar_id?: string | null
+          external_event_id?: string | null
           id?: string
+          last_synced_at?: string | null
           lead_id?: string | null
           notes?: string | null
           property_id?: string
           scheduled_at?: string
-          status?: string | null
+          status?: Database["public"]["Enums"]["viewing_status"] | null
         }
         Relationships: [
           {
@@ -1260,6 +1435,53 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_events: {
+        Row: {
+          brokerage_id: string | null
+          error: string | null
+          event_type: string | null
+          external_id: string | null
+          id: string
+          payload: Json
+          processed_at: string | null
+          provider: string
+          received_at: string
+          signature_valid: boolean | null
+        }
+        Insert: {
+          brokerage_id?: string | null
+          error?: string | null
+          event_type?: string | null
+          external_id?: string | null
+          id?: string
+          payload: Json
+          processed_at?: string | null
+          provider: string
+          received_at?: string
+          signature_valid?: boolean | null
+        }
+        Update: {
+          brokerage_id?: string | null
+          error?: string | null
+          event_type?: string | null
+          external_id?: string | null
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          provider?: string
+          received_at?: string
+          signature_valid?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_events_brokerage_id_fkey"
+            columns: ["brokerage_id"]
+            isOneToOne: false
+            referencedRelation: "brokerages"
             referencedColumns: ["id"]
           },
         ]
@@ -1373,6 +1595,17 @@ export type Database = {
         | "approved"
         | "rejected"
         | "requires_action"
+      deal_stage:
+        | "contacto_inicial"
+        | "visitas"
+        | "negociacion"
+        | "promesa_firmada"
+        | "tramite_bancario"
+        | "escritura_publica"
+        | "entrega_llaves"
+        | "post_cierre"
+        | "closed_won"
+        | "closed_lost"
       integration_provider:
         | "encuentra24"
         | "compreoalquile"
@@ -1390,6 +1623,10 @@ export type Database = {
         | "whatsapp_status"
         | "agency_website"
         | "email_matches"
+        | "google_calendar"
+        | "outlook_calendar"
+        | "resend"
+        | "sendgrid"
       integration_status:
         | "disconnected"
         | "connecting"
@@ -1403,6 +1640,12 @@ export type Database = {
         | "whatsapp"
         | "walk_in"
         | "other"
+      lead_property_role: "sugerida" | "interesada" | "visitada" | "ofertada"
+      lead_property_status:
+        | "pendiente"
+        | "le_encanto"
+        | "descartada"
+        | "oferta_hecha"
       lead_status:
         | "new"
         | "contacted"
@@ -1412,6 +1655,14 @@ export type Database = {
         | "closed_won"
         | "closed_lost"
       listing_type: "sale" | "rent"
+      offer_status:
+        | "draft"
+        | "submitted"
+        | "countered"
+        | "accepted"
+        | "rejected"
+        | "expired"
+        | "withdrawn"
       property_status:
         | "draft"
         | "active"
@@ -1429,6 +1680,12 @@ export type Database = {
         | "published"
         | "failed"
         | "paused"
+      viewing_status:
+        | "scheduled"
+        | "confirmed"
+        | "completed"
+        | "cancelled"
+        | "no_show"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1609,6 +1866,18 @@ export const Constants = {
         "rejected",
         "requires_action",
       ],
+      deal_stage: [
+        "contacto_inicial",
+        "visitas",
+        "negociacion",
+        "promesa_firmada",
+        "tramite_bancario",
+        "escritura_publica",
+        "entrega_llaves",
+        "post_cierre",
+        "closed_won",
+        "closed_lost",
+      ],
       integration_provider: [
         "encuentra24",
         "compreoalquile",
@@ -1626,6 +1895,10 @@ export const Constants = {
         "whatsapp_status",
         "agency_website",
         "email_matches",
+        "google_calendar",
+        "outlook_calendar",
+        "resend",
+        "sendgrid",
       ],
       integration_status: [
         "disconnected",
@@ -1642,6 +1915,13 @@ export const Constants = {
         "walk_in",
         "other",
       ],
+      lead_property_role: ["sugerida", "interesada", "visitada", "ofertada"],
+      lead_property_status: [
+        "pendiente",
+        "le_encanto",
+        "descartada",
+        "oferta_hecha",
+      ],
       lead_status: [
         "new",
         "contacted",
@@ -1652,6 +1932,15 @@ export const Constants = {
         "closed_lost",
       ],
       listing_type: ["sale", "rent"],
+      offer_status: [
+        "draft",
+        "submitted",
+        "countered",
+        "accepted",
+        "rejected",
+        "expired",
+        "withdrawn",
+      ],
       property_status: [
         "draft",
         "active",
@@ -1670,6 +1959,13 @@ export const Constants = {
         "published",
         "failed",
         "paused",
+      ],
+      viewing_status: [
+        "scheduled",
+        "confirmed",
+        "completed",
+        "cancelled",
+        "no_show",
       ],
     },
   },

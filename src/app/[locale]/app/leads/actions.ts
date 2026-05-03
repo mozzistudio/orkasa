@@ -7,6 +7,9 @@ import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/database.types'
 import { processTaskEvent } from '@/lib/tasks/trigger-engine'
 import { checkAutoComplete } from '@/lib/tasks/auto-complete'
+import { notifyLeadCreated } from '@/lib/notifications'
+import { pickNextAgent } from '@/lib/automation/auto-assign'
+import { scoreLead } from '@/lib/automation/ai-scoring'
 
 const LeadOrigins = [
   'portal',
@@ -74,8 +77,15 @@ export async function createLead(
     return { error: parsed.error.issues[0]?.message ?? 'Invalid input' }
   }
 
+  let assignedAgentId = parsed.data.assigned_agent_id ?? null
+  if (!assignedAgentId) {
+    const nextAgent = await pickNextAgent(agent.brokerage_id)
+    assignedAgentId = nextAgent?.id ?? user.id
+  }
+
   const insert: LeadInsert = {
     ...parsed.data,
+    assigned_agent_id: assignedAgentId,
     brokerage_id: agent.brokerage_id,
   }
 
@@ -93,6 +103,13 @@ export async function createLead(
     brokerageId: agent.brokerage_id,
     agentId: user.id,
     propertyId: insert.property_id ?? undefined,
+  }).catch(() => {})
+
+  notifyLeadCreated({
+    leadId: created.id,
+    leadName: parsed.data.full_name,
+    brokerageId: agent.brokerage_id,
+    agentId: assignedAgentId,
   }).catch(() => {})
 
   revalidatePath('/app/leads')
@@ -162,6 +179,24 @@ export async function updateLeadStatus(
 
   revalidatePath('/app/leads')
   return {}
+}
+
+export async function rescoreLead(
+  leadId: string,
+): Promise<{ error?: string; score?: number }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const result = await scoreLead(supabase, leadId)
+  if (!result) return { error: 'Lead not found' }
+
+  revalidatePath(`/app/leads/${leadId}`)
+  revalidatePath('/app/leads')
+  revalidatePath('/app')
+  return { score: result.score }
 }
 
 export async function deleteLead(id: string): Promise<void> {

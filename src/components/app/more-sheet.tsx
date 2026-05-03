@@ -11,12 +11,22 @@ import {
   Plug,
   Settings,
   LogOut,
+  DollarSign,
+  GitBranch,
+  BarChart3,
+  CalendarDays,
+  Inbox as InboxIcon,
 } from 'lucide-react'
 import { logout } from '@/app/[locale]/(auth)/login/actions'
 import { LogoLockup } from '@/components/ui/logo'
 
 const SECONDARY_NAV = [
+  { key: 'inbox',        href: '/app/inbox',        icon: InboxIcon },
+  { key: 'calendar',     href: '/app/calendar',     icon: CalendarDays },
+  { key: 'offers',       href: '/app/offers',       icon: DollarSign },
+  { key: 'deals',        href: '/app/deals',        icon: GitBranch },
   { key: 'agents',       href: '/app/agents',       icon: UserCheck },
+  { key: 'analytics',    href: '/app/analytics',    icon: BarChart3 },
   { key: 'compliance',   href: '/app/compliance',   icon: Shield },
   { key: 'integrations', href: '/app/integrations', icon: Plug },
   { key: 'settings',     href: '/app/settings',     icon: Settings },

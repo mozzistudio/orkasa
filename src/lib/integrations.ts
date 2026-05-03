@@ -5,7 +5,13 @@ export type IntegrationProvider =
 export type IntegrationStatus = Database['public']['Enums']['integration_status']
 
 type AuthMethod = 'api_key' | 'oauth' | 'webhook' | 'manual'
-type IntegrationCategory = 'portal' | 'social' | 'messaging' | 'custom'
+type IntegrationCategory =
+  | 'portal'
+  | 'social'
+  | 'messaging'
+  | 'calendar'
+  | 'email'
+  | 'custom'
 type Region = 'PA' | 'DO' | 'CR' | 'CO' | 'MX' | 'EC' | 'AR' | 'CL' | 'PE' | 'ES'
 
 export type IntegrationProviderMeta = {
@@ -460,6 +466,60 @@ export const INTEGRATION_PROVIDERS: IntegrationProviderMeta[] = [
     available: true,
     shortLabel: 'WH',
   },
+  // === CALENDAR ===
+  {
+    id: 'google_calendar',
+    label: 'Google Calendar',
+    description:
+      'Sincroniza visitas al calendario de Google. Crea eventos automáticamente con dirección, lead y agente como invitados.',
+    category: 'calendar',
+    regions: [],
+    authMethod: 'oauth',
+    available: true,
+    shortLabel: 'G',
+  },
+  {
+    id: 'outlook_calendar',
+    label: 'Outlook Calendar',
+    description:
+      'Sincroniza visitas al calendario de Microsoft 365 / Outlook. OAuth con Microsoft Graph.',
+    category: 'calendar',
+    regions: [],
+    authMethod: 'oauth',
+    available: true,
+    shortLabel: 'O',
+  },
+  // === EMAIL ===
+  {
+    id: 'resend',
+    label: 'Resend',
+    description:
+      'Enviá emails transaccionales y de marketing desde Orkasa. Webhook bidireccional para tracking de aperturas y rebotes.',
+    category: 'email',
+    regions: [],
+    authMethod: 'api_key',
+    credentialFields: [
+      { key: 'api_key', label: 'API key', type: 'password' },
+      { key: 'from_address', label: 'Remitente (ej: equipo@miagencia.com)', type: 'text' },
+    ],
+    available: true,
+    shortLabel: 'R',
+  },
+  {
+    id: 'sendgrid',
+    label: 'SendGrid',
+    description:
+      'Alternativa empresarial para envío de emails. Soporta plantillas dinámicas y reportes de entrega detallados.',
+    category: 'email',
+    regions: [],
+    authMethod: 'api_key',
+    credentialFields: [
+      { key: 'api_key', label: 'API key', type: 'password' },
+      { key: 'from_address', label: 'Remitente (ej: equipo@miagencia.com)', type: 'text' },
+    ],
+    available: true,
+    shortLabel: 'SG',
+  },
 ]
 
 export const PROVIDERS_BY_CATEGORY: Record<
@@ -469,6 +529,8 @@ export const PROVIDERS_BY_CATEGORY: Record<
   portal: INTEGRATION_PROVIDERS.filter((p) => p.category === 'portal'),
   social: INTEGRATION_PROVIDERS.filter((p) => p.category === 'social'),
   messaging: INTEGRATION_PROVIDERS.filter((p) => p.category === 'messaging'),
+  calendar: INTEGRATION_PROVIDERS.filter((p) => p.category === 'calendar'),
+  email: INTEGRATION_PROVIDERS.filter((p) => p.category === 'email'),
   custom: INTEGRATION_PROVIDERS.filter((p) => p.category === 'custom'),
 }
 

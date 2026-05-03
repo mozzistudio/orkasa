@@ -125,7 +125,11 @@
     "title": "Home",
     "inventory": "Properties",
     "leads": "Leads",
+    "tasks": "Tasks",
+    "inbox": "Inbox",
     "calendar": "Calendar",
+    "offers": "Offers",
+    "deals": "Pipeline",
     "agents": "Agents",
     "analytics": "Analytics",
     "compliance": "Compliance",
@@ -220,6 +224,8 @@
       "portal": "Real estate portals",
       "social": "Social networks",
       "messaging": "Messaging",
+      "calendar": "Calendar",
+      "email": "Email",
       "custom": "Custom"
     },
     "status": {

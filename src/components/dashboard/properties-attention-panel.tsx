@@ -77,8 +77,9 @@ export async function PropertiesAttentionPanel({
         const Icon = ACTION_ICONS[alert.actionType] ?? EyeIcon
         const gradient = THUMB_GRADIENTS[i % THUMB_GRADIENTS.length]
         return (
-          <div
+          <Link
             key={alert.id}
+            href={`/app/properties/${alert.id}`}
             className="grid grid-cols-[48px_1fr_auto] items-center gap-3 border-b border-bone px-[18px] py-[13px] last:border-b-0 transition-colors hover:bg-paper-warm"
           >
             {/* Thumbnail */}
@@ -117,8 +118,7 @@ export async function PropertiesAttentionPanel({
             </div>
 
             {/* Action */}
-            <button
-              type="button"
+            <span
               className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[5px] border border-bone bg-paper-warm text-steel hover:border-steel-soft hover:bg-paper hover:text-ink"
               title={
                 alert.actionType === 'boost' ? t('boost')
@@ -128,8 +128,8 @@ export async function PropertiesAttentionPanel({
               }
             >
               <Icon size={13} />
-            </button>
-          </div>
+            </span>
+          </Link>
         )
       })}
     </section>

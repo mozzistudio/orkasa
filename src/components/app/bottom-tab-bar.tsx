@@ -2,13 +2,13 @@
 
 import { useTranslations } from 'next-intl'
 import { Link, usePathname } from '@/i18n/navigation'
-import { LayoutDashboard, Building2, Users, BarChart3, Menu } from 'lucide-react'
+import { LayoutDashboard, Building2, Users, ClipboardList, Menu } from 'lucide-react'
 
 const TABS = [
   { key: 'title',     href: '/app',            icon: LayoutDashboard, match: 'exact' as const },
   { key: 'inventory', href: '/app/properties', icon: Building2,       match: 'prefix' as const },
   { key: 'leads',     href: '/app/leads',      icon: Users,           match: 'prefix' as const },
-  { key: 'analytics', href: '/app/analytics',  icon: BarChart3,       match: 'prefix' as const },
+  { key: 'tasks',     href: '/app/tasks',      icon: ClipboardList,   match: 'prefix' as const },
 ] as const
 
 export function BottomTabBar({

@@ -1,6 +1,7 @@
 'use client'
 
 import { MessageCircle, User } from 'lucide-react'
+import { useRouter } from '@/i18n/navigation'
 import type { CoolingLead } from '@/lib/queries/dashboard'
 import { formatPriceCompact } from '@/lib/utils'
 import { buildReminderUrl, reactivateColdLead } from '@/lib/whatsapp-templates'
@@ -15,7 +16,10 @@ const CHANNEL_LABELS: Record<string, string> = {
 }
 
 export function CoolingLeadRow({ lead }: { lead: CoolingLead }) {
-  function handleWhatsApp() {
+  const router = useRouter()
+
+  function handleWhatsApp(e: React.MouseEvent) {
+    e.stopPropagation()
     if (!lead.phone) return
     const message = reactivateColdLead(
       lead.name,
@@ -26,7 +30,10 @@ export function CoolingLeadRow({ lead }: { lead: CoolingLead }) {
   }
 
   return (
-    <div className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-bone px-[18px] py-[13px] last:border-b-0 hover:bg-paper-warm transition-colors">
+    <div
+      onClick={() => router.push(`/app/leads/${lead.id}`)}
+      className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-bone px-[18px] py-[13px] last:border-b-0 hover:bg-paper-warm transition-colors cursor-pointer"
+    >
       <div className="min-w-0">
         <div className="mb-1 flex items-center gap-2 text-[13px] text-ink">
           <span className="font-medium">{lead.name}</span>
@@ -50,7 +57,7 @@ export function CoolingLeadRow({ lead }: { lead: CoolingLead }) {
         {lead.phone && (
           <button
             type="button"
-            onClick={handleWhatsApp}
+            onClick={(e) => handleWhatsApp(e)}
             className="inline-flex items-center gap-1 rounded-[5px] border border-whatsapp bg-whatsapp px-[11px] py-1.5 text-[12px] font-medium text-white hover:border-whatsapp-deep hover:bg-whatsapp-deep"
           >
             <MessageCircle className="h-3 w-3" />
