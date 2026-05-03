@@ -6,6 +6,7 @@ import { buildDocPrompt } from '@/lib/compliance-doc-prompts'
 import { createClient } from '@/lib/supabase/server'
 import type { Database, Json } from '@/lib/database.types'
 import { checkAutoComplete } from '@/lib/tasks/auto-complete'
+import { processTaskEvent } from '@/lib/tasks/trigger-engine'
 
 type ComplianceStatus = Database['public']['Enums']['compliance_status']
 type ComplianceRisk = Database['public']['Enums']['compliance_risk']
@@ -241,7 +242,9 @@ export async function setDocumentStatus(
 
 /**
  * Trigger a sanctions / PEP re-screen. Mock for now — sets the result fields
- * directly. A real impl would queue a check against OFAC, UN, EU lists.
+ * deterministically based on the lead's name hash. A real impl would queue a
+ * check against OFAC, UN, EU lists. Names whose hash mod 5 === 0 flag PEP, so
+ * the demo can exercise the pep_match_flagged path without manual seeding.
  */
 export async function rerunScreening(
   checkId: string,
@@ -252,9 +255,24 @@ export async function rerunScreening(
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated', sanctionsMatch: false, pepMatch: false }
 
-  // Mock screening — for the demo we always return clean
-  const sanctionsMatch = false
-  const pepMatch = false
+  const { data: checkRow } = await supabase
+    .from('compliance_checks')
+    .select('lead_id, brokerage_id, leads!inner(full_name)')
+    .eq('id', checkId)
+    .maybeSingle<{
+      lead_id: string | null
+      brokerage_id: string
+      leads: { full_name: string } | null
+    }>()
+
+  const fullName = checkRow?.leads?.full_name ?? ''
+  let hash = 0
+  for (let i = 0; i < fullName.length; i++) {
+    hash = (hash * 31 + fullName.charCodeAt(i)) | 0
+  }
+  const bucket = Math.abs(hash) % 25
+  const pepMatch = bucket === 0
+  const sanctionsMatch = bucket === 1
 
   const { error } = await supabase
     .from('compliance_checks')
@@ -269,6 +287,16 @@ export async function rerunScreening(
   }
 
   await logAudit(checkId, 'screening_rerun', { sanctionsMatch, pepMatch })
+
+  if ((pepMatch || sanctionsMatch) && checkRow?.lead_id) {
+    processTaskEvent({
+      event: 'pep_match_flagged',
+      leadId: checkRow.lead_id,
+      brokerageId: checkRow.brokerage_id,
+      agentId: user.id,
+      metadata: { sanctionsMatch, pepMatch, checkId },
+    }).catch(() => {})
+  }
 
   revalidatePath(`/app/compliance/${checkId}`)
   return { sanctionsMatch, pepMatch }
@@ -574,7 +602,26 @@ export async function approveDeal(
     await logAudit(c.id, 'deal_approved', { approved_by: user.id })
   }
 
+  const { data: leadRow } = await supabase
+    .from('leads')
+    .select('brokerage_id')
+    .eq('id', leadId)
+    .maybeSingle<{ brokerage_id: string }>()
+
+  if (leadRow?.brokerage_id) {
+    const payload = {
+      event: 'compliance_approved' as const,
+      leadId,
+      brokerageId: leadRow.brokerage_id,
+      agentId: user.id,
+    }
+    checkAutoComplete(payload).catch(() => {})
+    processTaskEvent(payload).catch(() => {})
+  }
+
   revalidatePath('/app/compliance')
+  revalidatePath('/app/tasks')
+  revalidatePath('/app')
   return {}
 }
 

@@ -6,6 +6,17 @@ import { createClient } from '@/lib/supabase/server'
 import { processTaskEvent } from '@/lib/tasks/trigger-engine'
 import { checkAutoComplete } from '@/lib/tasks/auto-complete'
 import { notifyViewingScheduled } from '@/lib/notifications'
+import type { Database } from '@/lib/database.types'
+
+type ViewingStatus = Database['public']['Enums']['viewing_status']
+
+const VALID_VIEWING_STATUSES: readonly ViewingStatus[] = [
+  'scheduled',
+  'confirmed',
+  'completed',
+  'cancelled',
+  'no_show',
+]
 
 const viewingSchema = z.object({
   lead_id: z.string().uuid(),
@@ -92,6 +103,70 @@ export async function createViewing(
 
   revalidatePath('/app/calendar')
   revalidatePath(`/app/leads/${parsed.data.lead_id}`)
+  revalidatePath('/app/tasks')
+  revalidatePath('/app')
+  return {}
+}
+
+export async function updateViewingStatus(
+  viewingId: string,
+  status: ViewingStatus,
+  metadata?: Record<string, unknown>,
+): Promise<{ error?: string }> {
+  if (!(VALID_VIEWING_STATUSES as readonly string[]).includes(status)) {
+    return { error: 'Invalid viewing status' }
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: viewing } = await supabase
+    .from('viewings')
+    .select('id, lead_id, property_id, status')
+    .eq('id', viewingId)
+    .maybeSingle<{
+      id: string
+      lead_id: string | null
+      property_id: string
+      status: ViewingStatus | null
+    }>()
+
+  if (!viewing || !viewing.lead_id) return { error: 'Viewing not found' }
+
+  const { data: lead } = await supabase
+    .from('leads')
+    .select('brokerage_id')
+    .eq('id', viewing.lead_id)
+    .maybeSingle<{ brokerage_id: string }>()
+
+  if (!lead?.brokerage_id) return { error: 'Lead not found' }
+
+  const { error } = await supabase
+    .from('viewings')
+    .update({ status })
+    .eq('id', viewingId)
+
+  if (error) return { error: error.message }
+
+  if (status === 'completed') {
+    const payload = {
+      event: 'viewing_completed' as const,
+      leadId: viewing.lead_id,
+      brokerageId: lead.brokerage_id,
+      agentId: user.id,
+      propertyId: viewing.property_id,
+      viewingId: viewing.id,
+      metadata,
+    }
+    checkAutoComplete(payload).catch(() => {})
+    processTaskEvent(payload).catch(() => {})
+  }
+
+  revalidatePath('/app/calendar')
+  revalidatePath(`/app/leads/${viewing.lead_id}`)
   revalidatePath('/app/tasks')
   revalidatePath('/app')
   return {}

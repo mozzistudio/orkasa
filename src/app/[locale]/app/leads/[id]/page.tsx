@@ -106,7 +106,7 @@ export default async function LeadDetailPage({
   const { id } = await params
   const supabase = await createClient()
 
-  const [leadRes, propertiesRes, agentsRes, interactionsRes, messagesRes] =
+  const [leadRes, propertiesRes, agentsRes, interactionsRes, messagesRes, leadPropsRes] =
     await Promise.all([
       supabase
         .from('leads')
@@ -155,6 +155,17 @@ export default async function LeadDetailPage({
             created_at: string
           }>
         >(),
+      supabase
+        .from('lead_properties')
+        .select('property_id, status, role')
+        .eq('lead_id', id)
+        .returns<
+          Array<{
+            property_id: string
+            status: 'pendiente' | 'le_encanto' | 'descartada' | 'oferta_hecha'
+            role: 'sugerida' | 'interesada' | 'visitada' | 'ofertada'
+          }>
+        >(),
     ])
 
   const lead = leadRes.data
@@ -176,6 +187,11 @@ export default async function LeadDetailPage({
 
   const interactions = interactionsRes.data ?? []
   const conversationMessages = messagesRes.data ?? []
+
+  const leadPropertyStatusMap: Record<string, 'pendiente' | 'le_encanto' | 'descartada' | 'oferta_hecha'> = {}
+  for (const lp of leadPropsRes.data ?? []) {
+    leadPropertyStatusMap[lp.property_id] = lp.status
+  }
 
   // Compute days since last contact
   const lastInteraction = interactions[0]
@@ -328,10 +344,12 @@ export default async function LeadDetailPage({
 
           {/* Main Tabs (Historia / Propiedades) */}
           <LeadTabs
+            leadId={lead.id}
             interactions={interactions}
             agentMap={agentMap}
             property={property}
             matches={matches}
+            leadPropertyStatusMap={leadPropertyStatusMap}
           />
 
           {/* ── Tareas — standalone div, NOT a tab ── */}

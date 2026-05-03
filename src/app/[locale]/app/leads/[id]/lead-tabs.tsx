@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -11,8 +11,13 @@ import {
   ChevronRight,
   Plus,
   StickyNote,
+  Heart,
+  X,
 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
+import { updateLeadPropertyStatus } from '../actions'
+
+type LeadPropertyStatus = 'pendiente' | 'le_encanto' | 'descartada' | 'oferta_hecha'
 
 type StoredImage = { path: string; url: string }
 
@@ -44,10 +49,83 @@ type PropertyCard = {
 }
 
 type Props = {
+  leadId: string
   interactions: Interaction[]
   agentMap: Record<string, string>
   property: PropertyCard | null
   matches: PropertyCard[]
+  leadPropertyStatusMap: Record<string, LeadPropertyStatus>
+}
+
+const STATUS_BADGES: Record<LeadPropertyStatus, { label: string; style: string }> = {
+  pendiente: { label: 'Pendiente', style: 'bg-bone-soft text-steel' },
+  le_encanto: { label: '♥ Le encantó', style: 'bg-signal-bg text-signal-deep' },
+  descartada: { label: '✕ Descartada', style: 'bg-bone-soft text-steel-soft line-through' },
+  oferta_hecha: { label: 'Oferta hecha', style: 'bg-green-bg text-green-text' },
+}
+
+function PropertyStatusSelector({
+  leadId,
+  propertyId,
+  current,
+}: {
+  leadId: string
+  propertyId: string
+  current: LeadPropertyStatus
+}) {
+  const [open, setOpen] = useState(false)
+  const [pending, startTransition] = useTransition()
+  const [optimistic, setOptimistic] = useState<LeadPropertyStatus>(current)
+
+  function setStatus(next: LeadPropertyStatus) {
+    setOptimistic(next)
+    setOpen(false)
+    startTransition(async () => {
+      await updateLeadPropertyStatus(leadId, propertyId, next)
+    })
+  }
+
+  const badge = STATUS_BADGES[optimistic]
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        disabled={pending}
+        className={`font-mono text-[9px] tracking-[0.7px] uppercase px-1.5 py-0.5 rounded-full font-medium hover:opacity-80 transition-opacity disabled:opacity-50 ${badge.style}`}
+        aria-label="Cambiar estado de interés"
+      >
+        {badge.label}
+      </button>
+      {open && (
+        <>
+          <div
+            className="fixed inset-0 z-[5]"
+            onClick={() => setOpen(false)}
+          />
+          <div className="absolute right-0 top-full mt-1 z-[6] min-w-[140px] rounded-[6px] border border-bone bg-paper shadow-md py-1">
+            {(['pendiente', 'le_encanto', 'descartada', 'oferta_hecha'] as const).map(
+              (s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setStatus(s)}
+                  className={`w-full text-left px-3 py-1.5 text-[12px] hover:bg-bone-soft transition-colors flex items-center gap-2 ${
+                    s === optimistic ? 'text-ink font-medium' : 'text-steel'
+                  }`}
+                >
+                  {s === 'le_encanto' && <Heart className="h-3 w-3" strokeWidth={1.6} />}
+                  {s === 'descartada' && <X className="h-3 w-3" strokeWidth={1.6} />}
+                  {STATUS_BADGES[s].label.replace(/^[♥✕]\s/, '')}
+                </button>
+              ),
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  )
 }
 
 const ICON_MAP: Record<string, { icon: typeof Phone; bg: string }> = {
@@ -106,7 +184,14 @@ function formatTime(iso: string | null) {
   return `${d.toLocaleDateString('es-PA', { day: 'numeric', month: 'short' })} · ${d.toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit' })}`
 }
 
-export function LeadTabs({ interactions, agentMap, property, matches }: Props) {
+export function LeadTabs({
+  leadId,
+  interactions,
+  agentMap,
+  property,
+  matches,
+  leadPropertyStatusMap,
+}: Props) {
   const [tab, setTab] = useState<'historia' | 'propiedades'>('historia')
 
   const allProps = property ? [property, ...matches] : matches
@@ -331,15 +416,16 @@ export function LeadTabs({ interactions, agentMap, property, matches }: Props) {
                         <span className="text-[14px] font-medium text-ink">
                           {p.title}
                         </span>
-                        {isPrincipal ? (
+                        {isPrincipal && (
                           <span className="font-mono text-[9px] tracking-[0.7px] uppercase px-1.5 py-0.5 rounded-full bg-ink text-white font-medium">
                             Principal
                           </span>
-                        ) : (
-                          <span className="font-mono text-[9px] tracking-[0.7px] uppercase px-1.5 py-0.5 rounded-full bg-bone-soft text-steel font-medium">
-                            Sugerida
-                          </span>
                         )}
+                        <PropertyStatusSelector
+                          leadId={leadId}
+                          propertyId={p.id}
+                          current={leadPropertyStatusMap[p.id] ?? 'pendiente'}
+                        />
                       </div>
                       <p className="text-[12px] text-steel mb-1.5">
                         {location || '—'} ·{' '}
