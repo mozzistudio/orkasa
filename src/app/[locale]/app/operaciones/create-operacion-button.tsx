@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Search, X } from 'lucide-react'
-import { createDeal } from '../deals/actions'
+import { createDeal, getOperacionPickerData } from '../deals/actions'
 
 type LeadOption = {
   id: string
@@ -26,13 +26,16 @@ const STAGES = [
 ] as const
 
 export function CreateOperacionButton({
-  leads,
-  properties,
+  leads: leadsProp,
+  properties: propertiesProp,
   variant = 'default',
   label = '+ Crear operación',
 }: {
-  leads: LeadOption[]
-  properties: PropertyOption[]
+  /** Optional pre-fetched options. When omitted, the modal lazy-loads
+   *  them from the server the first time it opens — useful when the
+   *  button lives in the topbar / shared layout. */
+  leads?: LeadOption[]
+  properties?: PropertyOption[]
   variant?: 'default' | 'primary'
   label?: string
 }) {
@@ -48,6 +51,28 @@ export function CreateOperacionButton({
   const [stage, setStage] = useState<string>('contacto_inicial')
   const [amount, setAmount] = useState('')
   const [currency] = useState('USD')
+
+  const [leads, setLeads] = useState<LeadOption[]>(leadsProp ?? [])
+  const [properties, setProperties] = useState<PropertyOption[]>(
+    propertiesProp ?? [],
+  )
+  const [loadingOptions, setLoadingOptions] = useState(false)
+  const hasFetchedOptions = leadsProp !== undefined || propertiesProp !== undefined
+
+  // Lazy-fetch picker data on first open when not provided as props
+  useEffect(() => {
+    if (!open) return
+    if (hasFetchedOptions) return
+    if (leads.length > 0 || properties.length > 0) return
+    setLoadingOptions(true)
+    getOperacionPickerData()
+      .then((data) => {
+        setLeads(data.leads)
+        setProperties(data.properties)
+      })
+      .finally(() => setLoadingOptions(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   function handleSelectLead(lead: LeadOption) {
     setSelectedLeadId(lead.id)
@@ -182,8 +207,13 @@ export function CreateOperacionButton({
                       setLeadSearch(e.target.value)
                       if (selectedLeadId) setSelectedLeadId(null)
                     }}
-                    placeholder="Buscar lead por nombre o teléfono..."
-                    className="h-10 w-full rounded-[8px] border border-bone bg-paper pl-8 pr-3 text-[13px] focus:border-ink focus:outline-none focus:ring-0"
+                    placeholder={
+                      loadingOptions
+                        ? 'Cargando leads...'
+                        : 'Buscar lead por nombre o teléfono...'
+                    }
+                    disabled={loadingOptions}
+                    className="h-10 w-full rounded-[8px] border border-bone bg-paper pl-8 pr-3 text-[13px] focus:border-ink focus:outline-none focus:ring-0 disabled:opacity-60"
                   />
                 </div>
                 {leadSearch && !selectedLeadId && filteredLeads.length > 0 && (

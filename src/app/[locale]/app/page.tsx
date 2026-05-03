@@ -4,21 +4,21 @@ import { EmptyState } from '@/components/app/empty-state'
 import { DashboardGreeting } from '@/components/dashboard/dashboard-greeting'
 import { PipelineHero } from '@/components/dashboard/pipeline-hero'
 import { VisitsPanel } from '@/components/dashboard/visits-panel'
-import { CurrentDealsPanel } from '@/components/dashboard/current-deals-panel'
+import { TodoListPanel } from '@/components/dashboard/todo-list-panel'
 import { CoolingLeadsPanel } from '@/components/dashboard/cooling-leads-panel'
 import { PropertiesAttentionPanel } from '@/components/dashboard/properties-attention-panel'
 import { TeamPerformanceTable } from '@/components/dashboard/team-performance-table'
 import { PipelinePredictions } from '@/components/dashboard/pipeline-predictions'
-import { CreateOperacionButton } from './operaciones/create-operacion-button'
 import {
   getPipelineSnapshot,
   getUpcomingViewings,
-  getPendingReminders,
+  getMyOpenTasks,
   getCoolingLeads,
   getPropertiesNeedingAttention,
   getTeamPerformance,
   getDashboardUser,
 } from '@/lib/queries/dashboard'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import { getPipelineForecast } from '@/lib/automation/predictions'
 
 function SectionSkeleton({ height = 'h-40' }: { height?: string }) {
@@ -42,16 +42,23 @@ export default async function HomePage() {
     return <EmptyState />
   }
 
-  const [user, pipeline, viewings, reminders, cooling, propertyAlerts, team] =
+  const [user, pipeline, viewings, todos, cooling, propertyAlerts, team] =
     await Promise.all([
       getDashboardUser(),
       getPipelineSnapshot(),
       getUpcomingViewings(5),
-      getPendingReminders(5),
+      getMyOpenTasks(6),
       getCoolingLeads(5),
       getPropertiesNeedingAttention(4),
       getTeamPerformance(),
     ])
+
+  // Total open task count for the panel header
+  const supabaseForCount = await createServerClient()
+  const { count: totalOpenTasksCount } = await supabaseForCount
+    .from('tasks')
+    .select('id', { count: 'exact', head: true })
+    .in('status', ['open', 'escalated'])
 
   const { data: agentRow } = await supabase
     .from('agents')
@@ -68,54 +75,15 @@ export default async function HomePage() {
         atRiskValue: 0,
       }
 
-  // Fetch leads + properties for the "+ Crear operación" picker
-  const [leadsForOpRes, propsForOpRes] = agentRow?.brokerage_id
-    ? await Promise.all([
-        supabase
-          .from('leads')
-          .select('id, full_name, phone, email, property_id')
-          .eq('brokerage_id', agentRow.brokerage_id)
-          .order('updated_at', { ascending: false })
-          .limit(500)
-          .returns<
-            Array<{
-              id: string
-              full_name: string
-              phone: string | null
-              email: string | null
-              property_id: string | null
-            }>
-          >(),
-        supabase
-          .from('properties')
-          .select('id, title')
-          .eq('brokerage_id', agentRow.brokerage_id)
-          .returns<Array<{ id: string; title: string }>>(),
-      ])
-    : [{ data: [] }, { data: [] }]
-
-  const leadsForOp = leadsForOpRes.data ?? []
-  const propsForOp = propsForOpRes.data ?? []
-
   return (
     <div className="max-w-[1340px]">
-      {/* Greeting + Crear operación */}
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <DashboardGreeting
-            firstName={user.firstName}
-            totalValue={pipeline.totalValue}
-            readyToSign={pipeline.readyToSign}
-            coolingCount={cooling.length}
-          />
-        </div>
-        <div className="shrink-0 hidden sm:block">
-          <CreateOperacionButton
-            leads={leadsForOp}
-            properties={propsForOp}
-          />
-        </div>
-      </div>
+      {/* Greeting */}
+      <DashboardGreeting
+        firstName={user.firstName}
+        totalValue={pipeline.totalValue}
+        readyToSign={pipeline.readyToSign}
+        coolingCount={cooling.length}
+      />
 
       {/* Pipeline Hero */}
       <Suspense fallback={<SectionSkeleton height="h-52" />}>
@@ -135,7 +103,7 @@ export default async function HomePage() {
           <VisitsPanel viewings={viewings} />
         </Suspense>
         <Suspense fallback={<SectionSkeleton height="h-72" />}>
-          <CurrentDealsPanel reminders={reminders} />
+          <TodoListPanel todos={todos} totalOpenCount={totalOpenTasksCount ?? todos.length} />
         </Suspense>
         <Suspense fallback={<SectionSkeleton height="h-72" />}>
           <CoolingLeadsPanel leads={cooling} />
