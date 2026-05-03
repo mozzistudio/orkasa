@@ -187,6 +187,8 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     ctaAction: 'request_doc',
     ctaMetadataBuilder: () => ({
       docCodes: ['identity', 'address_proof'],
+      requiredDocCodesAny: ['identity_id_panamanian', 'identity_id_foreign'],
+      requiredDocCodesAll: ['identity_address_proof'],
     }),
     dueDaysOffset: 3,
     escalationDaysOffset: 7,
@@ -231,7 +233,6 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     escalationDaysOffset: 5,
     triggerEvents: ['task_completed'],
     triggerCondition: (ctx) => ctx.completedStep === 12,
-    autoCompleteOn: 'doc:dti_verified',
   },
 
   {
@@ -249,10 +250,15 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     ctaAction: 'request_doc',
     ctaMetadataBuilder: (ctx) => {
       const meta = ctx as TaskContext & { isCash?: boolean }
+      const baseCodes = meta.isCash
+        ? ['bank_statements_6m', 'funds_constitution_letter']
+        : ['bank_statements_6m', 'pre_approval']
+      const realCodes = meta.isCash
+        ? ['sof_bank_statements']
+        : ['sof_bank_statements', 'sof_credit_preapproval']
       return {
-        docCodes: meta.isCash
-          ? ['bank_statements_6m', 'funds_constitution_letter']
-          : ['bank_statements_6m', 'pre_approval'],
+        docCodes: baseCodes,
+        requiredDocCodesAll: realCodes,
       }
     },
     dueDaysOffset: 5,
@@ -378,7 +384,7 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     triggerEvents: ['viewing_completed'],
     triggerCondition: (ctx) =>
       (ctx.metadata?.viewingType as string) === 'avaluo',
-    autoCompleteOn: 'doc:avaluo_report',
+    autoCompleteOn: 'viewing_completed:avaluo',
   },
 
   {
@@ -428,13 +434,24 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
         'recibos_servicios_publicos',
       ]
       if (isAptOrCondo) codes.splice(2, 0, 'cuotas_mantenimiento')
-      return { docCodes: codes, target: 'seller' }
+      const realCodes = [
+        'property_paz_idaan',
+        'property_paz_imu',
+        'property_paz_electric',
+        'property_registro_publico',
+      ]
+      if (isAptOrCondo) realCodes.push('property_paz_condo')
+      return {
+        docCodes: codes,
+        target: 'seller',
+        requiredDocCodesAll: realCodes,
+      }
     },
     dueDaysOffset: 7,
     escalationDaysOffset: 14,
     triggerEvents: ['deal_stage_changed'],
     triggerCondition: (ctx) => ctx.dealStage === 'escritura_publica',
-    autoCompleteOn: 'doc:seller_docs_complete',
+    autoCompleteOn: 'doc:other',
     whatsappTemplate: 'requestSellerDocs',
   },
 
@@ -515,7 +532,6 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     escalationDaysOffset: 3,
     triggerEvents: ['task_completed'],
     triggerCondition: (ctx) => ctx.completedStep === 27,
-    autoCompleteOn: 'doc:acta_entrega',
   },
 
   // ═══════════════════════════════════════════════════════════════════
@@ -534,6 +550,7 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     dueDaysOffset: 0,
     escalationDaysOffset: 3,
     triggerEvents: ['cron_tick'],
+    triggerCondition: (ctx) => (ctx.daysSinceClosed ?? 0) >= 15,
     autoCompleteOn: 'interaction:whatsapp',
   },
 
@@ -549,6 +566,7 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     dueDaysOffset: 0,
     escalationDaysOffset: 7,
     triggerEvents: ['cron_tick'],
+    triggerCondition: (ctx) => (ctx.daysSinceClosed ?? 0) >= 30,
     autoCompleteOn: 'interaction:whatsapp',
   },
 
@@ -564,6 +582,7 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     dueDaysOffset: 0,
     escalationDaysOffset: 7,
     triggerEvents: ['cron_tick'],
+    triggerCondition: (ctx) => (ctx.daysSinceClosed ?? 0) >= 90,
     autoCompleteOn: 'interaction:whatsapp',
   },
 
@@ -579,6 +598,7 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     dueDaysOffset: 0,
     escalationDaysOffset: 7,
     triggerEvents: ['cron_tick'],
+    triggerCondition: (ctx) => (ctx.daysSinceClosed ?? 0) >= 180,
     autoCompleteOn: 'interaction:whatsapp',
   },
 
@@ -594,6 +614,7 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     dueDaysOffset: 0,
     escalationDaysOffset: 7,
     triggerEvents: ['cron_tick'],
+    triggerCondition: (ctx) => (ctx.daysSinceClosed ?? 0) >= 365,
     autoCompleteOn: 'interaction:whatsapp',
   },
 
@@ -609,6 +630,14 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     dueDaysOffset: 0,
     escalationDaysOffset: 14,
     triggerEvents: ['cron_tick'],
+    triggerCondition: (ctx) => {
+      if ((ctx.daysSinceClosed ?? 0) < 365) return false
+      const lastDone = ctx.lastDoneStepDates[34]
+      if (!lastDone) return true
+      const daysSinceLast =
+        (Date.now() - new Date(lastDone).getTime()) / 86_400_000
+      return daysSinceLast >= 365
+    },
     autoCompleteOn: 'interaction:whatsapp',
   },
 ]

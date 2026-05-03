@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, ChevronDown, Plus } from 'lucide-react'
+import { ArrowLeft, ChevronDown, Mail, Phone, Plus } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatPrice, formatPriceCompact } from '@/lib/utils'
 import {
@@ -13,6 +13,8 @@ import { PropertyHero } from './property-hero'
 import { PropertyComposer } from './property-composer'
 import { PropertyTabs } from './property-tabs'
 import type { LeadSummary, TimelineEvent } from './property-tabs'
+import { OwnerDocuments } from './owner-documents'
+import type { SignatureDocument } from '@/lib/signatures/types'
 import type { Database } from '@/lib/database.types'
 import type {
   PropertyWithMetrics,
@@ -20,6 +22,7 @@ import type {
   StoredImage,
   PriceHistoryEntry,
 } from '@/lib/properties/types'
+import { buildReminderUrl } from '@/lib/whatsapp-templates'
 
 type Property = Database['public']['Tables']['properties']['Row']
 type Lead = Database['public']['Tables']['leads']['Row']
@@ -54,30 +57,38 @@ export default async function PropertyDetailPage({
   const supabase = await createClient()
 
   // ── Parallel data fetching ──
-  const [propertyRes, leadsRes, publicationsRes] = await Promise.all([
-    supabase
-      .from('properties')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle<Property>(),
-    supabase
-      .from('leads')
-      .select('*')
-      .eq('property_id', id)
-      .order('created_at', { ascending: false })
-      .returns<Lead[]>(),
-    supabase
-      .from('property_publications')
-      .select('*')
-      .eq('property_id', id)
-      .returns<Publication[]>(),
-  ])
+  const [propertyRes, leadsRes, publicationsRes, signaturesRes] =
+    await Promise.all([
+      supabase
+        .from('properties')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle<Property>(),
+      supabase
+        .from('leads')
+        .select('*')
+        .eq('property_id', id)
+        .order('created_at', { ascending: false })
+        .returns<Lead[]>(),
+      supabase
+        .from('property_publications')
+        .select('*')
+        .eq('property_id', id)
+        .returns<Publication[]>(),
+      supabase
+        .from('signature_documents')
+        .select('*')
+        .eq('property_id', id)
+        .order('created_at', { ascending: false })
+        .returns<SignatureDocument[]>(),
+    ])
 
   const property = propertyRes.data
   if (!property) notFound()
 
   const leads = leadsRes.data ?? []
   const publications = publicationsRes.data ?? []
+  const signatures = signaturesRes.data ?? []
 
   // Fetch interactions for all leads of this property
   const leadIds = leads.map((l) => l.id)
@@ -146,7 +157,7 @@ export default async function PropertyDetailPage({
     recentPriceDrop,
     priceDropAt: lastPriceChange?.at ?? null,
     previousPrice,
-    ownerName: null,
+    ownerName: property.owner_name ?? null,
   }
 
   const propertyWithMetrics: PropertyWithMetrics = {
@@ -557,6 +568,66 @@ export default async function PropertyDetailPage({
               />
             </div>
           </section>
+
+          {/* Owner card */}
+          {(property.owner_name || property.owner_phone || property.owner_email) && (
+            <section className="rounded-[12px] border border-bone bg-paper overflow-hidden">
+              <div className="px-4 pt-3.5 pb-2.5">
+                <h3 className="font-mono text-[10px] tracking-[1.4px] uppercase text-steel">
+                  Propietario
+                </h3>
+              </div>
+              <div className="px-4 pb-3.5">
+                {property.owner_name && (
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-8 w-8 rounded-full bg-bone-soft flex items-center justify-center text-[13px] font-medium text-steel shrink-0">
+                      {property.owner_name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-[13px] font-medium text-ink truncate">
+                      {property.owner_name}
+                    </span>
+                  </div>
+                )}
+                {property.owner_phone && (
+                  <div className="flex items-center gap-2 py-1.5 text-[12px]">
+                    <Phone className="h-[12px] w-[12px] text-steel" strokeWidth={1.5} />
+                    <span className="text-ink font-mono text-[11px]">{property.owner_phone}</span>
+                  </div>
+                )}
+                {property.owner_email && (
+                  <div className="flex items-center gap-2 py-1.5 text-[12px]">
+                    <Mail className="h-[12px] w-[12px] text-steel" strokeWidth={1.5} />
+                    <span className="text-ink text-[11px] truncate">{property.owner_email}</span>
+                  </div>
+                )}
+                {property.owner_phone && (
+                  <a
+                    href={buildReminderUrl(
+                      property.owner_phone,
+                      `Hola${property.owner_name ? ` ${property.owner_name}` : ''}, te escribo de Orkasa respecto a la propiedad ${property.title}.`,
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-whatsapp text-white rounded-[6px] text-[12px] font-medium hover:bg-whatsapp-deep transition-colors"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M17.5 14.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.1-1.3-.5-2.5-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6.1-.1.3-.4.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.4-.2.3-1 1-1 2.4 0 1.4 1 2.8 1.2 3 .1.2 2 3.1 4.9 4.3 2.9 1.2 2.9.8 3.4.8.5 0 1.6-.7 1.9-1.3.2-.7.2-1.2.2-1.3-.1-.1-.3-.2-.6-.4zM12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.3c1.4.8 3 1.2 4.8 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2z" />
+                    </svg>
+                    Enviar WhatsApp
+                  </a>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Owner documents (signature) */}
+          <OwnerDocuments
+            propertyId={property.id}
+            signatures={signatures}
+            ownerName={property.owner_name}
+            ownerPhone={property.owner_phone}
+            propertyTitle={property.title}
+          />
 
           {/* Listing card */}
           <section className="rounded-[12px] border border-bone bg-paper overflow-hidden">

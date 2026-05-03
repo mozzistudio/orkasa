@@ -8,8 +8,19 @@ import type {
   TaskRow,
 } from './types'
 import type { Database, Json } from '@/lib/database.types'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 type TaskInsert = Database['public']['Tables']['tasks']['Insert']
+type DbClient = SupabaseClient<Database>
+
+/**
+ * Cron and other server-side jobs run without a user session, so they pass an
+ * explicit service-role client. Anything triggered from a server action or
+ * route handler can rely on the cookie-bound default.
+ */
+async function getClient(client?: DbClient): Promise<DbClient> {
+  return client ?? ((await createClient()) as unknown as DbClient)
+}
 
 export async function logTaskAudit(
   taskId: string,
@@ -17,9 +28,10 @@ export async function logTaskAudit(
   agentId: string | null,
   action: TaskAuditAction,
   details: Json = {},
+  client?: DbClient,
 ): Promise<void> {
   try {
-    const supabase = await createClient()
+    const supabase = await getClient(client)
     await supabase.from('task_audit_log').insert({
       task_id: taskId,
       brokerage_id: brokerageId,
@@ -34,10 +46,11 @@ export async function logTaskAudit(
 
 async function buildTriggerContext(
   payload: TaskEventPayload,
+  client?: DbClient,
 ): Promise<TriggerContext | null> {
-  const supabase = await createClient()
+  const supabase = await getClient(client)
 
-  const [leadRes, openTasksRes] = await Promise.all([
+  const [leadRes, openTasksRes, doneTasksRes] = await Promise.all([
     supabase
       .from('leads')
       .select('full_name, phone, status, property_id, metadata')
@@ -55,6 +68,13 @@ async function buildTriggerContext(
       .eq('lead_id', payload.leadId)
       .eq('status', 'open')
       .returns<Array<{ step_number: number }>>(),
+    supabase
+      .from('tasks')
+      .select('step_number, completed_at')
+      .eq('lead_id', payload.leadId)
+      .eq('status', 'done')
+      .order('completed_at', { ascending: false })
+      .returns<Array<{ step_number: number; completed_at: string | null }>>(),
   ])
 
   if (!leadRes.data) return null
@@ -90,12 +110,26 @@ async function buildTriggerContext(
     deal = data
   }
 
+  const daysSinceClosed = deal?.closed_at
+    ? Math.floor((Date.now() - new Date(deal.closed_at).getTime()) / 86_400_000)
+    : null
+
+  const lastDoneStepDates: Record<number, string> = {}
+  for (const t of doneTasksRes.data ?? []) {
+    if (!t.completed_at) continue
+    if (!lastDoneStepDates[t.step_number]) {
+      lastDoneStepDates[t.step_number] = t.completed_at
+    }
+  }
+
   return {
     ...payload,
     lead: leadRes.data,
     property,
     deal,
     existingOpenSteps: (openTasksRes.data ?? []).map((t) => t.step_number),
+    daysSinceClosed,
+    lastDoneStepDates,
   }
 }
 
@@ -134,11 +168,12 @@ function addDays(days: number): string {
 
 export async function processTaskEvent(
   payload: TaskEventPayload,
+  client?: DbClient,
 ): Promise<void> {
-  const ctx = await buildTriggerContext(payload)
+  const ctx = await buildTriggerContext(payload, client)
   if (!ctx) return
 
-  const supabase = await createClient()
+  const supabase = await getClient(client)
   const taskCtx = buildTaskContext(ctx)
 
   for (const entry of TASK_CATALOG) {
@@ -200,6 +235,7 @@ export async function processTaskEvent(
           payload.agentId,
           'created',
           { stepNumber: entry.stepNumber, event: payload.event },
+          client,
         )
         const { notifyTaskCreated } = await import('@/lib/notifications')
         notifyTaskCreated({

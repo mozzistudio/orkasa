@@ -181,6 +181,89 @@ export async function updateLeadStatus(
   return {}
 }
 
+type LeadPropertyStatus = Database['public']['Enums']['lead_property_status']
+type LeadPropertyRole = Database['public']['Enums']['lead_property_role']
+
+const VALID_LEAD_PROPERTY_STATUSES: readonly LeadPropertyStatus[] = [
+  'pendiente',
+  'le_encanto',
+  'descartada',
+  'oferta_hecha',
+]
+
+export async function updateLeadPropertyStatus(
+  leadId: string,
+  propertyId: string,
+  status: LeadPropertyStatus,
+  role?: LeadPropertyRole,
+): Promise<{ error?: string }> {
+  if (!(VALID_LEAD_PROPERTY_STATUSES as readonly string[]).includes(status)) {
+    return { error: 'Invalid status' }
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: lead } = await supabase
+    .from('leads')
+    .select('brokerage_id')
+    .eq('id', leadId)
+    .maybeSingle<{ brokerage_id: string }>()
+
+  if (!lead?.brokerage_id) return { error: 'Lead not found' }
+
+  const { data: existing } = await supabase
+    .from('lead_properties')
+    .select('id, status')
+    .eq('lead_id', leadId)
+    .eq('property_id', propertyId)
+    .maybeSingle<{ id: string; status: LeadPropertyStatus }>()
+
+  const oldStatus = existing?.status
+
+  if (existing) {
+    const { error } = await supabase
+      .from('lead_properties')
+      .update({
+        status,
+        ...(role ? { role } : {}),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existing.id)
+    if (error) return { error: error.message }
+  } else {
+    const { error } = await supabase.from('lead_properties').insert({
+      lead_id: leadId,
+      property_id: propertyId,
+      brokerage_id: lead.brokerage_id,
+      status,
+      role: role ?? 'sugerida',
+    })
+    if (error) return { error: error.message }
+  }
+
+  const payload = {
+    event: 'lead_property_status_changed' as const,
+    leadId,
+    brokerageId: lead.brokerage_id,
+    agentId: user.id,
+    propertyId,
+    oldStatus,
+    newStatus: status,
+  }
+  checkAutoComplete(payload).catch(() => {})
+  processTaskEvent(payload).catch(() => {})
+
+  revalidatePath(`/app/leads/${leadId}`)
+  revalidatePath(`/app/properties/${propertyId}`)
+  revalidatePath('/app/tasks')
+  revalidatePath('/app')
+  return {}
+}
+
 export async function rescoreLead(
   leadId: string,
 ): Promise<{ error?: string; score?: number }> {

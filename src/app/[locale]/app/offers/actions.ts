@@ -158,18 +158,33 @@ export async function updateOfferStatus(
         .from('offers')
         .update({ deal_id: deal.id })
         .eq('id', offerId)
-
-      processTaskEvent({
-        event: 'deal_created',
-        leadId: offer.lead_id,
-        brokerageId: offer.brokerage_id,
-        agentId: user.id,
-        propertyId: offer.property_id,
-        dealId: deal.id,
-        offerId: offer.id,
-      }).catch(() => {})
     }
+
+    const acceptedPayload = {
+      event: 'offer_accepted' as const,
+      leadId: offer.lead_id,
+      brokerageId: offer.brokerage_id,
+      agentId: user.id,
+      propertyId: offer.property_id,
+      dealId: deal?.id,
+      offerId: offer.id,
+    }
+    checkAutoComplete(acceptedPayload).catch(() => {})
+    processTaskEvent(acceptedPayload).catch(() => {})
+  } else if (newStatus === 'rejected') {
+    const rejectedPayload = {
+      event: 'offer_rejected' as const,
+      leadId: offer.lead_id,
+      brokerageId: offer.brokerage_id,
+      agentId: user.id,
+      propertyId: offer.property_id,
+      offerId: offer.id,
+    }
+    checkAutoComplete(rejectedPayload).catch(() => {})
+    processTaskEvent(rejectedPayload).catch(() => {})
   }
+
+  revalidatePath('/app/tasks')
 
   revalidatePath('/app/offers')
   revalidatePath('/app/deals')

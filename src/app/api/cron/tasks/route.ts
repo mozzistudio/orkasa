@@ -1,13 +1,26 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { TASK_CATALOG } from '@/lib/tasks/task-catalog'
-import type { TaskRow } from '@/lib/tasks/types'
+import { processTaskEvent } from '@/lib/tasks/trigger-engine'
+import type { Database, Json } from '@/lib/database.types'
 
 function serviceClient() {
-  return createClient(
+  return createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   )
+}
+
+async function openTaskCount(
+  supabase: ReturnType<typeof serviceClient>,
+  leadId: string,
+): Promise<number> {
+  const { count } = await supabase
+    .from('tasks')
+    .select('*', { count: 'exact', head: true })
+    .eq('lead_id', leadId)
+    .eq('status', 'open')
+  return count ?? 0
 }
 
 export async function GET(request: NextRequest) {
@@ -72,7 +85,10 @@ export async function GET(request: NextRequest) {
     results.escalated = overdue.length
   }
 
-  // ── 2. Post-closing follow-ups (steps 30–34) ──────────────────────
+  // ── 2. Post-closing follow-ups (steps 29–34) ──────────────────────
+  // Delegates to the trigger engine: per closed deal, fire a `cron_tick` event
+  // and let each catalog entry's `triggerCondition` decide whether to create
+  // its task (based on `daysSinceClosed` and `lastDoneStepDates`).
   const { data: closedDeals } = await supabase
     .from('deals')
     .select('id, lead_id, property_id, brokerage_id, agent_id, closed_at')
@@ -90,133 +106,21 @@ export async function GET(request: NextRequest) {
     >()
 
   if (closedDeals?.length) {
-    const postClosingSteps = [
-      { step: 30, daysAfter: 30 },
-      { step: 31, daysAfter: 90 },
-      { step: 32, daysAfter: 180 },
-      { step: 33, daysAfter: 365 },
-      { step: 34, daysAfter: 365 },
-    ]
-
     for (const deal of closedDeals) {
-      const closedAt = new Date(deal.closed_at)
-      const daysSinceClosed = Math.floor(
-        (Date.now() - closedAt.getTime()) / 86_400_000,
-      )
-
-      const { data: existingTasks } = await supabase
-        .from('tasks')
-        .select('step_number, status')
-        .eq('lead_id', deal.lead_id)
-        .in(
-          'step_number',
-          postClosingSteps.map((s) => s.step),
-        )
-        .returns<Array<{ step_number: number; status: string }>>()
-
-      const existingStepMap = new Map(
-        (existingTasks ?? []).map((t) => [t.step_number, t.status]),
-      )
-
-      const { data: lead } = await supabase
-        .from('leads')
-        .select('full_name, phone')
-        .eq('id', deal.lead_id)
-        .maybeSingle<{ full_name: string; phone: string | null }>()
-
-      if (!lead) continue
-
-      const { data: property } = deal.property_id
-        ? await supabase
-            .from('properties')
-            .select('title')
-            .eq('id', deal.property_id)
-            .maybeSingle<{ title: string }>()
-        : { data: null }
-
-      const firstName = lead.full_name.split(' ')[0]
-
-      for (const { step, daysAfter } of postClosingSteps) {
-        if (daysSinceClosed < daysAfter) continue
-        if (existingStepMap.has(step)) continue
-
-        // Step 34 is perpetual annual — check if last occurrence was >365 days ago
-        if (step === 34) {
-          const { data: lastDone } = await supabase
-            .from('tasks')
-            .select('completed_at')
-            .eq('lead_id', deal.lead_id)
-            .eq('step_number', 34)
-            .eq('status', 'done')
-            .order('completed_at', { ascending: false })
-            .limit(1)
-            .maybeSingle<{ completed_at: string | null }>()
-
-          if (lastDone?.completed_at) {
-            const daysSinceLast = Math.floor(
-              (Date.now() - new Date(lastDone.completed_at).getTime()) /
-                86_400_000,
-            )
-            if (daysSinceLast < 365) continue
-          }
-        }
-
-        const catalogEntry = TASK_CATALOG.find((e) => e.stepNumber === step)
-        if (!catalogEntry) continue
-
-        const ctx = {
-          firstName,
-          leadName: lead.full_name,
-          propertyTitle: property?.title,
-        }
-        const title = catalogEntry.titleTemplate(ctx)
-
-        const ctaMetadata: Record<string, unknown> = {}
-        if (catalogEntry.whatsappTemplate) {
-          ctaMetadata.template = catalogEntry.whatsappTemplate
-        }
-        if (lead.phone) ctaMetadata.phone = lead.phone
-
-        try {
-          const { data: created } = await supabase
-            .from('tasks')
-            .insert({
-              lead_id: deal.lead_id,
-              brokerage_id: deal.brokerage_id,
-              agent_id: deal.agent_id,
-              deal_id: deal.id,
-              step_number: step,
-              phase: 'post_cierre',
-              title,
-              description: catalogEntry.description,
-              cta_action: catalogEntry.ctaAction,
-              cta_metadata: ctaMetadata,
-              due_at: now,
-              escalation_at: new Date(
-                Date.now() + catalogEntry.escalationDaysOffset * 86_400_000,
-              ).toISOString(),
-              auto_complete_on: catalogEntry.autoCompleteOn ?? null,
-              status: 'open',
-              trigger_reason: { event: 'cron_tick', daysAfter },
-              property_id: deal.property_id,
-            })
-            .select('id')
-            .maybeSingle<{ id: string }>()
-
-          if (created) {
-            await supabase.from('task_audit_log').insert({
-              task_id: created.id,
-              brokerage_id: deal.brokerage_id,
-              agent_id: null,
-              action: 'created',
-              details: { stepNumber: step, event: 'cron_tick' },
-            })
-            results.postClosingCreated++
-          }
-        } catch {
-          // dedup constraint
-        }
-      }
+      const beforeCount = await openTaskCount(supabase, deal.lead_id)
+      await processTaskEvent(
+        {
+          event: 'cron_tick',
+          leadId: deal.lead_id,
+          brokerageId: deal.brokerage_id,
+          agentId: deal.agent_id ?? '',
+          dealId: deal.id,
+          propertyId: deal.property_id ?? undefined,
+        },
+        supabase,
+      ).catch(() => {})
+      const afterCount = await openTaskCount(supabase, deal.lead_id)
+      results.postClosingCreated += Math.max(0, afterCount - beforeCount)
     }
   }
 
@@ -290,7 +194,7 @@ export async function GET(request: NextRequest) {
             title,
             description: catalogEntry.description,
             cta_action: 'open_whatsapp',
-            cta_metadata: ctaMetadata,
+            cta_metadata: ctaMetadata as Json,
             due_at: now,
             escalation_at: viewing.scheduled_at,
             auto_complete_on: 'interaction:whatsapp',

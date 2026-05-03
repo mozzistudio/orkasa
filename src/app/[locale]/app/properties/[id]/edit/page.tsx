@@ -72,6 +72,9 @@ export default async function EditPropertyPage({
             city: property.city,
             external_id: property.external_id,
             images: initialImages,
+            owner_name: property.owner_name,
+            owner_phone: property.owner_phone,
+            owner_email: property.owner_email,
           }}
         />
       </div>

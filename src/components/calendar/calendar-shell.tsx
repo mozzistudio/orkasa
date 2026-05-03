@@ -1,8 +1,9 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 import { Link } from '@/i18n/navigation'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Check, X, FileSearch } from 'lucide-react'
+import { updateViewingStatus } from '@/app/[locale]/app/viewings/actions'
 
 export type CalendarEvent = {
   id: string
@@ -451,27 +452,83 @@ function EventCard({
 }) {
   const colors = eventColor(event.status)
   const time = fmtTime(event.scheduledAt)
+  const [pending, startTransition] = useTransition()
+  const [optimisticStatus, setOptimisticStatus] = useState(event.status)
+  const isPast = new Date(event.scheduledAt).getTime() < Date.now()
+  const isOpen = optimisticStatus !== 'completed' && optimisticStatus !== 'cancelled' && optimisticStatus !== 'no_show'
+
+  function setStatus(
+    next: 'completed' | 'cancelled',
+    metadata?: Record<string, unknown>,
+  ) {
+    setOptimisticStatus(next)
+    startTransition(async () => {
+      await updateViewingStatus(event.id, next, metadata)
+    })
+  }
+
   return (
-    <Link
-      href={
-        event.leadId
-          ? `/app/leads/${event.leadId}`
-          : event.propertyId
-            ? `/app/properties/${event.propertyId}`
-            : '/app/calendar'
-      }
-      className={`block rounded-[6px] border px-2.5 py-2 transition-colors hover:bg-bone-soft/40 ${colors.card}`}
-    >
-      <div className="flex items-center gap-1.5">
-        <span className={`h-1.5 w-1.5 rounded-full ${colors.dot}`} />
-        <span className="font-mono text-[11px]">{time}</span>
-      </div>
-      <div className={`mt-0.5 truncate text-[${compact ? '12' : '13'}px] font-medium`}>
-        {event.title}
-      </div>
-      <div className="mt-0.5 truncate text-[11px] opacity-70">
-        {event.subtitle}
-      </div>
-    </Link>
+    <div className={`rounded-[6px] border px-2.5 py-2 ${colors.card}`}>
+      <Link
+        href={
+          event.leadId
+            ? `/app/leads/${event.leadId}`
+            : event.propertyId
+              ? `/app/properties/${event.propertyId}`
+              : '/app/calendar'
+        }
+        className="block transition-colors hover:opacity-80"
+      >
+        <div className="flex items-center gap-1.5">
+          <span className={`h-1.5 w-1.5 rounded-full ${colors.dot}`} />
+          <span className="font-mono text-[11px]">{time}</span>
+        </div>
+        <div className={`mt-0.5 truncate text-[${compact ? '12' : '13'}px] font-medium`}>
+          {event.title}
+        </div>
+        <div className="mt-0.5 truncate text-[11px] opacity-70">
+          {event.subtitle}
+        </div>
+      </Link>
+      {isOpen && isPast && (
+        <div className="mt-1.5 flex flex-wrap gap-1 border-t border-current/10 pt-1.5">
+          <button
+            type="button"
+            disabled={pending}
+            onClick={(e) => {
+              e.stopPropagation()
+              setStatus('completed')
+            }}
+            className="inline-flex items-center gap-1 rounded-[3px] bg-ink/90 px-1.5 py-0.5 text-[10px] font-medium text-paper hover:bg-ink disabled:opacity-50"
+          >
+            <Check className="h-2.5 w-2.5" strokeWidth={2} />
+            Completar
+          </button>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={(e) => {
+              e.stopPropagation()
+              setStatus('completed', { viewingType: 'avaluo' })
+            }}
+            className="inline-flex items-center gap-1 rounded-[3px] border border-current/20 px-1.5 py-0.5 text-[10px] font-medium hover:bg-current/5 disabled:opacity-50"
+          >
+            <FileSearch className="h-2.5 w-2.5" strokeWidth={1.6} />
+            Avalúo
+          </button>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={(e) => {
+              e.stopPropagation()
+              setStatus('cancelled')
+            }}
+            className="inline-flex items-center gap-1 rounded-[3px] border border-current/20 px-1.5 py-0.5 text-[10px] font-medium hover:bg-current/5 disabled:opacity-50"
+          >
+            <X className="h-2.5 w-2.5" strokeWidth={1.6} />
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
