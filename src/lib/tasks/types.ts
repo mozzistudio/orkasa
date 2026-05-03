@@ -66,6 +66,9 @@ export type TaskContext = {
   agentName?: string
   amount?: number
   formattedAmount?: string
+  ownerName?: string
+  ownerPhone?: string
+  offerLink?: string
 }
 
 export type TriggerContext = TaskEventPayload & {
@@ -80,6 +83,8 @@ export type TriggerContext = TaskEventPayload & {
     title: string
     price: number | null
     property_type: string
+    owner_name: string | null
+    owner_phone: string | null
   } | null
   deal?: {
     id: string
@@ -87,6 +92,12 @@ export type TriggerContext = TaskEventPayload & {
     amount: number | null
     closed_at: string | null
     metadata: Record<string, unknown> | null
+  } | null
+  offer?: {
+    id: string
+    amount: number
+    currency: string
+    public_token: string | null
   } | null
   existingOpenSteps: number[]
   /** Days since `deal.closed_at` (null if no deal or no close date). Used by
@@ -154,6 +165,7 @@ export type TaskWhatsAppTemplate =
   | 'preVisitReminder'
   | 'postVisitFollowUp'
   | 'offerPresentation'
+  | 'transmitOfferToOwner'
   | 'offerAccepted'
   | 'requestIdentityDocs'
   | 'requestPayslips'
