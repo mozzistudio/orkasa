@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { OperacionStageSelector } from './operacion-stage-selector'
 import { OperacionPropertiesPanel } from './operacion-properties-panel'
 import { OperacionCloseActions } from './operacion-close-actions'
+import { OperacionTaskPipeline } from './operacion-task-pipeline'
 import type { Database } from '@/lib/database.types'
 
 type Deal = Database['public']['Tables']['deals']['Row']
@@ -50,7 +51,7 @@ export default async function OperacionDetailPage({
 
   if (!deal) notFound()
 
-  const [leadRes, leadPropsRes, offersRes, agentRes, allPropsRes] =
+  const [leadRes, leadPropsRes, offersRes, agentRes, allPropsRes, tasksRes] =
     await Promise.all([
       supabase
         .from('leads')
@@ -99,6 +100,11 @@ export default async function OperacionDetailPage({
             images: unknown
           }>
         >(),
+      supabase
+        .from('tasks')
+        .select('step_number, title, status')
+        .or(`deal_id.eq.${deal.id},and(lead_id.eq.${deal.lead_id},deal_id.is.null)`)
+        .returns<Array<{ step_number: number; title: string; status: string }>>(),
     ])
 
   const lead = leadRes.data
@@ -106,6 +112,7 @@ export default async function OperacionDetailPage({
   const offers = offersRes.data ?? []
   const agent = agentRes.data
   const allProperties = allPropsRes.data ?? []
+  const dealTasks = tasksRes.data ?? []
 
   const propertyById = new Map(allProperties.map((p) => [p.id, p]))
 
@@ -212,6 +219,13 @@ export default async function OperacionDetailPage({
               )}
             </div>
           </section>
+
+          {/* Task pipeline */}
+          <OperacionTaskPipeline
+            dealStage={deal.stage}
+            tasks={dealTasks}
+            leadFirstName={lead?.full_name?.split(' ')[0] ?? '…'}
+          />
 
           {/* Properties panel */}
           <OperacionPropertiesPanel
