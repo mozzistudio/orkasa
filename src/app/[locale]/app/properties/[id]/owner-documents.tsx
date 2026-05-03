@@ -160,7 +160,7 @@ export function OwnerDocuments({
 
         {activeSigs.length === 0 && !showPicker && (
           <p className="py-3 text-[12px] text-steel text-center">
-            Sin documentos. Tocá "Crear" para empezar.
+            Sin documentos. Tocá &ldquo;Crear&rdquo; para empezar.
           </p>
         )}
 
