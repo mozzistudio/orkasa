@@ -1,6 +1,6 @@
 import { DollarSign } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-import { OffersBoard } from './offers-board'
+import { OffersTable } from './offers-table'
 
 export type OfferRow = {
   id: string
@@ -18,6 +18,8 @@ export type OfferRow = {
   updated_at: string
   lead_name: string
   property_title: string
+  property_price: number | null
+  property_currency: string | null
   agent_name: string | null
 }
 
@@ -55,7 +57,11 @@ export default async function OffersPage() {
       ? supabase.from('leads').select('id, full_name').in('id', leadIds).returns<Array<{ id: string; full_name: string }>>()
       : { data: [] },
     propertyIds.length > 0
-      ? supabase.from('properties').select('id, title').in('id', propertyIds).returns<Array<{ id: string; title: string }>>()
+      ? supabase
+          .from('properties')
+          .select('id, title, price, currency')
+          .in('id', propertyIds)
+          .returns<Array<{ id: string; title: string; price: number | null; currency: string | null }>>()
       : { data: [] },
     agentIds.length > 0
       ? supabase.from('agents').select('id, full_name').in('id', agentIds).returns<Array<{ id: string; full_name: string }>>()
@@ -63,15 +69,25 @@ export default async function OffersPage() {
   ])
 
   const leadsById = new Map((leadsRes.data ?? []).map((l) => [l.id, l.full_name]))
-  const propsById = new Map((propertiesRes.data ?? []).map((p) => [p.id, p.title]))
+  const propsById = new Map(
+    (propertiesRes.data ?? []).map((p) => [
+      p.id,
+      { title: p.title, price: p.price, currency: p.currency },
+    ]),
+  )
   const agentsById = new Map((agentsRes.data ?? []).map((a) => [a.id, a.full_name]))
 
-  const enriched: OfferRow[] = allOffers.map((o) => ({
-    ...o,
-    lead_name: leadsById.get(o.lead_id) ?? 'Lead',
-    property_title: propsById.get(o.property_id) ?? 'Propiedad',
-    agent_name: o.agent_id ? (agentsById.get(o.agent_id) ?? null) : null,
-  }))
+  const enriched: OfferRow[] = allOffers.map((o) => {
+    const prop = propsById.get(o.property_id)
+    return {
+      ...o,
+      lead_name: leadsById.get(o.lead_id) ?? 'Lead',
+      property_title: prop?.title ?? 'Propiedad',
+      property_price: prop?.price ? Number(prop.price) : null,
+      property_currency: prop?.currency ?? null,
+      agent_name: o.agent_id ? (agentsById.get(o.agent_id) ?? null) : null,
+    }
+  })
 
   return (
     <div>
@@ -95,7 +111,7 @@ export default async function OffersPage() {
           </p>
         </div>
       ) : (
-        <OffersBoard offers={enriched} />
+        <OffersTable rows={enriched} />
       )}
     </div>
   )
