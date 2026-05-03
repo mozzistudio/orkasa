@@ -4,7 +4,7 @@ import { EmptyState } from '@/components/app/empty-state'
 import { DashboardGreeting } from '@/components/dashboard/dashboard-greeting'
 import { PipelineHero } from '@/components/dashboard/pipeline-hero'
 import { VisitsPanel } from '@/components/dashboard/visits-panel'
-import { PendingDocsPanel } from '@/components/dashboard/pending-docs-panel'
+import { CurrentDealsPanel } from '@/components/dashboard/current-deals-panel'
 import { CoolingLeadsPanel } from '@/components/dashboard/cooling-leads-panel'
 import { PropertiesAttentionPanel } from '@/components/dashboard/properties-attention-panel'
 import { TeamPerformanceTable } from '@/components/dashboard/team-performance-table'
@@ -71,7 +71,7 @@ export default async function HomePage() {
           <VisitsPanel viewings={viewings} />
         </Suspense>
         <Suspense fallback={<SectionSkeleton height="h-72" />}>
-          <PendingDocsPanel reminders={reminders} />
+          <CurrentDealsPanel reminders={reminders} />
         </Suspense>
         <Suspense fallback={<SectionSkeleton height="h-72" />}>
           <CoolingLeadsPanel leads={cooling} />

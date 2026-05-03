@@ -10,6 +10,7 @@ const ROOT_TABS = [
   '/app',
   '/app/properties',
   '/app/leads',
+  '/app/calendar',
   '/app/agents',
   '/app/analytics',
   '/app/compliance',
@@ -48,6 +49,7 @@ function breadcrumbForPath(pathname: string): string {
   if (pathname.startsWith('/app/leads/new')) return 'Leads / Nuevo'
   if (pathname.match(/\/app\/leads\/[^/]+/)) return 'Leads / Detalle'
   if (pathname.startsWith('/app/leads')) return 'Leads'
+  if (pathname.startsWith('/app/calendar')) return 'Calendario'
   if (pathname.startsWith('/app/agents')) return 'Equipo'
   if (pathname.startsWith('/app/analytics')) return 'Análisis'
   if (pathname.startsWith('/app/compliance')) return 'Compliance'
@@ -66,6 +68,7 @@ function mobileTitleForPath(pathname: string): string {
   if (pathname.startsWith('/app/leads/new')) return 'Nuevo lead'
   if (pathname.match(/\/app\/leads\/[^/]+/)) return 'Lead'
   if (pathname.startsWith('/app/leads')) return 'Leads'
+  if (pathname.startsWith('/app/calendar')) return 'Calendario'
   if (pathname.startsWith('/app/agents')) return 'Equipo'
   if (pathname.startsWith('/app/analytics')) return 'Análisis'
   if (pathname.startsWith('/app/compliance')) return 'Compliance'

@@ -57,7 +57,7 @@ export async function PropertiesAttentionPanel({
         <div className="min-w-0">
           <div className="mb-[3px] flex items-center gap-[7px] text-[14px] font-medium text-ink">
             <span className="flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded-[5px] bg-bone-soft text-ink">
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 6h12v9H2z"/><path d="M2 6l6-4 6 4"/></svg>
+              <BuildingIcon size={12} />
             </span>
             {t('title')}
           </div>

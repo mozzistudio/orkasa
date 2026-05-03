@@ -15,6 +15,7 @@ import { DealHeaderCard } from '@/components/compliance/detail/deal-header-card'
 import { FaltaSection } from '@/components/compliance/detail/falta-section'
 import { TenemosSection } from '@/components/compliance/detail/tenemos-section'
 import { ClientMiniCard } from '@/components/compliance/detail/client-mini-card'
+import { RelatedPropertyCard } from '@/components/compliance/detail/related-property-card'
 import { DossierTimeline, type TimelineEvent } from '@/components/compliance/detail/dossier-timeline'
 import { TechnicalDetailsFold } from '@/components/compliance/detail/technical-details-fold'
 import type { TodoItem } from '@/components/compliance/detail/todo-row'
@@ -26,6 +27,18 @@ type AuditEntry = Database['public']['Tables']['compliance_audit_log']['Row']
 type Lead = Database['public']['Tables']['leads']['Row']
 type Property = Database['public']['Tables']['properties']['Row']
 type Agent = Database['public']['Tables']['agents']['Row']
+type Interaction = Database['public']['Tables']['lead_interactions']['Row']
+
+const INTERACTION_TO_TIMELINE: Record<
+  string,
+  { variant: TimelineEvent['variant']; label: string }
+> = {
+  visit: { variant: 'created', label: 'registró una visita' },
+  call: { variant: 'requested', label: 'registró una llamada' },
+  whatsapp: { variant: 'uploaded', label: 'envió por WhatsApp' },
+  email: { variant: 'requested', label: 'envió un email' },
+  note: { variant: 'default', label: 'agregó una nota' },
+}
 
 const ACTION_TO_TIMELINE: Record<
   string,
@@ -179,15 +192,31 @@ export default async function ComplianceDetailPage({
   const audit = auditRes.data ?? []
   const agents = agentsRes.data ?? []
 
-  // Property lookup
+  // Pull lead interactions (visits, calls, notes, etc.) so they show up in
+  // the dossier Historia alongside compliance audit events.
+  const interactions: Interaction[] = lead
+    ? (
+        await supabase
+          .from('lead_interactions')
+          .select('*')
+          .eq('lead_id', lead.id)
+          .order('created_at', { ascending: false })
+          .limit(20)
+          .returns<Interaction[]>()
+      ).data ?? []
+    : []
+
+  // Property lookup — fetch enough fields to render the related-property card
   let property: Property | null = null
   if (lead?.property_id) {
     const { data } = await supabase
       .from('properties')
-      .select('id, title, price')
+      .select(
+        'id, title, price, listing_type, neighborhood, city, bedrooms, bathrooms, area_m2, images',
+      )
       .eq('id', lead.property_id)
-      .maybeSingle<Pick<Property, 'id' | 'title' | 'price'>>()
-    property = data as Property | null
+      .maybeSingle<Property>()
+    property = data ?? null
   }
 
   // Other deals count
@@ -292,12 +321,12 @@ export default async function ComplianceDetailPage({
     }
   })
 
-  // Build timeline from audit log
-  const timelineEvents: TimelineEvent[] = audit.slice(0, 8).map((entry) => {
+  // Build timeline from audit log + lead interactions, merged.
+  const timelineEvents: TimelineEvent[] = audit.map((entry) => {
     const config = ACTION_TO_TIMELINE[entry.action]
     const actorName = entry.agent_id ? agentsById.get(entry.agent_id) : null
     return {
-      id: entry.id,
+      id: `audit-${entry.id}`,
       text: config
         ? config.text(entry.details, actorName ?? undefined)
         : entry.action.replace(/_/g, ' '),
@@ -305,6 +334,20 @@ export default async function ComplianceDetailPage({
       variant: config?.variant ?? 'default',
     }
   })
+
+  for (const it of interactions) {
+    const cfg = INTERACTION_TO_TIMELINE[it.type]
+    if (!cfg) continue
+    const actorName = it.agent_id ? agentsById.get(it.agent_id) : null
+    timelineEvents.push({
+      id: `int-${it.id}`,
+      text: actorName
+        ? `<strong>${actorName}</strong> ${cfg.label}`
+        : cfg.label.charAt(0).toUpperCase() + cfg.label.slice(1),
+      time: it.created_at,
+      variant: cfg.variant,
+    })
+  }
 
   // Add the check creation as the last event if there's no audit-logged
   // 'created' event for it.
@@ -317,6 +360,14 @@ export default async function ComplianceDetailPage({
       variant: 'created',
     })
   }
+
+  // Sort merged events by time desc, take top 15
+  timelineEvents.sort((a, b) => {
+    const ta = a.time ? new Date(a.time).getTime() : 0
+    const tb = b.time ? new Date(b.time).getTime() : 0
+    return tb - ta
+  })
+  timelineEvents.splice(15)
 
   // Banner reason for flagged state
   let flagReason: string | null = null
@@ -412,6 +463,27 @@ export default async function ComplianceDetailPage({
               }
               otherDealsCount={otherDealsCount}
               propertyTitle={property?.title ?? ''}
+            />
+          )}
+
+          {property && (
+            <RelatedPropertyCard
+              propertyId={property.id}
+              title={property.title}
+              neighborhood={property.neighborhood}
+              city={property.city}
+              price={property.price ? Number(property.price) : null}
+              listingType={
+                (property.listing_type as 'sale' | 'rent' | null) ?? null
+              }
+              bedrooms={property.bedrooms}
+              bathrooms={
+                property.bathrooms != null ? Number(property.bathrooms) : null
+              }
+              areaM2={
+                property.area_m2 != null ? Number(property.area_m2) : null
+              }
+              images={property.images}
             />
           )}
 

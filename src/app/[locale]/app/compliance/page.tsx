@@ -9,8 +9,7 @@ import {
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/database.types'
 import { ComplianceHeader } from '@/components/compliance/compliance-header'
-import { AwaitingClientPanel } from '@/components/compliance/awaiting-client-panel'
-import { AwaitingBrokerPanel } from '@/components/compliance/awaiting-broker-panel'
+import { UnifiedRemindersPanel } from '@/components/compliance/unified-reminders-panel'
 import { DealBoard } from '@/components/compliance/deal-board'
 import type {
   AwaitingClientItem,
@@ -491,17 +490,11 @@ export default async function CompliancePage({
         awaitingBroker={awaitingBrokerItems.length}
       />
 
-      {/* Two-column action grid */}
-      <div className="mb-8 grid grid-cols-1 gap-[14px] md:grid-cols-2">
-        <AwaitingClientPanel
-          items={awaitingClientItems}
-          emptyMessage="Ningún cliente con documentos pendientes"
-        />
-        <AwaitingBrokerPanel
-          items={awaitingBrokerItems}
-          emptyMessage="Nada pendiente — sos un crack"
-        />
-      </div>
+      {/* Unified reminders */}
+      <UnifiedRemindersPanel
+        clientItems={awaitingClientItems}
+        brokerItems={awaitingBrokerItems}
+      />
 
       {/* Deal board */}
       <DealBoard
