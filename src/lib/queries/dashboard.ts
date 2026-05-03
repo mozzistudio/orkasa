@@ -671,84 +671,122 @@ export async function getUpcomingViewings(limit = 5): Promise<UpcomingViewing[]>
   }))
 }
 
+/**
+ * Reads the compliance reminders shown in the dashboard "Deals en curso"
+ * section directly from the task engine — every open `request_doc` task is a
+ * pending document request. This keeps the dashboard and the Tareas page in
+ * sync (single source of truth) instead of querying `compliance_documents`
+ * separately.
+ */
+const DOC_CODE_LABELS: Record<string, string> = {
+  identity: 'Cédula',
+  address_proof: 'Comprobante de domicilio',
+  income_proof: 'Comprobante de ingresos',
+  bank_statements_6m: 'Estados bancarios 6m',
+  pre_approval: 'Pre-aprobación bancaria',
+  funds_constitution_letter: 'Carta constitución de fondos',
+  pep_declaration: 'Declaración PEP',
+  paz_y_salvo_nacional: 'Paz y salvo nacional',
+  paz_y_salvo_municipal: 'Paz y salvo municipal',
+  registro_publico_libre_gravamenes: 'Registro Público (libre gravámenes)',
+  recibos_servicios_publicos: 'Recibos servicios públicos',
+  cuotas_mantenimiento: 'Cuotas mantenimiento',
+}
+
+function labelDocCode(code: string): string {
+  return DOC_CODE_LABELS[code] ?? code
+}
+
 export async function getPendingReminders(limit = 5): Promise<PendingReminder[]> {
   const supabase = await createClient()
 
-  const { data: docs } = await supabase
-    .from('compliance_documents')
-    .select('id, name, kind, status, check_id, created_at, is_required, compliance_checks(id, lead_id, leads(full_name, phone, properties(title)))')
-    .neq('status', 'verified')
-    .not('is_required', 'is', false)
+  const { data: tasks } = await supabase
+    .from('tasks')
+    .select(
+      'id, lead_id, cta_metadata, created_at, leads!inner(full_name, phone, property_id, properties(title))',
+    )
+    .eq('cta_action', 'request_doc')
+    .in('status', ['open', 'escalated'])
     .order('created_at', { ascending: true })
-    .returns<Array<{
-      id: string
-      name: string | null
-      kind: string
-      status: string
-      check_id: string
-      created_at: string | null
-      is_required: boolean | null
-      compliance_checks: {
+    .returns<
+      Array<{
         id: string
-        lead_id: string | null
+        lead_id: string
+        cta_metadata: Record<string, unknown> | null
+        created_at: string
         leads: {
           full_name: string
           phone: string | null
+          property_id: string | null
           properties: { title: string } | null
-        } | null
-      } | null
-    }>>()
+        }
+      }>
+    >()
 
-  if (!docs?.length) return []
+  if (!tasks?.length) return []
 
   type Bucket = {
-    leadId: string | null
+    leadId: string
     leadName: string
     leadPhone: string | null
     propertyTitle: string | null
-    checkId: string
-    docNames: string[]
+    docCodes: Set<string>
     oldestCreatedAt: number
   }
 
   const byLead = new Map<string, Bucket>()
-  for (const doc of docs) {
-    const check = doc.compliance_checks
-    const lead = check?.leads
-    if (!check || !lead) continue
-    const key = check.lead_id ?? check.id
-    const created = doc.created_at ? new Date(doc.created_at).getTime() : Date.now()
-    const docName = doc.name ?? doc.kind
-    const existing = byLead.get(key)
+  for (const task of tasks) {
+    const created = new Date(task.created_at).getTime()
+    const codes = Array.isArray(task.cta_metadata?.docCodes)
+      ? (task.cta_metadata.docCodes as string[])
+      : []
+    const existing = byLead.get(task.lead_id)
     if (existing) {
-      if (!existing.docNames.includes(docName)) existing.docNames.push(docName)
+      for (const c of codes) existing.docCodes.add(c)
       if (created < existing.oldestCreatedAt) existing.oldestCreatedAt = created
     } else {
-      byLead.set(key, {
-        leadId: check.lead_id,
-        leadName: lead.full_name,
-        leadPhone: lead.phone,
-        propertyTitle: lead.properties?.title ?? null,
-        checkId: check.id,
-        docNames: [docName],
+      byLead.set(task.lead_id, {
+        leadId: task.lead_id,
+        leadName: task.leads.full_name,
+        leadPhone: task.leads.phone,
+        propertyTitle: task.leads.properties?.title ?? null,
+        docCodes: new Set(codes),
         oldestCreatedAt: created,
       })
     }
+  }
+
+  // Resolve a check_id per lead so the dashboard rows can deep-link to the
+  // compliance detail page. If the lead has no compliance check yet, the row
+  // falls back to the compliance index page.
+  const leadIds = Array.from(byLead.keys())
+  const { data: checks } = await supabase
+    .from('compliance_checks')
+    .select('id, lead_id')
+    .in('lead_id', leadIds)
+    .returns<Array<{ id: string; lead_id: string }>>()
+
+  const checkByLead = new Map<string, string>()
+  for (const c of checks ?? []) {
+    if (!checkByLead.has(c.lead_id)) checkByLead.set(c.lead_id, c.id)
   }
 
   const now = Date.now()
   return Array.from(byLead.values())
     .sort((a, b) => a.oldestCreatedAt - b.oldestCreatedAt)
     .slice(0, limit)
-    .map((b) => ({
-      id: b.checkId,
-      leadId: b.leadId,
-      leadName: b.leadName,
-      leadPhone: b.leadPhone,
-      propertyTitle: b.propertyTitle,
-      checkId: b.checkId,
-      docCount: b.docNames.length,
-      docNames: b.docNames,
-      oldestDays: Math.max(0, Math.floor((now - b.oldestCreatedAt) / 86_400_000)),
-    }))
+    .map((b) => {
+      const codes = Array.from(b.docCodes)
+      return {
+        id: b.leadId,
+        leadId: b.leadId,
+        leadName: b.leadName,
+        leadPhone: b.leadPhone,
+        propertyTitle: b.propertyTitle,
+        checkId: checkByLead.get(b.leadId) ?? null,
+        docCount: codes.length,
+        docNames: codes.map(labelDocCode),
+        oldestDays: Math.max(0, Math.floor((now - b.oldestCreatedAt) / 86_400_000)),
+      }
+    })
 }
