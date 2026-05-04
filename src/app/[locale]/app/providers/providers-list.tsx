@@ -15,14 +15,31 @@ function buildWhatsAppUrl(phone: string): string {
   return `https://wa.me/${sanitized.replace(/^\+/, '')}`
 }
 
+function emptyProviderForType(type: ServiceType): ProviderRow {
+  return {
+    id: '',
+    service_type: type,
+    name: '',
+    company: null,
+    phone: null,
+    email: null,
+    tax_id: null,
+    license_number: null,
+    address: null,
+    city: null,
+    notes: null,
+    is_primary: false,
+  }
+}
+
 export function ProvidersList({ providers }: { providers: ProviderRow[] }) {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<ProviderRow | null>(null)
   const [menuFor, setMenuFor] = useState<string | null>(null)
   const [, startTransition] = useTransition()
 
-  function openCreate() {
-    setEditing(null)
+  function openCreate(presetType?: ServiceType) {
+    setEditing(presetType ? emptyProviderForType(presetType) : null)
     setFormOpen(true)
   }
 
@@ -94,19 +111,30 @@ export function ProvidersList({ providers }: { providers: ProviderRow[] }) {
       ) : (
         <div className="space-y-8">
           {SERVICE_TYPE_ORDER.map((type) => {
-            const list = byType.get(type)
-            if (!list || list.length === 0) return null
+            const list = byType.get(type) ?? []
             const meta = SERVICE_TYPE_META[type]
             return (
               <section key={type}>
-                <div className="mb-2.5 flex items-baseline gap-2">
+                <div className="mb-2.5 flex items-center gap-2">
                   <h2 className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
                     {meta.label}
                   </h2>
-                  <span className="font-mono text-[10px] tabular-nums text-steel-soft">
-                    {list.length}
-                  </span>
+                  {list.length > 0 && (
+                    <span className="font-mono text-[10px] tabular-nums text-steel-soft">
+                      {list.length}
+                    </span>
+                  )}
                 </div>
+                {list.length === 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => openCreate(type)}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-[4px] border border-dashed border-bone bg-paper px-4 py-5 text-[12px] text-steel hover:border-steel-soft hover:text-ink transition-colors"
+                  >
+                    <Plus className="h-3 w-3" strokeWidth={1.5} />
+                    Agregar {meta.short.toLowerCase()}
+                  </button>
+                ) : (
                 <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                   {list.map((p) => (
                     <article
@@ -243,6 +271,7 @@ export function ProvidersList({ providers }: { providers: ProviderRow[] }) {
                     </article>
                   ))}
                 </div>
+                )}
               </section>
             )
           })}

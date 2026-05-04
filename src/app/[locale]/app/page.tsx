@@ -2,8 +2,6 @@ import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { EmptyState } from '@/components/app/empty-state'
 import { DashboardGreeting } from '@/components/dashboard/dashboard-greeting'
-import { PipelineHero } from '@/components/dashboard/pipeline-hero'
-import { VisitsPanel } from '@/components/dashboard/visits-panel'
 import { TodoListPanel } from '@/components/dashboard/todo-list-panel'
 import { CoolingLeadsPanel } from '@/components/dashboard/cooling-leads-panel'
 import { PropertiesAttentionPanel } from '@/components/dashboard/properties-attention-panel'
@@ -11,7 +9,6 @@ import { TeamPerformanceTable } from '@/components/dashboard/team-performance-ta
 import { ActiveOperations } from '@/components/dashboard/active-operations'
 import {
   getPipelineSnapshot,
-  getUpcomingViewings,
   getMyOpenTasks,
   getCoolingLeads,
   getPropertiesNeedingAttention,
@@ -42,11 +39,10 @@ export default async function HomePage() {
     return <EmptyState />
   }
 
-  const [user, pipeline, viewings, todos, cooling, propertyAlerts, team] =
+  const [user, pipeline, todos, cooling, propertyAlerts, team] =
     await Promise.all([
       getDashboardUser(),
       getPipelineSnapshot(),
-      getUpcomingViewings(5),
       getMyOpenTasks(6),
       getCoolingLeads(5),
       getPropertiesNeedingAttention(4),
@@ -86,26 +82,18 @@ export default async function HomePage() {
         coolingCount={cooling.length}
       />
 
-      {/* Pipeline Hero */}
-      <Suspense fallback={<SectionSkeleton height="h-52" />}>
-        <PipelineHero data={pipeline} />
-      </Suspense>
-
-      {/* Active Operations */}
-      <div className="mb-7">
+      {/* Operations + Todo */}
+      <div className="mb-7 grid gap-4 lg:grid-cols-2">
         <Suspense fallback={<SectionSkeleton height="h-72" />}>
           <ActiveOperations forecast={forecast} />
+        </Suspense>
+        <Suspense fallback={<SectionSkeleton height="h-72" />}>
+          <TodoListPanel todos={todos} totalOpenCount={totalOpenTasksCount ?? todos.length} />
         </Suspense>
       </div>
 
       {/* Action Panels */}
       <div className="mb-7 grid gap-4 lg:grid-cols-2">
-        <Suspense fallback={<SectionSkeleton height="h-72" />}>
-          <VisitsPanel viewings={viewings} />
-        </Suspense>
-        <Suspense fallback={<SectionSkeleton height="h-72" />}>
-          <TodoListPanel todos={todos} totalOpenCount={totalOpenTasksCount ?? todos.length} />
-        </Suspense>
         <Suspense fallback={<SectionSkeleton height="h-72" />}>
           <CoolingLeadsPanel leads={cooling} />
         </Suspense>
