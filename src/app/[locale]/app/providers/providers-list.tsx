@@ -84,7 +84,7 @@ export function ProvidersList({ providers }: { providers: ProviderRow[] }) {
         </div>
         <button
           type="button"
-          onClick={openCreate}
+          onClick={() => openCreate()}
           className="inline-flex shrink-0 items-center gap-1.5 rounded-[4px] border border-bone bg-paper px-3 py-2 text-[13px] font-medium text-ink hover:bg-bone-soft transition-colors md:px-4"
         >
           <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -101,7 +101,7 @@ export function ProvidersList({ providers }: { providers: ProviderRow[] }) {
           </p>
           <button
             type="button"
-            onClick={openCreate}
+            onClick={() => openCreate()}
             className="mt-5 inline-flex items-center gap-1.5 rounded-[4px] bg-ink px-4 py-2 text-[13px] font-medium text-paper hover:bg-coal transition-colors"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
