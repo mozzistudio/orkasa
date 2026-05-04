@@ -124,6 +124,9 @@ export default async function OperacionDetailPage({
             price: number | null
             currency: string | null
             images: unknown
+            owner_name: string | null
+            owner_phone: string | null
+            owner_email: string | null
           }>
         >(),
       supabase
