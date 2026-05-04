@@ -105,7 +105,7 @@ export function firstContact(clientName: string, agentName: string, propertyTitl
 
 export function sendPropertyOptions(clientName: string, propertyTitles: string[]): string {
   const list = propertyTitles.map((t) => `• ${t}`).join('\n')
-  return `Hola ${clientName}! Te seleccioné estas ${propertyTitles.length} opciones que creo que te van a gustar:\n\n${list}\n\nFijate y me contás cuál te llama la atención. Cualquier duda me escribís!`
+  return `Hola ${clientName}! Te seleccioné estas ${propertyTitles.length} opciones que creo que te van a gustar:\n\n${list}\n\nDecime cuál(es) te llama la atención y armo una visita esta semana. Cualquier duda me escribís!`
 }
 
 export function noResponseReminder48h(clientName: string, propertyTitle?: string): string {

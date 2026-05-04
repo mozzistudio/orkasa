@@ -4,7 +4,6 @@ import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Check, Circle } from 'lucide-react'
 import { TASK_CATALOG } from '@/lib/tasks/task-catalog'
-import type { TaskContext } from '@/lib/tasks/types'
 import { updateDealStage } from '../../deals/actions'
 
 const STAGES = [
@@ -43,13 +42,53 @@ const STAGE_FULL_LABEL: Record<Stage, string> = {
 
 const STAGE_STEPS: Record<Stage, number[]> = {
   contacto_inicial: [1, 2, 3, 4],
-  visitas: [5, 6, 7, 8, 9],
+  visitas: [6, 7, 8, 9],
   negociacion: [10, 35],
   promesa_firmada: [11, 12, 13, 14, 15, 16, 17, 18, 19],
   tramite_bancario: [20, 21, 22],
   escritura_publica: [23, 24, 25, 26],
   entrega_llaves: [27, 28],
   post_cierre: [29, 30, 31, 32, 33, 34],
+}
+
+// Short, broker-friendly labels used in the compact pipeline popups and the
+// inline current-stage list. Names omit the lead's name and trim the verbose
+// instructional text — keep around 3-5 words.
+const STEP_SHORT_LABEL: Record<number, string> = {
+  1: 'Primer mensaje',
+  2: 'Llamada de calificación',
+  3: 'Enviar 3 propiedades + visitas',
+  4: 'Recordatorio 48h sin respuesta',
+  6: 'Recordatorio de visita',
+  7: 'Visita',
+  8: 'Seguimiento post-visita',
+  9: 'Simulación de financiamiento',
+  10: 'Registrar oferta verbal',
+  11: 'Pedir cédula + domicilio',
+  12: 'Pedir fichas de pago',
+  13: 'Verificar capacidad de pago',
+  14: 'Pedir estados bancarios + pre-aprobación',
+  15: 'Verificar PEP',
+  16: 'Aclarar verificación',
+  17: 'Notificar al abogado',
+  18: 'Enviar borrador de promesa',
+  19: 'Promesa firmada',
+  20: 'Coordinar avalúo',
+  21: 'Confirmar avalúo',
+  22: 'Préstamo aprobado',
+  23: 'Pedir documentos al vendedor',
+  24: 'Verificar documentos del vendedor',
+  25: 'Inspección final',
+  26: 'Firma de escritura',
+  27: 'Coordinar entrega de llaves',
+  28: 'Firmar acta de entrega',
+  29: 'Enviar copia de escritura',
+  30: 'Seguimiento 1 mes',
+  31: 'Seguimiento 3 meses + referidos',
+  32: 'Encuesta 6 meses',
+  33: 'Aniversario 1 año',
+  34: 'Check-in anual',
+  35: 'Transmitir oferta al propietario',
 }
 
 type TaskRow = { step_number: number; status: string }
@@ -59,7 +98,6 @@ type Props = {
   dealStage: string
   stageEnteredAt: string | null
   tasks: TaskRow[]
-  leadFirstName: string
   isClosed?: boolean
 }
 
@@ -87,14 +125,12 @@ export function OperacionTaskPipeline({
   dealStage,
   stageEnteredAt,
   tasks,
-  leadFirstName,
   isClosed,
 }: Props) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
 
   const taskByStep = new Map(tasks.map((t) => [t.step_number, t]))
-  const ctx: TaskContext = { firstName: leadFirstName, leadName: leadFirstName }
 
   const days = daysSince(stageEnteredAt)
   const currentStage = STAGES.includes(dealStage as Stage)
@@ -147,7 +183,6 @@ export function OperacionTaskPipeline({
                 status={status}
                 stepNumbers={stepNumbers}
                 doneCount={doneCount}
-                ctx={ctx}
                 taskByStep={taskByStep}
                 onClick={() => handleStageClick(stage)}
                 disabled={isClosed || pending}
@@ -177,12 +212,7 @@ export function OperacionTaskPipeline({
                 const isDone = taskStatus === 'done'
                 const isActive =
                   taskStatus === 'open' || taskStatus === 'escalated'
-                let title: string
-                try {
-                  title = entry.titleTemplate(ctx)
-                } catch {
-                  title = entry.description
-                }
+                const title = STEP_SHORT_LABEL[n] ?? entry.description
                 return (
                   <li
                     key={n}
@@ -216,7 +246,6 @@ function StageCell({
   status,
   stepNumbers,
   doneCount,
-  ctx,
   taskByStep,
   onClick,
   disabled,
@@ -225,7 +254,6 @@ function StageCell({
   status: 'past' | 'current' | 'future'
   stepNumbers: number[]
   doneCount: number
-  ctx: TaskContext
   taskByStep: Map<number, TaskRow>
   onClick: () => void
   disabled: boolean
@@ -261,7 +289,6 @@ function StageCell({
           stage={stage}
           stepNumbers={stepNumbers}
           doneCount={doneCount}
-          ctx={ctx}
           taskByStep={taskByStep}
         />
       </button>
@@ -298,7 +325,6 @@ function StageCell({
         stage={stage}
         stepNumbers={stepNumbers}
         doneCount={doneCount}
-        ctx={ctx}
         taskByStep={taskByStep}
       />
     </button>
@@ -309,13 +335,11 @@ function StagePopup({
   stage,
   stepNumbers,
   doneCount,
-  ctx,
   taskByStep,
 }: {
   stage: Stage
   stepNumbers: number[]
   doneCount: number
-  ctx: TaskContext
   taskByStep: Map<number, TaskRow>
 }) {
   return (
@@ -335,12 +359,7 @@ function StagePopup({
           const taskStatus = taskByStep.get(n)?.status
           const isDone = taskStatus === 'done'
           const isActive = taskStatus === 'open' || taskStatus === 'escalated'
-          let title: string
-          try {
-            title = entry.titleTemplate(ctx)
-          } catch {
-            title = entry.description
-          }
+          const title = STEP_SHORT_LABEL[n] ?? entry.description
           return (
             <li
               key={n}

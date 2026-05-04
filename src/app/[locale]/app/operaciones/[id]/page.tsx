@@ -302,7 +302,6 @@ export default async function OperacionDetailPage({
             dealStage={deal.stage}
             stageEnteredAt={extractStageEnteredAt(deal.metadata, deal.stage) ?? deal.updated_at}
             tasks={dealTasks}
-            leadFirstName={lead?.full_name?.split(' ')[0] ?? '…'}
             isClosed={isClosed}
           />
 

@@ -43,9 +43,9 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     stepNumber: 3,
     phase: 'contacto_inicial',
     titleTemplate: (ctx) =>
-      `Enviar 3 propiedades que le encajen a ${firstName(ctx)}`,
+      `Enviar 3 propiedades a ${firstName(ctx)} y proponer visitas`,
     description:
-      'Seleccionar las mejores opciones según presupuesto y zona, y enviarlas por WhatsApp con links públicos.',
+      'Seleccionar las mejores opciones según presupuesto y zona, enviarlas por WhatsApp con links públicos y preguntar cuáles quiere visitar.',
     ctaAction: 'open_whatsapp',
     whatsappTemplate: 'sendPropertyOptions',
     dueDaysOffset: 1,
@@ -71,25 +71,11 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     autoCompleteOn: 'interaction:whatsapp',
   },
 
-  // ══════════════════════════════════════════════════════════════��════
-  // Phase: VISITAS (Steps 5–8)
-  // ══════════════════��═════════════════════��══════════════════════════
-
-  {
-    stepNumber: 5,
-    phase: 'visitas',
-    titleTemplate: (ctx) =>
-      `Enviarle invitación de visita a ${firstName(ctx)} para ${ctx.propertyTitle ?? 'la propiedad'}`,
-    description:
-      'Proponer horarios disponibles para que el cliente visite la propiedad.',
-    ctaAction: 'open_whatsapp',
-    whatsappTemplate: 'visitInvitation',
-    dueDaysOffset: 1,
-    escalationDaysOffset: 3,
-    triggerEvents: ['lead_property_status_changed'],
-    triggerCondition: (ctx) => ctx.newStatus === 'le_encanto',
-    autoCompleteOn: 'viewing_scheduled',
-  },
+  // ═══════════════════════════════════════════════════════════════════
+  // Phase: VISITAS (Steps 6–8)
+  // Step 5 was merged into step 3 (proposing properties + asking which to
+  // visit happens in a single WhatsApp message).
+  // ═══════════════════════════════════════════════════════════════════
 
   {
     stepNumber: 6,
