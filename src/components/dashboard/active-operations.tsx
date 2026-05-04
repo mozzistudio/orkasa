@@ -135,9 +135,17 @@ export function ActiveOperations({
                     {p.leadName}
                   </span>
                   {p.atRisk && (
-                    <span className="flex shrink-0 items-center gap-1 font-mono text-[10px] uppercase tracking-[1px] text-signal">
+                    <span className="group/risk relative flex shrink-0 items-center gap-1 font-mono text-[10px] uppercase tracking-[1px] text-signal">
                       <AlertTriangle className="h-2.5 w-2.5" strokeWidth={2} />
                       Riesgo
+                      {p.riskReason && (
+                        <span
+                          role="tooltip"
+                          className="pointer-events-none absolute left-0 top-full z-20 mt-1.5 hidden w-max max-w-[260px] rounded-[4px] border border-ink/15 bg-ink px-2 py-1.5 font-mono text-[10px] normal-case tracking-normal text-paper shadow-sm group-hover/risk:block"
+                        >
+                          {p.riskReason}
+                        </span>
+                      )}
                     </span>
                   )}
                 </div>

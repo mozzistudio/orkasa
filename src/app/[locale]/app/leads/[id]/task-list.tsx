@@ -21,6 +21,7 @@ import {
   isCtaActionable,
   getCtaUnavailableReason,
   resolveCtaPhone,
+  resolveTaskRecipient,
 } from '@/lib/tasks/cta-handlers'
 import type { CtaCallbacks } from '@/lib/tasks/cta-handlers'
 import type { TaskRow, CtaAction } from '@/lib/tasks/types'
@@ -198,7 +199,10 @@ export function TaskList({ tasks, leadName, agentName, phone, propertyPrice }: P
             {group.items.map((task) => {
               const urgency = urgencyFromDueAt(task.due_at, task.status)
               const icon = getCtaIcon(task.cta_action as CtaAction)
-              const label = getCtaLabel(task.cta_action as CtaAction)
+              const label = getCtaLabel(
+                task.cta_action as CtaAction,
+                task.cta_metadata,
+              )
               const actionable = isCtaActionable(
                 task.cta_action as CtaAction,
                 task.cta_metadata,
@@ -210,6 +214,7 @@ export function TaskList({ tasks, leadName, agentName, phone, propertyPrice }: P
                     task.cta_action as CtaAction,
                     task.cta_metadata,
                   )
+              const recipient = resolveTaskRecipient(task.cta_metadata, leadName)
 
               return (
                 <div
@@ -221,6 +226,11 @@ export function TaskList({ tasks, leadName, agentName, phone, propertyPrice }: P
                       {task.title}
                     </p>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      {!recipient.isLead && (
+                        <span className="font-mono text-[9px] tracking-[0.7px] uppercase px-1.5 py-0.5 rounded-full bg-amber-bg text-amber-text font-medium">
+                          → {recipient.role}: {recipient.name}
+                        </span>
+                      )}
                       <span className="font-mono text-[9px] tracking-[0.7px] uppercase px-1.5 py-0.5 rounded-full bg-bone-soft text-steel font-medium">
                         Auto
                       </span>

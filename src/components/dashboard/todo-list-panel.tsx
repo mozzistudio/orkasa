@@ -23,6 +23,7 @@ import {
   isCtaActionable,
   getCtaUnavailableReason,
   resolveCtaPhone,
+  resolveTaskRecipient,
 } from '@/lib/tasks/cta-handlers'
 import type { CtaCallbacks } from '@/lib/tasks/cta-handlers'
 import type { CtaAction } from '@/lib/tasks/types'
@@ -165,7 +166,10 @@ export function TodoListPanel({
         {todos.map((task) => {
           const u = urgency(task.due_at, task.status)
           const icon = getCtaIcon(task.cta_action as CtaAction)
-          const label = getCtaLabel(task.cta_action as CtaAction)
+          const label = getCtaLabel(
+            task.cta_action as CtaAction,
+            task.cta_metadata,
+          )
           const actionable = isCtaActionable(
             task.cta_action as CtaAction,
             task.cta_metadata,
@@ -177,6 +181,10 @@ export function TodoListPanel({
                 task.cta_action as CtaAction,
                 task.cta_metadata,
               )
+          const recipient = resolveTaskRecipient(
+            task.cta_metadata,
+            task.lead_name,
+          )
           return (
             <li key={task.id} className="px-[18px] py-3">
               <div className="flex items-start justify-between gap-3">
@@ -185,12 +193,19 @@ export function TodoListPanel({
                     {task.title}
                   </p>
                   <div className="mt-1 flex items-center gap-2 flex-wrap">
-                    <Link
-                      href={`/app/leads/${task.lead_id}`}
-                      className="font-mono text-[10px] text-steel hover:text-ink transition-colors"
-                    >
-                      {task.lead_name}
-                    </Link>
+                    {recipient.isLead ? (
+                      <Link
+                        href={`/app/leads/${task.lead_id}`}
+                        className="font-mono text-[10px] text-steel hover:text-ink transition-colors"
+                      >
+                        {recipient.name}
+                      </Link>
+                    ) : (
+                      <span className="font-mono text-[10px] text-steel">
+                        <span className="text-ink">{recipient.role}:</span>{' '}
+                        {recipient.name}
+                      </span>
+                    )}
                     {task.property_title && (
                       <>
                         <span className="text-bone">·</span>

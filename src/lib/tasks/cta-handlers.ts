@@ -221,10 +221,48 @@ export function executeCtaAction(
   }
 }
 
-export function getCtaLabel(action: CtaAction): string {
+const WHATSAPP_TEMPLATE_LABELS: Record<string, string> = {
+  firstContact: 'Saludar',
+  sendPropertyOptions: 'Enviar opciones',
+  noResponseReminder48h: 'Recordar',
+  visitInvitation: 'Invitar a visita',
+  preVisitReminder: 'Confirmar visita',
+  postVisitFollowUp: 'Seguimiento',
+  offerPresentation: 'Avisar oferta',
+  transmitOfferToOwner: 'Enviar oferta',
+  offerAccepted: 'Avisar aceptación',
+  requestIdentityDocs: 'Pedir cédula',
+  requestPayslips: 'Pedir fichas',
+  requestBankStatements: 'Pedir bancos',
+  askPepRelationship: 'Preguntar PEP',
+  requestSellerDocs: 'Pedir docs',
+  promesaDraft: 'Enviar borrador',
+  notifyLawyerExpediente: 'Avisar abogado',
+  coordinateAppraisal: 'Coordinar avalúo',
+  coordinateNotaryEscritura: 'Coordinar notario',
+  thankYouAndReview: 'Agradecer',
+  escrituraRegistered: 'Enviar escritura',
+  welcomeNewOwner: 'Bienvenida',
+  followUp1Month: 'Check-in 1 mes',
+  followUp3Months: 'Pedir referidos',
+  followUp6Months: 'Encuesta',
+  anniversary1Year: 'Felicitar',
+  annualCheckIn: 'Saludar',
+  requestReferral: 'Pedir referido',
+}
+
+export function getCtaLabel(
+  action: CtaAction,
+  metadata?: Record<string, unknown>,
+): string {
+  if (action === 'open_whatsapp') {
+    const template = metadata?.template as string | undefined
+    if (template && WHATSAPP_TEMPLATE_LABELS[template]) {
+      return WHATSAPP_TEMPLATE_LABELS[template]
+    }
+    return 'WhatsApp'
+  }
   switch (action) {
-    case 'open_whatsapp':
-      return 'WhatsApp'
     case 'open_call':
       return 'Llamar'
     case 'schedule_visit':
@@ -242,6 +280,66 @@ export function getCtaLabel(action: CtaAction): string {
     case 'navigate':
       return 'Ver'
   }
+}
+
+export type TaskRecipient = {
+  name: string
+  role: string
+  isLead: boolean
+}
+
+const TARGET_ROLE_LABELS: Record<string, string> = {
+  seller: 'Vendedor',
+  notary: 'Notario',
+  lawyer: 'Abogado',
+  appraiser: 'Tasador',
+  banker: 'Banco',
+}
+
+export function resolveTaskRecipient(
+  metadata: Record<string, unknown>,
+  leadName: string,
+): TaskRecipient {
+  const target = metadata.target as string | undefined
+  switch (target) {
+    case 'seller':
+      return {
+        name: (metadata.ownerName as string) || 'Vendedor',
+        role: 'Vendedor',
+        isLead: false,
+      }
+    case 'notary':
+      return {
+        name: (metadata.notaryName as string) || 'Notario',
+        role: 'Notario',
+        isLead: false,
+      }
+    case 'lawyer':
+      return {
+        name: (metadata.lawyerName as string) || 'Abogado',
+        role: 'Abogado',
+        isLead: false,
+      }
+    case 'appraiser':
+      return {
+        name: (metadata.appraiserName as string) || 'Tasador',
+        role: 'Tasador',
+        isLead: false,
+      }
+    case 'banker':
+      return {
+        name: (metadata.bankerName as string) || 'Banco',
+        role: 'Banco',
+        isLead: false,
+      }
+    default:
+      return { name: leadName, role: 'Cliente', isLead: true }
+  }
+}
+
+export function getTargetRoleLabel(target: string | undefined): string | null {
+  if (!target) return null
+  return TARGET_ROLE_LABELS[target] ?? null
 }
 
 export function resolveCtaPhone(
