@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect, useRef, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
-import { Plus, Search, X, UserPlus, Check } from 'lucide-react'
+import { Plus, Search, X, UserPlus, Check, ChevronDown } from 'lucide-react'
 import { Link } from '@/i18n/navigation'
 import {
   createDeal,
@@ -55,11 +55,33 @@ export function CreateOperacionButton({
   const [stage, setStage] = useState<string>('contacto_inicial')
   const [amount, setAmount] = useState('')
 
+  // Combobox open states
+  const [leadOpen, setLeadOpen] = useState(false)
+  const [propOpen, setPropOpen] = useState(false)
+  const leadRef = useRef<HTMLDivElement | null>(null)
+  const propRef = useRef<HTMLDivElement | null>(null)
+
   // Inline lead creation
   const [creatingLead, setCreatingLead] = useState(false)
   const [newLeadPhone, setNewLeadPhone] = useState('')
   const [newLeadEmail, setNewLeadEmail] = useState('')
   const [creatingPending, setCreatingPending] = useState(false)
+
+  // Close popovers on outside click
+  useEffect(() => {
+    if (!leadOpen && !propOpen) return
+    function handleClickOutside(e: MouseEvent) {
+      const target = e.target as Node
+      if (leadOpen && leadRef.current && !leadRef.current.contains(target)) {
+        setLeadOpen(false)
+      }
+      if (propOpen && propRef.current && !propRef.current.contains(target)) {
+        setPropOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [leadOpen, propOpen])
 
   const [leads, setLeads] = useState<LeadOption[]>(leadsProp ?? [])
   const [properties, setProperties] = useState<PropertyOption[]>(
@@ -86,6 +108,7 @@ export function CreateOperacionButton({
   function handleSelectLead(lead: LeadOption) {
     setSelectedLead(lead)
     setLeadSearch('')
+    setLeadOpen(false)
     if (!selectedProperty && lead.property_id) {
       const prop = properties.find((p) => p.id === lead.property_id)
       if (prop) setSelectedProperty(prop)
@@ -95,6 +118,7 @@ export function CreateOperacionButton({
   function handleSelectProperty(prop: PropertyOption) {
     setSelectedProperty(prop)
     setPropSearch('')
+    setPropOpen(false)
   }
 
   function clearLead() {
@@ -190,22 +214,16 @@ export function CreateOperacionButton({
             .toLowerCase()
             .includes(leadSearch.toLowerCase()),
         )
-        .slice(0, 6)
-    : []
+        .slice(0, 8)
+    : leads.slice(0, 8)
 
   const filteredProps = propSearch
     ? properties
         .filter((p) =>
           p.title.toLowerCase().includes(propSearch.toLowerCase()),
         )
-        .slice(0, 6)
-    : []
-
-  const hasExactLeadMatch = leadSearch
-    ? leads.some(
-        (l) => l.full_name.toLowerCase() === leadSearch.toLowerCase(),
-      )
-    : false
+        .slice(0, 8)
+    : properties.slice(0, 8)
 
   const buttonClass =
     variant === 'primary'
@@ -284,8 +302,8 @@ export function CreateOperacionButton({
                       <X className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </button>
                   </div>
-                ) : (
-                  <>
+                ) : creatingLead ? null : (
+                  <div ref={leadRef} className="relative">
                     <div className="relative">
                       <Search
                         className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-steel"
@@ -294,59 +312,87 @@ export function CreateOperacionButton({
                       <input
                         type="text"
                         value={leadSearch}
-                        onChange={(e) => setLeadSearch(e.target.value)}
+                        onChange={(e) => {
+                          setLeadSearch(e.target.value)
+                          setLeadOpen(true)
+                        }}
+                        onFocus={() => setLeadOpen(true)}
                         placeholder={
                           loadingOptions
                             ? 'Cargando…'
-                            : 'Buscar por nombre, teléfono, email…'
+                            : 'Buscar o seleccionar cliente…'
                         }
                         disabled={loadingOptions}
-                        className="h-10 w-full rounded-[4px] border border-bone bg-paper pl-9 pr-3 text-[13px] focus:border-ink focus:outline-none focus:ring-0 disabled:opacity-60"
+                        className="h-10 w-full rounded-[4px] border border-bone bg-paper pl-9 pr-9 text-[13px] focus:border-ink focus:outline-none focus:ring-0 disabled:opacity-60"
                       />
-                    </div>
-
-                    {leadSearch && filteredLeads.length > 0 && (
-                      <div className="mt-1.5 rounded-[4px] border border-bone bg-paper overflow-hidden divide-y divide-bone-soft">
-                        {filteredLeads.map((lead) => (
-                          <button
-                            key={lead.id}
-                            type="button"
-                            onClick={() => handleSelectLead(lead)}
-                            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-bone-soft transition-colors"
-                          >
-                            <div className="min-w-0 flex-1">
-                              <p className="text-[13px] font-medium text-ink truncate">
-                                {lead.full_name}
-                              </p>
-                              {(lead.phone || lead.email) && (
-                                <p className="font-mono text-[11px] text-steel truncate">
-                                  {lead.phone ?? lead.email}
-                                </p>
-                              )}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {leadSearch && !hasExactLeadMatch && !creatingLead && (
                       <button
                         type="button"
-                        onClick={() => setCreatingLead(true)}
-                        className="mt-1.5 flex w-full items-center gap-2 rounded-[4px] border border-dashed border-ink/20 bg-paper px-3 py-2.5 text-left hover:bg-bone-soft hover:border-ink/40 transition-colors"
+                        onClick={() => setLeadOpen((o) => !o)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-[4px] text-steel hover:bg-bone-soft hover:text-ink transition-colors"
+                        aria-label="Abrir lista"
                       >
-                        <UserPlus
-                          className="h-3.5 w-3.5 shrink-0 text-ink"
+                        <ChevronDown
+                          className={`h-3.5 w-3.5 transition-transform ${
+                            leadOpen ? 'rotate-180' : ''
+                          }`}
                           strokeWidth={1.5}
                         />
-                        <span className="text-[12px] text-ink">
-                          Crear lead{' '}
-                          <span className="font-medium">{leadSearch}</span>
-                        </span>
                       </button>
-                    )}
+                    </div>
 
-                    {creatingLead && (
+                    {leadOpen && (
+                      <div className="mt-1.5 rounded-[4px] border border-ink/15 bg-paper overflow-hidden">
+                        <div className="max-h-[180px] overflow-y-auto divide-y divide-bone-soft">
+                          {filteredLeads.length === 0 ? (
+                            <p className="px-3 py-3 font-mono text-[11px] uppercase tracking-[1.2px] text-steel-soft">
+                              {leadSearch
+                                ? 'Sin coincidencias'
+                                : 'Sin clientes cargados'}
+                            </p>
+                          ) : (
+                            filteredLeads.map((lead) => (
+                              <button
+                                key={lead.id}
+                                type="button"
+                                onClick={() => handleSelectLead(lead)}
+                                className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-bone-soft transition-colors"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[13px] font-medium text-ink truncate">
+                                    {lead.full_name}
+                                  </p>
+                                  {(lead.phone || lead.email) && (
+                                    <p className="font-mono text-[11px] text-steel truncate">
+                                      {lead.phone ?? lead.email}
+                                    </p>
+                                  )}
+                                </div>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCreatingLead(true)
+                            setLeadOpen(false)
+                          }}
+                          className="flex w-full items-center gap-2 border-t border-bone bg-bone-soft/40 px-3 py-2.5 text-left hover:bg-bone-soft transition-colors"
+                        >
+                          <UserPlus
+                            className="h-3.5 w-3.5 shrink-0 text-ink"
+                            strokeWidth={1.5}
+                          />
+                          <span className="text-[12px] font-medium text-ink">
+                            Crear nuevo cliente
+                            {leadSearch ? `: ${leadSearch}` : ''}
+                          </span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {creatingLead && (
                       <div className="mt-2 rounded-[4px] border border-ink/15 bg-bone-soft/50 p-3 space-y-2">
                         <p className="font-mono text-[10px] uppercase tracking-[1.2px] text-steel">
                           Nuevo lead
@@ -399,8 +445,6 @@ export function CreateOperacionButton({
                         </div>
                       </div>
                     )}
-                  </>
-                )}
               </section>
 
               {/* Propiedad */}
@@ -429,7 +473,7 @@ export function CreateOperacionButton({
                     </button>
                   </div>
                 ) : (
-                  <>
+                  <div ref={propRef} className="relative">
                     <div className="relative">
                       <Search
                         className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-steel"
@@ -438,46 +482,71 @@ export function CreateOperacionButton({
                       <input
                         type="text"
                         value={propSearch}
-                        onChange={(e) => setPropSearch(e.target.value)}
-                        placeholder="Buscar propiedad por título…"
-                        className="h-10 w-full rounded-[4px] border border-bone bg-paper pl-9 pr-3 text-[13px] focus:border-ink focus:outline-none focus:ring-0"
+                        onChange={(e) => {
+                          setPropSearch(e.target.value)
+                          setPropOpen(true)
+                        }}
+                        onFocus={() => setPropOpen(true)}
+                        placeholder="Buscar o seleccionar propiedad…"
+                        className="h-10 w-full rounded-[4px] border border-bone bg-paper pl-9 pr-9 text-[13px] focus:border-ink focus:outline-none focus:ring-0"
                       />
-                    </div>
-
-                    {propSearch && filteredProps.length > 0 && (
-                      <div className="mt-1.5 rounded-[4px] border border-bone bg-paper overflow-hidden divide-y divide-bone-soft">
-                        {filteredProps.map((p) => (
-                          <button
-                            key={p.id}
-                            type="button"
-                            onClick={() => handleSelectProperty(p)}
-                            className="w-full px-3 py-2 text-left text-[13px] text-ink hover:bg-bone-soft transition-colors truncate"
-                          >
-                            {p.title}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {propSearch && filteredProps.length === 0 && (
-                      <Link
-                        href="/app/properties/new"
-                        className="mt-1.5 flex w-full items-center gap-2 rounded-[4px] border border-dashed border-ink/20 bg-paper px-3 py-2.5 hover:bg-bone-soft hover:border-ink/40 transition-colors"
+                      <button
+                        type="button"
+                        onClick={() => setPropOpen((o) => !o)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-[4px] text-steel hover:bg-bone-soft hover:text-ink transition-colors"
+                        aria-label="Abrir lista"
                       >
-                        <Plus
-                          className="h-3.5 w-3.5 shrink-0 text-ink"
+                        <ChevronDown
+                          className={`h-3.5 w-3.5 transition-transform ${
+                            propOpen ? 'rotate-180' : ''
+                          }`}
                           strokeWidth={1.5}
                         />
-                        <span className="text-[12px] text-ink">
-                          Cargar propiedad nueva
-                        </span>
-                      </Link>
+                      </button>
+                    </div>
+
+                    {propOpen && (
+                      <div className="mt-1.5 rounded-[4px] border border-ink/15 bg-paper overflow-hidden">
+                        <div className="max-h-[180px] overflow-y-auto divide-y divide-bone-soft">
+                          {filteredProps.length === 0 ? (
+                            <p className="px-3 py-3 font-mono text-[11px] uppercase tracking-[1.2px] text-steel-soft">
+                              {propSearch
+                                ? 'Sin coincidencias'
+                                : 'Sin propiedades cargadas'}
+                            </p>
+                          ) : (
+                            filteredProps.map((p) => (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => handleSelectProperty(p)}
+                                className="w-full px-3 py-2 text-left text-[13px] text-ink hover:bg-bone-soft transition-colors truncate"
+                              >
+                                {p.title}
+                              </button>
+                            ))
+                          )}
+                        </div>
+                        <Link
+                          href="/app/properties/new"
+                          onClick={() => setPropOpen(false)}
+                          className="flex w-full items-center gap-2 border-t border-bone bg-bone-soft/40 px-3 py-2.5 hover:bg-bone-soft transition-colors"
+                        >
+                          <Plus
+                            className="h-3.5 w-3.5 shrink-0 text-ink"
+                            strokeWidth={1.5}
+                          />
+                          <span className="text-[12px] font-medium text-ink">
+                            Cargar propiedad nueva
+                          </span>
+                        </Link>
+                      </div>
                     )}
 
                     <p className="mt-1.5 text-[10px] text-steel-soft">
                       Podés agregar más propiedades después desde la operación.
                     </p>
-                  </>
+                  </div>
                 )}
               </section>
 
