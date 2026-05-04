@@ -105,7 +105,7 @@ export default function MethodologiePage() {
             claires : à chaque moment du parcours d’achat, le système crée la
             bonne tâche, propose le bon message à envoyer et garde la trace de
             ce qui s’est passé. Cette page documente le flow complet —{' '}
-            <strong className="text-ink">9 phases, 35 étapes</strong> — et la
+            <strong className="text-ink">8 phases, 34 étapes</strong> — et la
             façon dont l’agent interagit avec chaque tâche.
           </p>
           <p className="mt-5 max-w-2xl text-[14px] text-steel">
@@ -128,8 +128,8 @@ export default function MethodologiePage() {
             Vue d’ensemble
           </h2>
           <p className="mt-3 max-w-2xl text-[14px] text-steel">
-            Une opération typique passe par 9 phases. Chaque phase contient
-            entre 1 et 6 étapes. Les flèches sont automatiques : le système
+            Une opération typique passe par 8 phases. Chaque phase contient
+            entre 2 et 8 étapes. Les flèches sont automatiques : le système
             avance dès qu’il détecte le bon signal (réponse WhatsApp, visite
             terminée, document validé, oferta acceptée…).
           </p>
@@ -137,13 +137,12 @@ export default function MethodologiePage() {
             {[
               ['1', 'Contact initial', '4 étapes — premier message → qualification → propositions de propriétés'],
               ['2', 'Visites', '3 étapes — rappel → visite du jour → décision post-visite'],
-              ['3', 'Financement', '1 étape — simulation de prêt sur demande'],
-              ['4', 'Négociation', '2 étapes — registrar oferta → transmettre au propriétaire'],
-              ['5', 'Conformité (KYC)', '6 étapes — pièces d’identité, revenus, origine des fonds, PEP'],
-              ['6', 'Cierre legal — promesa', '3 étapes — expediente abogado → borrador → promesa firmée'],
-              ['7', 'Trámite bancario', '3 étapes — avalúo bancaire → confirmation → coordination notaire'],
-              ['8', 'Cierre legal — vendeur + firma', '4 étapes — paz y salvos vendeur → inspection → escritura'],
-              ['9', 'Entrega + Post-cierre', '8 étapes — remise des clés → suivi 1 mois / 3 mois / 6 mois / 1 an / annuel'],
+              ['3', 'Négociation', '3 étapes — registrar oferta → carta de pre-aprobación → transmettre au propriétaire'],
+              ['4', 'Conformité (KYC)', '6 étapes — pièces d’identité, revenus, origine des fonds, PEP'],
+              ['5', 'Cierre legal — promesa', '3 étapes — expediente abogado → borrador → promesa firmée'],
+              ['6', 'Trámite bancario', '3 étapes — avalúo bancaire → confirmation → coordination notaire'],
+              ['7', 'Cierre legal — vendeur + firma', '4 étapes — paz y salvos vendeur → inspection → escritura'],
+              ['8', 'Entrega + Post-cierre', '8 étapes — remise des clés → suivi 1 mois / 3 mois / 6 mois / 1 an / annuel'],
             ].map(([num, title, sub]) => (
               <li
                 key={num}
@@ -194,10 +193,6 @@ export default function MethodologiePage() {
             <CtaLegendItem
               label="Oferta"
               description="Ouvre le formulaire de capture d’oferta (montant, conditions, vigencia). À la sauvegarde, déclenche l’étape 35 : transmettre la oferta au propriétaire."
-            />
-            <CtaLegendItem
-              label="Simular (financement)"
-              description="Ouvre le simulateur de prêt avec les données de la propriété et du client pré-remplies. Utilisé sur demande explicite du client."
             />
             <CtaLegendItem
               label="Agendar (visite)"
@@ -315,58 +310,45 @@ export default function MethodologiePage() {
         </div>
       </section>
 
-      {/* Phase 3 — Financement */}
+      {/* Phase 3 — Négociation */}
       <section className="px-4 py-12 md:px-6 md:py-16">
         <div className="mx-auto max-w-4xl">
           <PhaseHeading
             number="3"
-            title="Financement"
-            subtitle="Étape optionnelle, déclenchée uniquement quand le client demande explicitement une simulation."
-          />
-          <div className="space-y-3">
-            <Step
-              n={9}
-              title="Générer une simulation de financement"
-              trigger="Quand le client demande explicitement une simulation (interaction « financing_request »)."
-              action="Créer un PDF avec le calcul du prêt personnalisé et planifier un appel pour le revoir ensemble."
-              cta="Simular"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Phase 4 — Négociation */}
-      <section className="bg-paper-warm px-4 py-12 md:px-6 md:py-16">
-        <div className="mx-auto max-w-4xl">
-          <PhaseHeading
-            number="4"
             title="Négociation"
-            subtitle="Le client veut faire une oferta. On capture le montant et on transmet la lettre d’oferta formelle au propriétaire."
+            subtitle="Le client veut faire une oferta. On capture le montant, on demande la carta de pre-aprobación bancaire, et seulement avec les deux on transmet le paquet au propriétaire."
           />
           <div className="space-y-3">
             <Step
               n={10}
               title="Registrar la oferta du client"
               trigger="Quand l’opération avance en phase Négociation (typiquement via la décision « Interesado » de l’étape 8) ou quand le statut du lead passe en « negotiating »."
-              action="Capturer le montant offert et les conditions dans le formulaire d’oferta. À la sauvegarde, le propriétaire est notifié automatiquement (étape 35)."
+              action="Capturer le montant offert et les conditions dans le formulaire d’oferta. À la sauvegarde, l’étape 36 se déclenche pour réclamer la pre-aprobación bancaire."
               cta="Oferta"
             />
             <Step
-              n={35}
-              title="Transmettre la oferta formelle au propriétaire"
+              n={36}
+              title="Demander la carta de pre-aprobación bancaire au client"
               trigger="Automatique dès qu’une oferta est créée (étape 10)."
-              action="Envoyer la carta d’oferta formelle (PDF avec lien public) au propriétaire par WhatsApp."
+              action="Envoyer un WhatsApp au client pour demander la carta de pre-aprobación du banque. C’est ce qui valide qu’il peut payer et donne du poids à l’oferta. L’agent marque la tâche comme faite quand la lettre est reçue."
+              cta="WhatsApp · Pedir pre-aprobación"
+            />
+            <Step
+              n={35}
+              title="Transmettre la oferta + pre-aprobación au propriétaire"
+              trigger="Automatique dès que l’étape 36 est marquée comme faite (la carta de pre-aprobación est en main)."
+              action="Envoyer au propriétaire par WhatsApp le paquet complet : carta d’oferta formelle (PDF avec lien public) + carta de pre-aprobación bancaire."
               cta="WhatsApp · Enviar oferta"
             />
           </div>
         </div>
       </section>
 
-      {/* Phase 5 — Conformité */}
-      <section className="px-4 py-12 md:px-6 md:py-16">
+      {/* Phase 4 — Conformité */}
+      <section className="bg-paper-warm px-4 py-12 md:px-6 md:py-16">
         <div className="mx-auto max-w-4xl">
           <PhaseHeading
-            number="5"
+            number="4"
             title="Conformité (KYC / origine des fonds)"
             subtitle="Une fois la oferta acceptée par le propriétaire, on ouvre le dossier de conformité du client. Documents obligatoires selon la loi 23 (Panama)."
           />
@@ -417,11 +399,11 @@ export default function MethodologiePage() {
         </div>
       </section>
 
-      {/* Phase 6 — Cierre legal (promesa) */}
-      <section className="bg-paper-warm px-4 py-12 md:px-6 md:py-16">
+      {/* Phase 5 — Cierre legal (promesa) */}
+      <section className="px-4 py-12 md:px-6 md:py-16">
         <div className="mx-auto max-w-4xl">
           <PhaseHeading
-            number="6"
+            number="5"
             title="Cierre legal — promesa de compraventa"
             subtitle="Le dossier compliance est complet. On rédige et on fait signer la promesa de compraventa."
           />
@@ -451,11 +433,11 @@ export default function MethodologiePage() {
         </div>
       </section>
 
-      {/* Phase 7 — Trámite bancario */}
-      <section className="px-4 py-12 md:px-6 md:py-16">
+      {/* Phase 6 — Trámite bancario */}
+      <section className="bg-paper-warm px-4 py-12 md:px-6 md:py-16">
         <div className="mx-auto max-w-4xl">
           <PhaseHeading
-            number="7"
+            number="6"
             title="Trámite bancario"
             subtitle="Le banque fait son avalúo, approuve le prêt, et on coordonne avec le notaire la firma de la escritura."
           />
@@ -485,11 +467,11 @@ export default function MethodologiePage() {
         </div>
       </section>
 
-      {/* Phase 8 — Cierre legal (vendeur + firma) */}
-      <section className="bg-paper-warm px-4 py-12 md:px-6 md:py-16">
+      {/* Phase 7 — Cierre legal (vendeur + firma) */}
+      <section className="px-4 py-12 md:px-6 md:py-16">
         <div className="mx-auto max-w-4xl">
           <PhaseHeading
-            number="8"
+            number="7"
             title="Cierre legal — documents vendeur + firma"
             subtitle="On collecte les paz y salvos du vendeur et on fait l’inspection finale avant la firma de la escritura pública."
           />
@@ -526,11 +508,11 @@ export default function MethodologiePage() {
         </div>
       </section>
 
-      {/* Phase 9 — Entrega + Post-cierre */}
-      <section className="px-4 py-12 md:px-6 md:py-16">
+      {/* Phase 8 — Entrega + Post-cierre */}
+      <section className="bg-paper-warm px-4 py-12 md:px-6 md:py-16">
         <div className="mx-auto max-w-4xl">
           <PhaseHeading
-            number="9"
+            number="8"
             title="Entrega + Post-cierre"
             subtitle="Remise des clés, message de remerciement, demande de review, puis suivi long terme (1 mois, 3 mois, 6 mois, anniversaire, annuel)."
           />

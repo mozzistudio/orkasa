@@ -7,6 +7,7 @@ import {
   preVisitReminder,
   postVisitFollowUp,
   offerPresentation,
+  requestPreapprovalLetter,
   transmitOfferToOwner,
   offerAccepted,
   requestIdentityDocs,
@@ -64,6 +65,8 @@ function buildWhatsAppMessage(
       return postVisitFollowUp(clientName, propertyTitle)
     case 'offerPresentation':
       return offerPresentation(clientName, propertyTitle, amount)
+    case 'requestPreapprovalLetter':
+      return requestPreapprovalLetter(clientName, propertyTitle)
     case 'transmitOfferToOwner': {
       const ownerName = (meta.ownerName as string) ?? 'propietario'
       const offerLink = (meta.offerLink as string) ?? ''
@@ -196,13 +199,6 @@ export function executeCtaAction(
       })
       break
 
-    case 'open_financing_sim':
-      callbacks.openModal?.('financing_sim', {
-        dealId: metadata.dealId,
-        leadId: metadata.leadId,
-      })
-      break
-
     case 'open_compliance_check':
       callbacks.navigate?.(`/app/compliance/${metadata.checkId}`)
       break
@@ -233,6 +229,7 @@ const WHATSAPP_TEMPLATE_LABELS: Record<string, string> = {
   preVisitReminder: 'Confirmar visita',
   postVisitFollowUp: 'Seguimiento',
   offerPresentation: 'Avisar oferta',
+  requestPreapprovalLetter: 'Pedir pre-aprobación',
   transmitOfferToOwner: 'Enviar oferta',
   offerAccepted: 'Avisar aceptación',
   requestIdentityDocs: 'Pedir cédula',
@@ -275,8 +272,6 @@ export function getCtaLabel(
       return 'Pedir'
     case 'open_offer_form':
       return 'Oferta'
-    case 'open_financing_sim':
-      return 'Simular'
     case 'open_compliance_check':
       return 'Revisar'
     case 'post_visit_decision':
@@ -401,8 +396,6 @@ export function getCtaIcon(action: CtaAction): string {
       return 'file'
     case 'open_offer_form':
       return 'dollar'
-    case 'open_financing_sim':
-      return 'calculator'
     case 'open_compliance_check':
       return 'shield'
     case 'post_visit_decision':

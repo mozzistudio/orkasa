@@ -28,7 +28,6 @@ import type { TaskRow, CtaAction } from '@/lib/tasks/types'
 import { ScheduleVisitModal } from '@/components/app/modals/schedule-visit-modal'
 import { OfferFormModal } from '@/components/app/modals/offer-form-modal'
 import { RequestDocModal } from '@/components/app/modals/request-doc-modal'
-import { FinancingSimModal } from '@/components/app/modals/financing-sim-modal'
 import { PostVisitDecisionButtons } from '@/components/tasks/post-visit-decision-buttons'
 
 type Props = {
@@ -36,7 +35,6 @@ type Props = {
   leadName: string
   agentName?: string
   phone?: string
-  propertyPrice?: number
 }
 
 function urgencyFromDueAt(dueAt: string | null, status: string) {
@@ -116,7 +114,7 @@ const PHASE_LABELS: Record<string, string> = {
   post_cierre: 'Post cierre',
 }
 
-export function TaskList({ tasks, leadName, agentName, phone, propertyPrice }: Props) {
+export function TaskList({ tasks, leadName, agentName, phone }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [activeModal, setActiveModal] = useState<{
@@ -314,13 +312,6 @@ export function TaskList({ tasks, leadName, agentName, phone, propertyPrice }: P
         leadId={activeModal?.props.leadId as string ?? firstLeadId}
         docCodes={activeModal?.props.docCodes as string[]}
         target={activeModal?.props.target as string}
-        phone={phone}
-        clientName={leadName.split(' ')[0]}
-      />
-      <FinancingSimModal
-        open={activeModal?.type === 'financing_sim'}
-        onClose={() => setActiveModal(null)}
-        propertyPrice={propertyPrice}
         phone={phone}
         clientName={leadName.split(' ')[0]}
       />

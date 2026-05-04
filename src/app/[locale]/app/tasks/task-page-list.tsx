@@ -49,7 +49,6 @@ type TaskWithContext = {
 const PHASE_LABELS: Record<string, string> = {
   contacto_inicial: 'Contacto inicial',
   visitas: 'Visitas',
-  financiamiento: 'Financiamiento',
   negociacion: 'Negociación',
   cumplimiento: 'Cumplimiento',
   cierre_legal: 'Cierre legal',

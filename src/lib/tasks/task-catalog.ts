@@ -119,25 +119,6 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     triggerEvents: ['viewing_completed'],
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // Phase: FINANCIAMIENTO (Step 9)
-  // ═════════════��═════════════════════════════════════════════════════
-
-  {
-    stepNumber: 9,
-    phase: 'financiamiento',
-    titleTemplate: (ctx) =>
-      `Generar simulación de financiamiento para ${firstName(ctx)}`,
-    description:
-      'Crear PDF con el cálculo del préstamo personalizado y agendar llamada para revisarlo juntos.',
-    ctaAction: 'open_financing_sim',
-    dueDaysOffset: 1,
-    escalationDaysOffset: 3,
-    triggerEvents: ['interaction_logged'],
-    triggerCondition: (ctx) => ctx.interactionType === 'financing_request',
-    autoCompleteOn: 'interaction:whatsapp',
-  },
-
   // ════���═════════════════════════════════════════════════════════��════
   // Phase: NEGOCIACION (Step 10)
   // ═══════════════���═══════════════════════════════════════════════════
@@ -649,10 +630,25 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════════
-  // Phase: NEGOCIACION — Step 35 (post-Step-10)
-  // Fires immediately after an offer is created. The agent must transmit
-  // the formal offer letter (PDF) to the property owner via WhatsApp.
+  // Phase: NEGOCIACION — Steps 35 & 36 (post-Step-10)
+  // After an offer is created we ask the buyer for a bank pre-approval
+  // letter (Step 36). Only once that letter is in does Step 35 fire,
+  // transmitting the formal offer + pre-approval to the property owner.
   // ═══════════════════════════════════════════════════════════════════
+
+  {
+    stepNumber: 36,
+    phase: 'negociacion',
+    titleTemplate: (ctx) =>
+      `Pedir carta de pre-aprobación bancaria a ${firstName(ctx)}`,
+    description:
+      'Antes de transmitir la oferta al propietario, necesitamos la carta de pre-aprobación del banco. Le da peso a la oferta y demuestra que el cliente puede pagar.',
+    ctaAction: 'open_whatsapp',
+    whatsappTemplate: 'requestPreapprovalLetter',
+    dueDaysOffset: 1,
+    escalationDaysOffset: 3,
+    triggerEvents: ['offer_created'],
+  },
 
   {
     stepNumber: 35,
@@ -660,7 +656,7 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     titleTemplate: (ctx) =>
       `Transmitir la oferta de ${firstName(ctx)} (${ctx.formattedAmount ?? ''}) al propietario${ctx.ownerName ? ` ${ctx.ownerName}` : ''}`,
     description:
-      'Enviar la carta de oferta formal por WhatsApp al propietario, con el link al PDF.',
+      'Ya tenemos la oferta y la carta de pre-aprobación. Enviar al propietario por WhatsApp el paquete completo: carta de oferta formal + pre-aprobación bancaria.',
     ctaAction: 'open_whatsapp',
     whatsappTemplate: 'transmitOfferToOwner',
     ctaMetadataBuilder: (ctx) => ({
@@ -672,7 +668,8 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     }),
     dueDaysOffset: 0,
     escalationDaysOffset: 1,
-    triggerEvents: ['offer_created'],
+    triggerEvents: ['task_completed'],
+    triggerCondition: (ctx) => ctx.completedStep === 36,
   },
 ]
 

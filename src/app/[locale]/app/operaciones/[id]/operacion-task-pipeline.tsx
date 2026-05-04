@@ -62,7 +62,6 @@ const STEP_SHORT_LABEL: Record<number, string> = {
   6: 'Recordatorio de visita',
   7: 'Visita',
   8: 'Seguimiento post-visita',
-  9: 'Simulación de financiamiento',
   10: 'Registrar oferta verbal',
   11: 'Pedir cédula + domicilio',
   12: 'Pedir fichas de pago',
@@ -89,6 +88,7 @@ const STEP_SHORT_LABEL: Record<number, string> = {
   33: 'Aniversario 1 año',
   34: 'Check-in anual',
   35: 'Transmitir oferta al propietario',
+  36: 'Pedir carta de pre-aprobación',
 }
 
 type TaskRow = { step_number: number; status: string }

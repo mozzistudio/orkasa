@@ -130,6 +130,10 @@ export function offerPresentation(clientName: string, propertyTitle: string, amo
   return `Hola ${clientName}, ya presenté tu oferta de ${amount} por el ${propertyTitle} al propietario. Te aviso apenas tenga respuesta. ¡Crucemos los dedos!`
 }
 
+export function requestPreapprovalLetter(clientName: string, propertyTitle: string): string {
+  return `Hola ${clientName}, antes de presentar tu oferta por el ${propertyTitle} al propietario necesito la carta de pre-aprobación bancaria. Es lo que valida que podés pagar y le da peso a la oferta. ¿La podés mandar cuando puedas? Gracias!`
+}
+
 export function transmitOfferToOwner(
   ownerName: string,
   propertyTitle: string,

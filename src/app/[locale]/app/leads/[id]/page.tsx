@@ -407,7 +407,6 @@ export default async function LeadDetailPage({
                 leadName={lead.full_name}
                 agentName={assignedAgent?.full_name}
                 phone={lead.phone ?? undefined}
-                propertyPrice={property?.price ? Number(property.price) : undefined}
               />
             </div>
           </section>
