@@ -207,6 +207,10 @@ export function executeCtaAction(
       callbacks.navigate?.(`/app/compliance/${metadata.checkId}`)
       break
 
+    case 'post_visit_decision':
+      // Handled inline by the task row UI (two-button decision).
+      break
+
     case 'mark_done':
       if (metadata.taskId) {
         callbacks.onComplete?.(metadata.taskId as string)
@@ -275,6 +279,8 @@ export function getCtaLabel(
       return 'Simular'
     case 'open_compliance_check':
       return 'Revisar'
+    case 'post_visit_decision':
+      return 'Decidir'
     case 'mark_done':
       return 'Listo'
     case 'navigate':
@@ -399,6 +405,8 @@ export function getCtaIcon(action: CtaAction): string {
       return 'calculator'
     case 'open_compliance_check':
       return 'shield'
+    case 'post_visit_decision':
+      return 'check'
     case 'mark_done':
       return 'check'
     case 'navigate':

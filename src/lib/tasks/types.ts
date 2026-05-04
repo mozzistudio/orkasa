@@ -19,6 +19,7 @@ export type CtaAction =
   | 'open_offer_form'
   | 'open_financing_sim'
   | 'open_compliance_check'
+  | 'post_visit_decision'
   | 'mark_done'
   | 'navigate'
 

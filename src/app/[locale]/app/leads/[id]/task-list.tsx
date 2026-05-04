@@ -29,6 +29,7 @@ import { ScheduleVisitModal } from '@/components/app/modals/schedule-visit-modal
 import { OfferFormModal } from '@/components/app/modals/offer-form-modal'
 import { RequestDocModal } from '@/components/app/modals/request-doc-modal'
 import { FinancingSimModal } from '@/components/app/modals/financing-sim-modal'
+import { PostVisitDecisionButtons } from '@/components/tasks/post-visit-decision-buttons'
 
 type Props = {
   tasks: TaskRow[]
@@ -242,35 +243,51 @@ export function TaskList({ tasks, leadName, agentName, phone, propertyPrice }: P
                     </div>
                   </div>
                   <div className="shrink-0 flex items-center gap-1.5">
-                    <button
-                      onClick={() => handleCta(task)}
-                      disabled={!actionable}
-                      title={unavailableReason || undefined}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-[12px] font-medium transition-colors ${
-                        actionable
-                          ? 'bg-ink text-white hover:bg-coal'
-                          : 'bg-bone-soft text-steel cursor-not-allowed'
-                      }`}
-                    >
-                      <CtaIcon icon={icon} />
-                      {label}
-                    </button>
-                    <button
-                      onClick={() => handleComplete(task.id)}
-                      className="inline-flex items-center gap-1 px-2 py-1.5 rounded-[6px] border border-bone text-steel hover:text-green-text hover:border-green-mark transition-colors text-[11px]"
-                      title="Marcar como hecho sin enviar"
-                    >
-                      <Check className="h-3 w-3" strokeWidth={1.5} />
-                      Hecho
-                    </button>
-                    <button
-                      onClick={() => handleSkip(task.id)}
-                      className="inline-flex items-center gap-1 px-2 py-1.5 rounded-[6px] border border-bone text-steel hover:text-signal-deep hover:border-signal/30 transition-colors text-[11px]"
-                      title="Ignorar esta tarea"
-                    >
-                      <X className="h-3 w-3" strokeWidth={1.5} />
-                      Ignorar
-                    </button>
+                    {task.cta_action === 'post_visit_decision' ? (
+                      <>
+                        <PostVisitDecisionButtons taskId={task.id} />
+                        <button
+                          onClick={() => handleSkip(task.id)}
+                          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-[6px] border border-bone text-steel hover:text-signal-deep hover:border-signal/30 transition-colors text-[11px]"
+                          title="Ignorar esta tarea"
+                        >
+                          <X className="h-3 w-3" strokeWidth={1.5} />
+                          Ignorar
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleCta(task)}
+                          disabled={!actionable}
+                          title={unavailableReason || undefined}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-[12px] font-medium transition-colors ${
+                            actionable
+                              ? 'bg-ink text-white hover:bg-coal'
+                              : 'bg-bone-soft text-steel cursor-not-allowed'
+                          }`}
+                        >
+                          <CtaIcon icon={icon} />
+                          {label}
+                        </button>
+                        <button
+                          onClick={() => handleComplete(task.id)}
+                          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-[6px] border border-bone text-steel hover:text-green-text hover:border-green-mark transition-colors text-[11px]"
+                          title="Marcar como hecho sin enviar"
+                        >
+                          <Check className="h-3 w-3" strokeWidth={1.5} />
+                          Hecho
+                        </button>
+                        <button
+                          onClick={() => handleSkip(task.id)}
+                          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-[6px] border border-bone text-steel hover:text-signal-deep hover:border-signal/30 transition-colors text-[11px]"
+                          title="Ignorar esta tarea"
+                        >
+                          <X className="h-3 w-3" strokeWidth={1.5} />
+                          Ignorar
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               )

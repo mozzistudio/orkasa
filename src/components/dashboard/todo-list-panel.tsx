@@ -28,6 +28,7 @@ import {
 import type { CtaCallbacks } from '@/lib/tasks/cta-handlers'
 import type { CtaAction } from '@/lib/tasks/types'
 import type { DashboardTodo } from '@/lib/queries/dashboard'
+import { PostVisitDecisionButtons } from '@/components/tasks/post-visit-decision-buttons'
 
 function CtaIcon({ icon }: { icon: string }) {
   const props = { className: 'h-3 w-3', strokeWidth: 1.5 } as const
@@ -222,36 +223,52 @@ export function TodoListPanel({
                   </div>
                 </div>
                 <div className="shrink-0 flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => handleCta(task)}
-                    disabled={!actionable}
-                    title={unavailableReason || undefined}
-                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-[6px] text-[11px] font-medium transition-colors ${
-                      actionable
-                        ? 'bg-ink text-white hover:bg-coal'
-                        : 'bg-bone-soft text-steel cursor-not-allowed'
-                    }`}
-                  >
-                    <CtaIcon icon={icon} />
-                    {label}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleComplete(task.id)}
-                    title="Marcar como hecho"
-                    className="p-1.5 rounded-[6px] border border-bone text-steel hover:text-green-text hover:border-green-mark transition-colors"
-                  >
-                    <Check className="h-3 w-3" strokeWidth={1.5} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSkip(task.id)}
-                    title="Ignorar"
-                    className="p-1.5 rounded-[6px] border border-bone text-steel hover:text-signal-deep hover:border-signal/30 transition-colors"
-                  >
-                    <X className="h-3 w-3" strokeWidth={1.5} />
-                  </button>
+                  {task.cta_action === 'post_visit_decision' ? (
+                    <>
+                      <PostVisitDecisionButtons taskId={task.id} size="sm" />
+                      <button
+                        type="button"
+                        onClick={() => handleSkip(task.id)}
+                        title="Ignorar"
+                        className="p-1.5 rounded-[6px] border border-bone text-steel hover:text-signal-deep hover:border-signal/30 transition-colors"
+                      >
+                        <X className="h-3 w-3" strokeWidth={1.5} />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleCta(task)}
+                        disabled={!actionable}
+                        title={unavailableReason || undefined}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-[6px] text-[11px] font-medium transition-colors ${
+                          actionable
+                            ? 'bg-ink text-white hover:bg-coal'
+                            : 'bg-bone-soft text-steel cursor-not-allowed'
+                        }`}
+                      >
+                        <CtaIcon icon={icon} />
+                        {label}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleComplete(task.id)}
+                        title="Marcar como hecho"
+                        className="p-1.5 rounded-[6px] border border-bone text-steel hover:text-green-text hover:border-green-mark transition-colors"
+                      >
+                        <Check className="h-3 w-3" strokeWidth={1.5} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSkip(task.id)}
+                        title="Ignorar"
+                        className="p-1.5 rounded-[6px] border border-bone text-steel hover:text-signal-deep hover:border-signal/30 transition-colors"
+                      >
+                        <X className="h-3 w-3" strokeWidth={1.5} />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </li>

@@ -110,15 +110,13 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     stepNumber: 8,
     phase: 'visitas',
     titleTemplate: (ctx) =>
-      `Enviar seguimiento post-visita a ${firstName(ctx)} — aclarar dudas y pedir decisión`,
+      `Seguimiento post-visita: ¿${firstName(ctx)} quiere avanzar con ${ctx.propertyTitle ?? 'la propiedad'}?`,
     description:
-      'Enviar mensaje dentro de las 4 horas después de la visita con aclaraciones y preguntar si quiere avanzar.',
-    ctaAction: 'open_whatsapp',
-    whatsappTemplate: 'postVisitFollowUp',
+      'Llama o escribe al cliente para entender su decisión sobre la propiedad visitada y registrarla.',
+    ctaAction: 'post_visit_decision',
     dueDaysOffset: 0,
     escalationDaysOffset: 1,
     triggerEvents: ['viewing_completed'],
-    autoCompleteOn: 'interaction:whatsapp',
   },
 
   // ═══════════════════════════════════════════════════════════════════
@@ -148,14 +146,16 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     stepNumber: 10,
     phase: 'negociacion',
     titleTemplate: (ctx) =>
-      `Registrar oferta verbal de ${firstName(ctx)} por ${ctx.propertyTitle ?? 'la propiedad'}`,
+      `Registrar oferta de ${firstName(ctx)} por ${ctx.propertyTitle ?? 'la propiedad'}`,
     description:
-      'Capturar el monto ofrecido y las condiciones, notificar al dueño de la propiedad.',
+      'Capturar el monto ofrecido y las condiciones. Al guardarla, se notifica al dueño automáticamente.',
     ctaAction: 'open_offer_form',
     dueDaysOffset: 0,
     escalationDaysOffset: 2,
-    triggerEvents: ['lead_status_changed'],
-    triggerCondition: (ctx) => ctx.newStatus === 'negotiating',
+    triggerEvents: ['lead_status_changed', 'deal_stage_changed'],
+    triggerCondition: (ctx) =>
+      (ctx.event === 'lead_status_changed' && ctx.newStatus === 'negotiating') ||
+      (ctx.event === 'deal_stage_changed' && ctx.dealStage === 'negociacion'),
     autoCompleteOn: 'offer_created',
   },
 

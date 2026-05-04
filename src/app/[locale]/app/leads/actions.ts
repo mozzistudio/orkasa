@@ -387,6 +387,153 @@ export async function completeTask(
   return {}
 }
 
+/**
+ * Records the agent's post-visit decision for the property tied to a Step 8
+ * task: marks the lead_property as `le_encanto` (interested) or `descartada`
+ * (not interested), completes the task, and — when interested — advances the
+ * deal stage to `negociacion` so the existing Step 10 (Registrar oferta)
+ * task fires automatically.
+ */
+export async function recordPostVisitDecision(
+  taskId: string,
+  decision: 'interested' | 'not_interested',
+  reason?: string,
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('id, lead_id, brokerage_id, step_number, deal_id, property_id')
+    .eq('id', taskId)
+    .eq('status', 'open')
+    .maybeSingle<{
+      id: string
+      lead_id: string
+      brokerage_id: string
+      step_number: number
+      deal_id: string | null
+      property_id: string | null
+    }>()
+
+  if (!task) return { error: 'Task not found or already done' }
+
+  // Update the per-property status on the operación
+  if (task.property_id) {
+    const { data: leadProp } = await supabase
+      .from('lead_properties')
+      .select('id')
+      .eq('lead_id', task.lead_id)
+      .eq('property_id', task.property_id)
+      .maybeSingle<{ id: string }>()
+
+    if (leadProp) {
+      await supabase
+        .from('lead_properties')
+        .update({
+          status: decision === 'interested' ? 'le_encanto' : 'descartada',
+          lost_reason:
+            decision === 'not_interested'
+              ? reason ?? 'no interesado tras visita'
+              : null,
+        })
+        .eq('id', leadProp.id)
+    }
+  }
+
+  // Mark the task done
+  const { error: taskErr } = await supabase
+    .from('tasks')
+    .update({
+      status: 'done',
+      completed_at: new Date().toISOString(),
+      completed_by: user.id,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', taskId)
+    .eq('status', 'open')
+  if (taskErr) return { error: taskErr.message }
+
+  const { logTaskAudit } = await import('@/lib/tasks/trigger-engine')
+  await logTaskAudit(taskId, task.brokerage_id, user.id, 'completed', {
+    stepNumber: task.step_number,
+    decision,
+  })
+
+  // Interested → advance the deal so Step 10 (Registrar oferta) fires.
+  if (decision === 'interested' && task.deal_id) {
+    const { data: deal } = await supabase
+      .from('deals')
+      .select('stage')
+      .eq('id', task.deal_id)
+      .maybeSingle<{ stage: string }>()
+
+    const alreadyAdvanced = [
+      'negociacion',
+      'promesa_firmada',
+      'tramite_bancario',
+      'escritura_publica',
+      'entrega_llaves',
+      'post_cierre',
+      'closed_won',
+      'closed_lost',
+    ]
+    if (deal && !alreadyAdvanced.includes(deal.stage)) {
+      await supabase
+        .from('deals')
+        .update({
+          stage: 'negociacion',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', task.deal_id)
+
+      processTaskEvent({
+        event: 'deal_stage_changed',
+        leadId: task.lead_id,
+        brokerageId: task.brokerage_id,
+        agentId: user.id,
+        propertyId: task.property_id ?? undefined,
+        dealId: task.deal_id,
+        oldStatus: deal.stage,
+        newStatus: 'negociacion',
+        dealStage: 'negociacion',
+      }).catch(() => {})
+    } else if (deal) {
+      // Deal is already at or past negociacion — still try to fire Step 10
+      // (idempotent: trigger engine skips if the step already exists).
+      processTaskEvent({
+        event: 'deal_stage_changed',
+        leadId: task.lead_id,
+        brokerageId: task.brokerage_id,
+        agentId: user.id,
+        propertyId: task.property_id ?? undefined,
+        dealId: task.deal_id,
+        dealStage: deal.stage,
+      }).catch(() => {})
+    }
+  }
+
+  processTaskEvent({
+    event: 'task_completed',
+    leadId: task.lead_id,
+    brokerageId: task.brokerage_id,
+    agentId: user.id,
+    completedStep: task.step_number,
+  }).catch(() => {})
+
+  revalidatePath(`/app/leads/${task.lead_id}`)
+  if (task.deal_id) {
+    revalidatePath(`/app/operaciones/${task.deal_id}`)
+  }
+  revalidatePath('/app/operaciones')
+  revalidatePath('/app/tasks')
+  revalidatePath('/app')
+  return {}
+}
+
 export async function skipTask(
   taskId: string,
   reason?: string,
