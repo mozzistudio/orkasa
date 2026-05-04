@@ -157,7 +157,7 @@ export function Topbar() {
             </div>
             <Link
               href="/app/properties/new"
-              className="inline-flex items-center gap-1.5 rounded-[4px] bg-ink px-3 py-2 text-[13px] font-medium text-paper hover:bg-coal active:bg-coal transition-colors md:px-4"
+              className="inline-flex items-center gap-1.5 rounded-[4px] border border-bone bg-paper px-3 py-2 text-[13px] font-medium text-ink hover:bg-bone-soft active:bg-bone transition-colors md:px-4"
               aria-label={t('uploadProperty')}
             >
               <Plus className="h-4 w-4 md:h-3.5 md:w-3.5" strokeWidth={1.5} />

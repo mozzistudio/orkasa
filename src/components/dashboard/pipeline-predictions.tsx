@@ -104,7 +104,7 @@ export function PipelinePredictions({
         {top.map((p, idx) => (
           <Link
             key={p.dealId}
-            href={`/app/leads/${p.leadId}`}
+            href={`/app/operaciones/${p.dealId}`}
             className={`flex items-center gap-3 px-[18px] py-3 transition-colors hover:bg-bone-soft ${
               idx !== top.length - 1 ? 'border-b border-bone' : ''
             }`}

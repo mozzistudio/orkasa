@@ -1212,6 +1212,71 @@ export type Database = {
           },
         ]
       }
+      providers: {
+        Row: {
+          address: string | null
+          brokerage_id: string
+          city: string | null
+          company: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_primary: boolean
+          license_number: string | null
+          metadata: Json
+          name: string
+          notes: string | null
+          phone: string | null
+          service_type: string
+          tax_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          brokerage_id: string
+          city?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean
+          license_number?: string | null
+          metadata?: Json
+          name: string
+          notes?: string | null
+          phone?: string | null
+          service_type: string
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          brokerage_id?: string
+          city?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean
+          license_number?: string | null
+          metadata?: Json
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          service_type?: string
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "providers_brokerage_id_fkey"
+            columns: ["brokerage_id"]
+            isOneToOne: false
+            referencedRelation: "brokerages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       signature_documents: {
         Row: {
           agent_id: string | null

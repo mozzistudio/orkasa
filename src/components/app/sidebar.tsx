@@ -21,7 +21,7 @@ import {
   DocumentIcon,
   StarIcon,
 } from '@/components/icons/icons'
-import { GitBranch, Inbox as InboxLucide } from 'lucide-react'
+import { GitBranch, Inbox as InboxLucide, Briefcase } from 'lucide-react'
 
 function PipelineIcon({ size = 16, className }: { size?: number; className?: string }) {
   return <GitBranch width={size} height={size} className={className} strokeWidth={1.5} />
@@ -29,6 +29,10 @@ function PipelineIcon({ size = 16, className }: { size?: number; className?: str
 
 function InboxIcon({ size = 16, className }: { size?: number; className?: string }) {
   return <InboxLucide width={size} height={size} className={className} strokeWidth={1.5} />
+}
+
+function ProvidersIcon({ size = 16, className }: { size?: number; className?: string }) {
+  return <Briefcase width={size} height={size} className={className} strokeWidth={1.5} />
 }
 
 const navItems = [
@@ -40,6 +44,7 @@ const navItems = [
   { key: 'calendar',     href: '/app/calendar',     icon: CalendarIcon,  match: 'prefix' as const },
   { key: 'offers',       href: '/app/offers',       icon: StarIcon,      match: 'prefix' as const },
   { key: 'deals',        href: '/app/operaciones',  icon: PipelineIcon,  match: 'prefix' as const },
+  { key: 'providers',    href: '/app/providers',    icon: ProvidersIcon, match: 'prefix' as const },
   { key: 'agents',       href: '/app/agents',       icon: AgentIcon,     match: 'prefix' as const },
   { key: 'analytics',    href: '/app/analytics',    icon: AnalyticsIcon, match: 'prefix' as const },
   { key: 'compliance',   href: '/app/compliance',   icon: ShieldIcon,    match: 'prefix' as const },
