@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Award, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { markDealWon, markDealLost } from '../../deals/actions'
 
 const LOST_REASONS = [
@@ -91,24 +91,14 @@ export function OperacionCloseActions({
       </div>
       <div className="px-4 pb-3.5 space-y-2">
         {mode === null && (
-          <>
-            <button
-              type="button"
-              onClick={() => setMode('won')}
-              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-[6px] bg-green-bg text-green-text border border-green-mark/30 text-[12px] font-medium hover:bg-green-mark/15 transition-colors"
-            >
-              <Award className="h-3.5 w-3.5" strokeWidth={1.5} />
-              Marcar ganada
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('lost')}
-              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-[6px] border border-bone text-steel hover:text-signal-deep hover:border-signal/30 text-[12px] transition-colors"
-            >
-              <X className="h-3.5 w-3.5" strokeWidth={1.5} />
-              Marcar perdida
-            </button>
-          </>
+          <button
+            type="button"
+            onClick={() => setMode('lost')}
+            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-[6px] border border-bone text-steel hover:text-signal-deep hover:border-signal/30 text-[12px] transition-colors"
+          >
+            <X className="h-3.5 w-3.5" strokeWidth={1.5} />
+            Marcar perdida
+          </button>
         )}
 
         {mode === 'won' && (

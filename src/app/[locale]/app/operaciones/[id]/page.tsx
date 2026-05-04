@@ -112,7 +112,7 @@ export default async function OperacionDetailPage({
         : Promise.resolve({ data: null }),
       supabase
         .from('properties')
-        .select('id, title, address, city, neighborhood, price, currency, images')
+        .select('id, title, address, city, neighborhood, price, currency, images, owner_name, owner_phone, owner_email')
         .eq('brokerage_id', deal.brokerage_id)
         .returns<
           Array<{
@@ -437,6 +437,53 @@ export default async function OperacionDetailPage({
               </div>
             </section>
           )}
+
+          {/* Vendedor */}
+          {headlineProperty &&
+            (headlineProperty.owner_name ||
+              headlineProperty.owner_phone ||
+              headlineProperty.owner_email) && (
+              <section className="rounded-[12px] border border-bone bg-paper overflow-hidden">
+                <div className="px-4 pt-3.5 pb-2.5">
+                  <h3 className="font-mono text-[10px] tracking-[1.4px] uppercase text-steel">
+                    Vendedor
+                  </h3>
+                </div>
+                <div className="px-4 pb-3.5 space-y-1">
+                  {headlineProperty.owner_name && (
+                    <p className="text-[14px] font-medium text-ink mb-2">
+                      {headlineProperty.owner_name}
+                    </p>
+                  )}
+                  {headlineProperty.owner_phone && (
+                    <div className="flex items-center gap-2 py-1 text-[12px]">
+                      <Phone
+                        className="h-[12px] w-[12px] text-steel"
+                        strokeWidth={1.5}
+                      />
+                      <span className="text-ink font-mono text-[11px]">
+                        {headlineProperty.owner_phone}
+                      </span>
+                    </div>
+                  )}
+                  {headlineProperty.owner_email && (
+                    <div className="flex items-center gap-2 py-1 text-[12px]">
+                      <Mail
+                        className="h-[12px] w-[12px] text-steel"
+                        strokeWidth={1.5}
+                      />
+                      <span className="text-ink text-[11px] truncate">
+                        {headlineProperty.owner_email}
+                      </span>
+                    </div>
+                  )}
+                  <div className="pt-2 mt-2 border-t border-bone-soft text-[11px] text-steel">
+                    Propiedad:{' '}
+                    <span className="text-ink">{headlineProperty.title}</span>
+                  </div>
+                </div>
+              </section>
+            )}
 
           {/* Agente */}
           {agent && (
