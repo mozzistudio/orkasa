@@ -1,9 +1,15 @@
 'use client'
 
 import { useState, useEffect, useTransition } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
-import { Plus, Search, X } from 'lucide-react'
-import { createDeal, getOperacionPickerData } from '../deals/actions'
+import { Plus, Search, X, UserPlus, Check } from 'lucide-react'
+import { Link } from '@/i18n/navigation'
+import {
+  createDeal,
+  getOperacionPickerData,
+  createLeadInline,
+} from '../deals/actions'
 
 type LeadOption = {
   id: string
@@ -31,9 +37,6 @@ export function CreateOperacionButton({
   variant = 'default',
   label = 'Crear operación',
 }: {
-  /** Optional pre-fetched options. When omitted, the modal lazy-loads
-   *  them from the server the first time it opens — useful when the
-   *  button lives in the topbar / shared layout. */
   leads?: LeadOption[]
   properties?: PropertyOption[]
   variant?: 'default' | 'primary'
@@ -46,20 +49,26 @@ export function CreateOperacionButton({
 
   const [leadSearch, setLeadSearch] = useState('')
   const [propSearch, setPropSearch] = useState('')
-  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null)
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null)
+  const [selectedLead, setSelectedLead] = useState<LeadOption | null>(null)
+  const [selectedProperty, setSelectedProperty] =
+    useState<PropertyOption | null>(null)
   const [stage, setStage] = useState<string>('contacto_inicial')
   const [amount, setAmount] = useState('')
-  const [currency] = useState('USD')
+
+  // Inline lead creation
+  const [creatingLead, setCreatingLead] = useState(false)
+  const [newLeadPhone, setNewLeadPhone] = useState('')
+  const [newLeadEmail, setNewLeadEmail] = useState('')
+  const [creatingPending, setCreatingPending] = useState(false)
 
   const [leads, setLeads] = useState<LeadOption[]>(leadsProp ?? [])
   const [properties, setProperties] = useState<PropertyOption[]>(
     propertiesProp ?? [],
   )
   const [loadingOptions, setLoadingOptions] = useState(false)
-  const hasFetchedOptions = leadsProp !== undefined || propertiesProp !== undefined
+  const hasFetchedOptions =
+    leadsProp !== undefined || propertiesProp !== undefined
 
-  // Lazy-fetch picker data on first open when not provided as props
   useEffect(() => {
     if (!open) return
     if (hasFetchedOptions) return
@@ -75,37 +84,88 @@ export function CreateOperacionButton({
   }, [open])
 
   function handleSelectLead(lead: LeadOption) {
-    setSelectedLeadId(lead.id)
-    setLeadSearch(lead.full_name)
-    if (!selectedPropertyId && lead.property_id) {
-      setSelectedPropertyId(lead.property_id)
+    setSelectedLead(lead)
+    setLeadSearch('')
+    if (!selectedProperty && lead.property_id) {
       const prop = properties.find((p) => p.id === lead.property_id)
-      if (prop) setPropSearch(prop.title)
+      if (prop) setSelectedProperty(prop)
     }
   }
 
-  function reset() {
-    setSelectedLeadId(null)
-    setSelectedPropertyId(null)
-    setLeadSearch('')
+  function handleSelectProperty(prop: PropertyOption) {
+    setSelectedProperty(prop)
     setPropSearch('')
+  }
+
+  function clearLead() {
+    setSelectedLead(null)
+    setLeadSearch('')
+    setCreatingLead(false)
+  }
+
+  function clearProperty() {
+    setSelectedProperty(null)
+    setPropSearch('')
+  }
+
+  function reset() {
+    clearLead()
+    clearProperty()
     setStage('contacto_inicial')
     setAmount('')
     setError(null)
+    setNewLeadPhone('')
+    setNewLeadEmail('')
+    setCreatingLead(false)
+  }
+
+  async function handleCreateLeadInline() {
+    setError(null)
+    const name = leadSearch.trim()
+    if (!name) {
+      setError('Nombre del lead requerido')
+      return
+    }
+    setCreatingPending(true)
+    const result = await createLeadInline({
+      full_name: name,
+      phone: newLeadPhone || null,
+      email: newLeadEmail || null,
+    })
+    setCreatingPending(false)
+    if (result.error) {
+      setError(result.error)
+      return
+    }
+    if (result.id && result.full_name) {
+      const lead: LeadOption = {
+        id: result.id,
+        full_name: result.full_name,
+        phone: result.phone ?? null,
+        email: result.email ?? null,
+        property_id: null,
+      }
+      setLeads((ls) => [lead, ...ls])
+      setSelectedLead(lead)
+      setLeadSearch('')
+      setCreatingLead(false)
+      setNewLeadPhone('')
+      setNewLeadEmail('')
+    }
   }
 
   function handleSubmit() {
     setError(null)
-    if (!selectedLeadId) {
+    if (!selectedLead) {
       setError('Tenés que seleccionar un cliente')
       return
     }
     const fd = new FormData()
-    fd.set('lead_id', selectedLeadId)
-    if (selectedPropertyId) fd.set('property_id', selectedPropertyId)
+    fd.set('lead_id', selectedLead.id)
+    if (selectedProperty) fd.set('property_id', selectedProperty.id)
     fd.set('stage', stage)
     if (amount) fd.set('amount', amount)
-    fd.set('currency', currency)
+    fd.set('currency', 'USD')
     fd.set('redirect_to_detail', '1')
 
     startTransition(async () => {
@@ -114,7 +174,6 @@ export function CreateOperacionButton({
         setError(result.error)
         return
       }
-      // createDeal redirects on success, but if it returns instead:
       if (result.id) {
         setOpen(false)
         reset()
@@ -131,171 +190,307 @@ export function CreateOperacionButton({
             .toLowerCase()
             .includes(leadSearch.toLowerCase()),
         )
-        .slice(0, 8)
+        .slice(0, 6)
     : []
 
   const filteredProps = propSearch
     ? properties
-        .filter((p) => p.title.toLowerCase().includes(propSearch.toLowerCase()))
-        .slice(0, 8)
+        .filter((p) =>
+          p.title.toLowerCase().includes(propSearch.toLowerCase()),
+        )
+        .slice(0, 6)
     : []
+
+  const hasExactLeadMatch = leadSearch
+    ? leads.some(
+        (l) => l.full_name.toLowerCase() === leadSearch.toLowerCase(),
+      )
+    : false
 
   const buttonClass =
     variant === 'primary'
       ? 'inline-flex items-center gap-1.5 h-9 px-3.5 rounded-[4px] bg-ink text-paper text-[13px] font-medium hover:bg-coal transition-colors'
       : 'inline-flex items-center gap-1.5 h-9 px-3 rounded-[4px] bg-ink text-paper text-[13px] font-medium hover:bg-coal transition-colors'
 
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={buttonClass}
-      >
-        <Plus className="h-3.5 w-3.5" strokeWidth={1.8} />
-        {label}
-      </button>
+  function close() {
+    if (pending || creatingPending) return
+    setOpen(false)
+    reset()
+  }
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center">
-          {/* Backdrop */}
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const modal = open ? (
+    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center md:p-6">
           <div
-            className="absolute inset-0 bg-ink/40 backdrop-blur-sm"
-            onClick={() => {
-              if (!pending) {
-                setOpen(false)
-                reset()
-              }
-            }}
+            className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]"
+            onClick={close}
           />
 
-          {/* Panel */}
-          <div className="relative z-10 w-full max-w-[480px] rounded-t-[16px] md:rounded-[16px] bg-paper shadow-lg border border-bone overflow-hidden">
-            <div className="flex items-center justify-between border-b border-bone px-5 py-3.5">
-              <h2 className="text-[15px] font-medium text-ink">
-                Nueva operación
-              </h2>
+          <div className="relative z-10 flex w-full max-w-[520px] max-h-[calc(100vh-3rem)] flex-col rounded-t-[4px] md:rounded-[4px] border border-ink/10 bg-paper">
+            {/* Header */}
+            <div className="flex shrink-0 items-center justify-between border-b border-bone px-5 py-3">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
+                  Nueva
+                </p>
+                <h2 className="text-[16px] font-medium tracking-[-0.3px] text-ink">
+                  Operación
+                </h2>
+              </div>
               <button
                 type="button"
-                onClick={() => {
-                  if (!pending) {
-                    setOpen(false)
-                    reset()
-                  }
-                }}
-                className="p-1 rounded-md text-steel hover:text-ink hover:bg-bone-soft"
+                onClick={close}
+                className="flex h-8 w-8 items-center justify-center rounded-[4px] text-steel hover:bg-bone-soft hover:text-ink transition-colors"
               >
                 <X className="h-4 w-4" strokeWidth={1.5} />
               </button>
             </div>
 
-            <div className="px-5 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
-              {/* Lead picker */}
-              <div className="space-y-1.5">
-                <label className="block text-[12px] font-medium text-ink">
-                  Cliente
-                </label>
-                <div className="relative">
-                  <Search
-                    className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-steel"
-                    strokeWidth={1.5}
-                  />
-                  <input
-                    type="text"
-                    value={leadSearch}
-                    onChange={(e) => {
-                      setLeadSearch(e.target.value)
-                      if (selectedLeadId) setSelectedLeadId(null)
-                    }}
-                    placeholder={
-                      loadingOptions
-                        ? 'Cargando leads...'
-                        : 'Buscar lead por nombre o teléfono...'
-                    }
-                    disabled={loadingOptions}
-                    className="h-10 w-full rounded-[8px] border border-bone bg-paper pl-8 pr-3 text-[13px] focus:border-ink focus:outline-none focus:ring-0 disabled:opacity-60"
-                  />
-                </div>
-                {leadSearch && !selectedLeadId && filteredLeads.length > 0 && (
-                  <div className="rounded-[8px] border border-bone bg-paper overflow-hidden divide-y divide-bone-soft">
-                    {filteredLeads.map((lead) => (
-                      <button
-                        key={lead.id}
-                        type="button"
-                        onClick={() => handleSelectLead(lead)}
-                        className="w-full text-left px-3 py-2 hover:bg-bone-soft text-[12px] text-ink"
-                      >
-                        <div className="font-medium">{lead.full_name}</div>
-                        {(lead.phone || lead.email) && (
-                          <div className="text-[11px] text-steel font-mono">
-                            {lead.phone ?? lead.email}
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {leadSearch && !selectedLeadId && filteredLeads.length === 0 && (
-                  <p className="text-[11px] text-steel">
-                    Sin coincidencias. Creá el lead primero desde Leads.
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+              {/* Cliente */}
+              <section>
+                <div className="mb-2 flex items-baseline justify-between">
+                  <p className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
+                    Cliente
                   </p>
-                )}
-              </div>
-
-              {/* Property picker (optional) */}
-              <div className="space-y-1.5">
-                <label className="block text-[12px] font-medium text-ink">
-                  Propiedad inicial{' '}
-                  <span className="text-steel font-normal">(opcional)</span>
-                </label>
-                <div className="relative">
-                  <Search
-                    className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-steel"
-                    strokeWidth={1.5}
-                  />
-                  <input
-                    type="text"
-                    value={propSearch}
-                    onChange={(e) => {
-                      setPropSearch(e.target.value)
-                      if (selectedPropertyId) setSelectedPropertyId(null)
-                    }}
-                    placeholder="Buscar propiedad por título..."
-                    className="h-10 w-full rounded-[8px] border border-bone bg-paper pl-8 pr-3 text-[13px] focus:border-ink focus:outline-none focus:ring-0"
-                  />
+                  <span className="font-mono text-[10px] uppercase tracking-[1.2px] text-signal">
+                    Requerido
+                  </span>
                 </div>
-                {propSearch && !selectedPropertyId && filteredProps.length > 0 && (
-                  <div className="rounded-[8px] border border-bone bg-paper overflow-hidden divide-y divide-bone-soft">
-                    {filteredProps.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedPropertyId(p.id)
-                          setPropSearch(p.title)
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-bone-soft text-[12px] text-ink"
-                      >
-                        {p.title}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <p className="text-[10px] text-steel-soft">
-                  Podés agregar más propiedades desde la página de la operación.
-                </p>
-              </div>
 
-              {/* Stage + amount */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="block text-[12px] font-medium text-ink">
+                {selectedLead ? (
+                  <div className="flex items-center justify-between rounded-[4px] border border-ink bg-paper px-3 py-2.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-medium text-ink truncate">
+                        {selectedLead.full_name}
+                      </p>
+                      {(selectedLead.phone || selectedLead.email) && (
+                        <p className="font-mono text-[11px] text-steel truncate">
+                          {selectedLead.phone ?? selectedLead.email}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearLead}
+                      className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] text-steel hover:bg-bone hover:text-ink transition-colors"
+                      aria-label="Quitar cliente"
+                    >
+                      <X className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="relative">
+                      <Search
+                        className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-steel"
+                        strokeWidth={1.5}
+                      />
+                      <input
+                        type="text"
+                        value={leadSearch}
+                        onChange={(e) => setLeadSearch(e.target.value)}
+                        placeholder={
+                          loadingOptions
+                            ? 'Cargando…'
+                            : 'Buscar por nombre, teléfono, email…'
+                        }
+                        disabled={loadingOptions}
+                        className="h-10 w-full rounded-[4px] border border-bone bg-paper pl-9 pr-3 text-[13px] focus:border-ink focus:outline-none focus:ring-0 disabled:opacity-60"
+                      />
+                    </div>
+
+                    {leadSearch && filteredLeads.length > 0 && (
+                      <div className="mt-1.5 rounded-[4px] border border-bone bg-paper overflow-hidden divide-y divide-bone-soft">
+                        {filteredLeads.map((lead) => (
+                          <button
+                            key={lead.id}
+                            type="button"
+                            onClick={() => handleSelectLead(lead)}
+                            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-bone-soft transition-colors"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[13px] font-medium text-ink truncate">
+                                {lead.full_name}
+                              </p>
+                              {(lead.phone || lead.email) && (
+                                <p className="font-mono text-[11px] text-steel truncate">
+                                  {lead.phone ?? lead.email}
+                                </p>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {leadSearch && !hasExactLeadMatch && !creatingLead && (
+                      <button
+                        type="button"
+                        onClick={() => setCreatingLead(true)}
+                        className="mt-1.5 flex w-full items-center gap-2 rounded-[4px] border border-dashed border-ink/20 bg-paper px-3 py-2.5 text-left hover:bg-bone-soft hover:border-ink/40 transition-colors"
+                      >
+                        <UserPlus
+                          className="h-3.5 w-3.5 shrink-0 text-ink"
+                          strokeWidth={1.5}
+                        />
+                        <span className="text-[12px] text-ink">
+                          Crear lead{' '}
+                          <span className="font-medium">{leadSearch}</span>
+                        </span>
+                      </button>
+                    )}
+
+                    {creatingLead && (
+                      <div className="mt-2 rounded-[4px] border border-ink/15 bg-bone-soft/50 p-3 space-y-2">
+                        <p className="font-mono text-[10px] uppercase tracking-[1.2px] text-steel">
+                          Nuevo lead
+                        </p>
+                        <input
+                          type="text"
+                          value={leadSearch}
+                          onChange={(e) => setLeadSearch(e.target.value)}
+                          placeholder="Nombre completo"
+                          className="h-9 w-full rounded-[4px] border border-bone bg-paper px-2.5 text-[13px] focus:border-ink focus:outline-none"
+                        />
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="tel"
+                            value={newLeadPhone}
+                            onChange={(e) => setNewLeadPhone(e.target.value)}
+                            placeholder="+507 6000-0000"
+                            className="h-9 w-full rounded-[4px] border border-bone bg-paper px-2.5 font-mono text-[12px] focus:border-ink focus:outline-none"
+                          />
+                          <input
+                            type="email"
+                            value={newLeadEmail}
+                            onChange={(e) => setNewLeadEmail(e.target.value)}
+                            placeholder="email@ejemplo.com"
+                            className="h-9 w-full rounded-[4px] border border-bone bg-paper px-2.5 font-mono text-[12px] focus:border-ink focus:outline-none"
+                          />
+                        </div>
+                        <div className="flex items-center justify-end gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCreatingLead(false)
+                              setNewLeadPhone('')
+                              setNewLeadEmail('')
+                            }}
+                            disabled={creatingPending}
+                            className="px-2.5 py-1.5 text-[12px] text-steel hover:text-ink transition-colors disabled:opacity-50"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCreateLeadInline}
+                            disabled={creatingPending || !leadSearch.trim()}
+                            className="inline-flex items-center gap-1.5 rounded-[4px] bg-ink px-3 py-1.5 text-[12px] font-medium text-paper hover:bg-coal transition-colors disabled:opacity-50"
+                          >
+                            <Check className="h-3 w-3" strokeWidth={2} />
+                            {creatingPending ? 'Creando…' : 'Crear y usar'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </section>
+
+              {/* Propiedad */}
+              <section>
+                <div className="mb-2 flex items-baseline justify-between">
+                  <p className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
+                    Propiedad
+                  </p>
+                  <span className="font-mono text-[10px] uppercase tracking-[1.2px] text-steel-soft">
+                    Opcional
+                  </span>
+                </div>
+
+                {selectedProperty ? (
+                  <div className="flex items-center justify-between rounded-[4px] border border-ink bg-paper px-3 py-2.5">
+                    <p className="text-[13px] font-medium text-ink truncate">
+                      {selectedProperty.title}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={clearProperty}
+                      className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] text-steel hover:bg-bone hover:text-ink transition-colors"
+                      aria-label="Quitar propiedad"
+                    >
+                      <X className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="relative">
+                      <Search
+                        className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-steel"
+                        strokeWidth={1.5}
+                      />
+                      <input
+                        type="text"
+                        value={propSearch}
+                        onChange={(e) => setPropSearch(e.target.value)}
+                        placeholder="Buscar propiedad por título…"
+                        className="h-10 w-full rounded-[4px] border border-bone bg-paper pl-9 pr-3 text-[13px] focus:border-ink focus:outline-none focus:ring-0"
+                      />
+                    </div>
+
+                    {propSearch && filteredProps.length > 0 && (
+                      <div className="mt-1.5 rounded-[4px] border border-bone bg-paper overflow-hidden divide-y divide-bone-soft">
+                        {filteredProps.map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => handleSelectProperty(p)}
+                            className="w-full px-3 py-2 text-left text-[13px] text-ink hover:bg-bone-soft transition-colors truncate"
+                          >
+                            {p.title}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {propSearch && filteredProps.length === 0 && (
+                      <Link
+                        href="/app/properties/new"
+                        className="mt-1.5 flex w-full items-center gap-2 rounded-[4px] border border-dashed border-ink/20 bg-paper px-3 py-2.5 hover:bg-bone-soft hover:border-ink/40 transition-colors"
+                      >
+                        <Plus
+                          className="h-3.5 w-3.5 shrink-0 text-ink"
+                          strokeWidth={1.5}
+                        />
+                        <span className="text-[12px] text-ink">
+                          Cargar propiedad nueva
+                        </span>
+                      </Link>
+                    )}
+
+                    <p className="mt-1.5 text-[10px] text-steel-soft">
+                      Podés agregar más propiedades después desde la operación.
+                    </p>
+                  </>
+                )}
+              </section>
+
+              {/* Stage + monto */}
+              <section className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="mb-2 font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
                     Stage inicial
-                  </label>
+                  </p>
                   <select
                     value={stage}
                     onChange={(e) => setStage(e.target.value)}
-                    className="h-10 w-full rounded-[8px] border border-bone bg-paper px-3 text-[13px] text-ink focus:border-ink focus:outline-none"
+                    className="h-10 w-full rounded-[4px] border border-bone bg-paper px-3 text-[13px] text-ink focus:border-ink focus:outline-none"
                   >
                     {STAGES.map((s) => (
                       <option key={s.value} value={s.value}>
@@ -304,37 +499,37 @@ export function CreateOperacionButton({
                     ))}
                   </select>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="block text-[12px] font-medium text-ink">
-                    Monto estimado{' '}
-                    <span className="text-steel font-normal">(opcional)</span>
-                  </label>
+                <div>
+                  <div className="mb-2 flex items-baseline justify-between">
+                    <p className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
+                      Monto
+                    </p>
+                    <span className="font-mono text-[10px] uppercase tracking-[1.2px] text-steel-soft">
+                      Opcional
+                    </span>
+                  </div>
                   <input
                     type="number"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="450000"
-                    className="h-10 w-full rounded-[8px] border border-bone bg-paper px-3 text-[13px] font-mono tabular-nums focus:border-ink focus:outline-none focus:ring-0"
+                    className="h-10 w-full rounded-[4px] border border-bone bg-paper px-3 font-mono tabular-nums text-[13px] focus:border-ink focus:outline-none focus:ring-0"
                   />
                 </div>
-              </div>
+              </section>
 
               {error && (
-                <p className="rounded-[6px] border border-signal/30 bg-signal-bg px-3 py-2 text-[12px] text-signal-deep">
+                <p className="rounded-[4px] border border-signal/40 bg-signal-bg px-3 py-2 font-mono text-[11px] text-signal-deep">
                   {error}
                 </p>
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-2 border-t border-bone px-5 py-3">
+            {/* Footer */}
+            <div className="flex shrink-0 items-center justify-end gap-2 border-t border-bone px-5 py-3">
               <button
                 type="button"
-                onClick={() => {
-                  if (!pending) {
-                    setOpen(false)
-                    reset()
-                  }
-                }}
+                onClick={close}
                 disabled={pending}
                 className="px-3 py-2 text-[12px] text-steel hover:text-ink transition-colors disabled:opacity-50"
               >
@@ -343,15 +538,23 @@ export function CreateOperacionButton({
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={pending || !selectedLeadId}
-                className="px-4 py-2 rounded-[8px] bg-ink text-white text-[12px] font-medium hover:bg-coal transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={pending || !selectedLead}
+                className="inline-flex items-center gap-1.5 rounded-[4px] bg-ink px-4 py-2 text-[13px] font-medium text-paper hover:bg-coal transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {pending ? 'Creando…' : 'Crear operación'}
               </button>
             </div>
           </div>
         </div>
-      )}
+  ) : null
+
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} className={buttonClass}>
+        <Plus className="h-3.5 w-3.5" strokeWidth={1.8} />
+        {label}
+      </button>
+      {mounted && modal ? createPortal(modal, document.body) : null}
     </>
   )
 }

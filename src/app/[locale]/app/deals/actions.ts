@@ -433,6 +433,63 @@ export async function getOperacionPickerData(): Promise<OperacionPickerData> {
   }
 }
 
+/**
+ * Inline lead creation used by the Crear operación modal so the broker
+ * can register a new buyer without leaving the flow. Returns the ID
+ * (or an error) — does not redirect, unlike the standard createLead.
+ */
+export async function createLeadInline(input: {
+  full_name: string
+  phone?: string | null
+  email?: string | null
+}): Promise<{ id?: string; full_name?: string; phone?: string | null; email?: string | null; error?: string }> {
+  const fullName = input.full_name.trim()
+  if (!fullName) return { error: 'Nombre requerido' }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const { data: agent } = await supabase
+    .from('agents')
+    .select('brokerage_id')
+    .eq('id', user.id)
+    .maybeSingle<{ brokerage_id: string | null }>()
+  if (!agent?.brokerage_id) return { error: 'Sin brokerage' }
+
+  const phone = input.phone?.trim() || null
+  const email = input.email?.trim() || null
+
+  const { data: created, error } = await supabase
+    .from('leads')
+    .insert({
+      full_name: fullName,
+      phone,
+      email,
+      origin: 'other',
+      status: 'new',
+      brokerage_id: agent.brokerage_id,
+      assigned_agent_id: user.id,
+    })
+    .select('id')
+    .single<{ id: string }>()
+
+  if (error) return { error: error.message }
+
+  processTaskEvent({
+    event: 'lead_created',
+    leadId: created.id,
+    brokerageId: agent.brokerage_id,
+    agentId: user.id,
+  }).catch(() => {})
+
+  revalidatePath('/app/leads')
+  revalidatePath('/app')
+  return { id: created.id, full_name: fullName, phone, email }
+}
+
 export async function markDealLost(
   dealId: string,
   reason: string,
