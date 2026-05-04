@@ -118,6 +118,7 @@ export async function getPipelineForecast(
       predictions: [],
       totalPipelineValue: 0,
       weightedForecast: 0,
+      totalCommission: 0,
       atRiskCount: 0,
       atRiskValue: 0,
     }
