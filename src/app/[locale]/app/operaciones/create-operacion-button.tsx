@@ -29,7 +29,7 @@ export function CreateOperacionButton({
   leads: leadsProp,
   properties: propertiesProp,
   variant = 'default',
-  label = '+ Crear operación',
+  label = 'Crear operación',
 }: {
   /** Optional pre-fetched options. When omitted, the modal lazy-loads
    *  them from the server the first time it opens — useful when the
@@ -142,8 +142,8 @@ export function CreateOperacionButton({
 
   const buttonClass =
     variant === 'primary'
-      ? 'inline-flex items-center gap-1.5 px-4 py-2.5 rounded-[4px] border border-ink bg-paper text-ink text-[13px] font-medium hover:bg-ink hover:text-paper transition-colors'
-      : 'inline-flex items-center gap-1.5 px-3 py-2 rounded-[4px] border border-bone bg-paper text-ink text-[12px] font-medium hover:bg-bone-soft transition-colors'
+      ? 'inline-flex items-center gap-1.5 h-9 px-3.5 rounded-[4px] border border-ink/15 bg-paper text-ink text-[13px] font-medium hover:bg-ink hover:text-paper hover:border-ink transition-colors'
+      : 'inline-flex items-center gap-1.5 h-9 px-3 rounded-[4px] border border-ink/15 bg-paper text-ink text-[13px] font-medium hover:bg-ink hover:text-paper hover:border-ink transition-colors'
 
   return (
     <>
