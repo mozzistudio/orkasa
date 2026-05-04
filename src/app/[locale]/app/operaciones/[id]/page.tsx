@@ -2,10 +2,13 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, Phone, Mail, MapPin } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-import { OperacionStageSelector } from './operacion-stage-selector'
 import { OperacionPropertiesPanel } from './operacion-properties-panel'
 import { OperacionCloseActions } from './operacion-close-actions'
 import { OperacionTaskPipeline } from './operacion-task-pipeline'
+import {
+  LeadDocumentsPanel,
+  type LeadDocumentRow,
+} from '@/components/documents/lead-documents-panel'
 import type { Database } from '@/lib/database.types'
 
 type Deal = Database['public']['Tables']['deals']['Row']
@@ -35,6 +38,29 @@ function fmtMoney(amount: number | null, currency: string): string {
   }).format(amount)
 }
 
+function coverUrl(images: unknown): string | null {
+  if (!Array.isArray(images)) return null
+  const first = images[0] as { url?: string } | undefined
+  return first?.url ?? null
+}
+
+function extractStageEnteredAt(
+  metadata: unknown,
+  stage: string,
+): string | null {
+  if (!metadata || typeof metadata !== 'object') return null
+  const history = (metadata as { stage_history?: unknown }).stage_history
+  if (!Array.isArray(history)) return null
+  const entry = history.find(
+    (e): e is { stage: string; entered_at: string } =>
+      typeof e === 'object' &&
+      e !== null &&
+      (e as { stage?: unknown }).stage === stage &&
+      typeof (e as { entered_at?: unknown }).entered_at === 'string',
+  )
+  return entry?.entered_at ?? null
+}
+
 export default async function OperacionDetailPage({
   params,
 }: {
@@ -51,7 +77,7 @@ export default async function OperacionDetailPage({
 
   if (!deal) notFound()
 
-  const [leadRes, leadPropsRes, offersRes, agentRes, allPropsRes, tasksRes] =
+  const [leadRes, leadPropsRes, offersRes, agentRes, allPropsRes, tasksRes, complianceChecksRes] =
     await Promise.all([
       supabase
         .from('leads')
@@ -105,6 +131,11 @@ export default async function OperacionDetailPage({
         .select('step_number, title, status')
         .or(`deal_id.eq.${deal.id},and(lead_id.eq.${deal.lead_id},deal_id.is.null)`)
         .returns<Array<{ step_number: number; title: string; status: string }>>(),
+      supabase
+        .from('compliance_checks')
+        .select('id')
+        .eq('lead_id', deal.lead_id)
+        .returns<Array<{ id: string }>>(),
     ])
 
   const lead = leadRes.data
@@ -113,6 +144,18 @@ export default async function OperacionDetailPage({
   const agent = agentRes.data
   const allProperties = allPropsRes.data ?? []
   const dealTasks = tasksRes.data ?? []
+  const checkIds = (complianceChecksRes.data ?? []).map((c) => c.id)
+
+  const { data: complianceDocs } =
+    checkIds.length > 0
+      ? await supabase
+          .from('compliance_documents')
+          .select(
+            'id, code, kind, name, category, status, file_path, file_name, uploaded_at, verified_at',
+          )
+          .in('check_id', checkIds)
+          .returns<LeadDocumentRow[]>()
+      : { data: [] as LeadDocumentRow[] }
 
   const propertyById = new Map(allProperties.map((p) => [p.id, p]))
 
@@ -151,6 +194,25 @@ export default async function OperacionDetailPage({
 
   const isClosed = deal.stage === 'closed_won' || deal.stage === 'closed_lost'
 
+  // Pick a "headline" property for the hero. Priority: winning_property →
+  // first property with an accepted offer → first considered property.
+  const headlinePropertyId =
+    deal.winning_property_id ??
+    offers.find((o) => o.status === 'accepted')?.property_id ??
+    leadProperties[0]?.property_id ??
+    null
+  const headlineProperty = headlinePropertyId
+    ? propertyById.get(headlinePropertyId) ?? null
+    : null
+  const headlineImage = headlineProperty
+    ? coverUrl(headlineProperty.images)
+    : null
+  const headlineLocation = headlineProperty
+    ? [headlineProperty.neighborhood, headlineProperty.city]
+        .filter(Boolean)
+        .join(', ') || null
+    : null
+
   return (
     <div className="mx-auto max-w-[1280px]">
       <Link
@@ -165,66 +227,83 @@ export default async function OperacionDetailPage({
         {/* ── Main column ── */}
         <div className="min-w-0 flex flex-col gap-4">
           {/* Hero */}
-          <section className="rounded-[14px] border border-bone bg-paper overflow-hidden shadow-sm">
-            <div className="px-6 py-6">
-              <div className="flex items-center gap-2 mb-3 flex-wrap">
-                <span className="font-mono text-[10px] tracking-[1.3px] uppercase text-steel">
-                  Operación
-                </span>
-              </div>
-
-              <h1 className="text-[26px] font-medium tracking-[-0.5px] leading-tight text-ink mb-1">
-                {deal.title ?? `Operación ${lead?.full_name ?? ''}`}
-              </h1>
-
-              {lead && (
-                <p className="text-[14px] text-steel mb-4">
-                  Cliente:{' '}
-                  <Link
-                    href={`/app/leads/${lead.id}`}
-                    className="text-ink font-medium hover:underline underline-offset-2"
-                  >
-                    {lead.full_name}
-                  </Link>
-                </p>
-              )}
-
-              <div className="flex items-center gap-3 mb-3 flex-wrap">
-                <OperacionStageSelector
-                  dealId={deal.id}
-                  currentStage={deal.stage}
-                />
-                {deal.amount && (
-                  <span className="font-mono text-[20px] font-medium tabular-nums text-ink">
-                    {fmtMoney(Number(deal.amount), deal.currency)}
-                  </span>
+          <section className="rounded-[14px] border border-bone bg-paper overflow-hidden">
+            <div className="flex items-stretch min-h-[160px]">
+              {/* Property thumbnail */}
+              <div className="w-[160px] shrink-0 bg-bone-soft border-r border-bone overflow-hidden">
+                {headlineImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={headlineImage}
+                    alt={headlineProperty?.title ?? ''}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center text-steel-soft">
+                    <MapPin className="h-6 w-6" strokeWidth={1.5} />
+                  </div>
                 )}
               </div>
 
-              {deal.winning_property_id && (
-                <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-[8px] bg-green-bg text-green-text text-[12px]">
-                  <span className="font-mono text-[10px] tracking-[0.8px] uppercase font-medium">
-                    Comprado:
-                  </span>{' '}
-                  <strong className="font-medium">
-                    {propertyById.get(deal.winning_property_id)?.title ?? '—'}
-                  </strong>
+              {/* Info */}
+              <div className="flex-1 min-w-0 px-6 py-5 flex flex-col justify-between gap-4">
+                {/* Top: property identity */}
+                <div className="min-w-0">
+                  <h1 className="text-[22px] font-medium tracking-[-0.4px] leading-tight text-ink line-clamp-1">
+                    {headlineProperty?.title ?? deal.title ?? 'Operación'}
+                  </h1>
+                  {headlineLocation && (
+                    <p className="mt-1 text-[12.5px] text-steel">
+                      {headlineLocation}
+                    </p>
+                  )}
                 </div>
-              )}
 
-              {deal.lost_reason && (
-                <p className="mt-3 text-[12px] text-signal-deep">
-                  Razón de cierre: {deal.lost_reason}
-                </p>
-              )}
+                {/* Bottom: deal facts (buyer + amount) */}
+                <div className="flex items-end justify-between gap-6 flex-wrap">
+                  {lead && (
+                    <div className="min-w-0">
+                      <span className="block font-mono text-[9.5px] tracking-[1.4px] uppercase text-steel-soft">
+                        Comprador
+                      </span>
+                      <Link
+                        href={`/app/leads/${lead.id}`}
+                        className="block mt-0.5 text-[14px] font-medium text-ink hover:underline underline-offset-2 line-clamp-1"
+                      >
+                        {lead.full_name}
+                      </Link>
+                    </div>
+                  )}
+
+                  {deal.amount && (
+                    <div className="text-right shrink-0">
+                      <span className="block font-mono text-[9.5px] tracking-[1.4px] uppercase text-steel-soft">
+                        Monto
+                      </span>
+                      <span className="block mt-0.5 font-mono text-[22px] font-medium tabular-nums text-ink leading-none">
+                        {fmtMoney(Number(deal.amount), deal.currency)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {deal.lost_reason && (
+                  <p className="text-[12px] text-signal-deep">
+                    Razón de cierre: {deal.lost_reason}
+                  </p>
+                )}
+              </div>
             </div>
           </section>
 
           {/* Task pipeline */}
           <OperacionTaskPipeline
+            dealId={deal.id}
             dealStage={deal.stage}
+            stageEnteredAt={extractStageEnteredAt(deal.metadata, deal.stage) ?? deal.updated_at}
             tasks={dealTasks}
             leadFirstName={lead?.full_name?.split(' ')[0] ?? '…'}
+            isClosed={isClosed}
           />
 
           {/* Properties panel */}
@@ -234,6 +313,9 @@ export default async function OperacionDetailPage({
             availableProperties={propertiesNotInDeal}
             disabled={isClosed}
           />
+
+          {/* Documents */}
+          <LeadDocumentsPanel documents={complianceDocs ?? []} />
 
           {/* Offers list */}
           <section className="rounded-[12px] border border-bone bg-paper overflow-hidden">

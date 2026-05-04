@@ -1,210 +1,388 @@
-import { Check, Circle, AlertTriangle, Minus } from 'lucide-react'
-import { TASK_CATALOG } from '@/lib/tasks/task-catalog'
-import type { TaskPhase, TaskContext } from '@/lib/tasks/types'
+'use client'
 
-const PHASE_ORDER: TaskPhase[] = [
+import { useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import { Check, Circle } from 'lucide-react'
+import { TASK_CATALOG } from '@/lib/tasks/task-catalog'
+import type { TaskContext } from '@/lib/tasks/types'
+import { updateDealStage } from '../../deals/actions'
+
+const STAGES = [
   'contacto_inicial',
   'visitas',
-  'financiamiento',
   'negociacion',
-  'cumplimiento',
-  'cierre_legal',
+  'promesa_firmada',
   'tramite_bancario',
-  'entrega',
+  'escritura_publica',
+  'entrega_llaves',
   'post_cierre',
-]
+] as const
+type Stage = (typeof STAGES)[number]
 
-const PHASE_LABEL: Record<TaskPhase, string> = {
-  contacto_inicial: 'Contacto inicial',
+const STAGE_LABEL: Record<Stage, string> = {
+  contacto_inicial: 'Contacto',
   visitas: 'Visitas',
-  financiamiento: 'Financiamiento',
-  negociacion: 'Negociacion',
-  cumplimiento: 'Cumplimiento',
-  cierre_legal: 'Cierre legal',
-  tramite_bancario: 'Tramite bancario',
-  entrega: 'Entrega',
+  negociacion: 'Negociación',
+  promesa_firmada: 'Promesa',
+  tramite_bancario: 'Banco',
+  escritura_publica: 'Escritura',
+  entrega_llaves: 'Entrega',
   post_cierre: 'Post cierre',
 }
 
-const PHASE_IDX: Record<TaskPhase, number> = Object.fromEntries(
-  PHASE_ORDER.map((p, i) => [p, i]),
-) as Record<TaskPhase, number>
-
-const MAX_PHASE_AT_STAGE: Record<string, number> = {
-  contacto_inicial: 0,
-  visitas: 2,
-  negociacion: 3,
-  promesa_firmada: 5,
-  tramite_bancario: 6,
-  escritura_publica: 6,
-  entrega_llaves: 7,
-  post_cierre: 8,
-  closed_won: 8,
-  closed_lost: 8,
+const STAGE_FULL_LABEL: Record<Stage, string> = {
+  contacto_inicial: 'Contacto inicial',
+  visitas: 'Visitas',
+  negociacion: 'Negociación',
+  promesa_firmada: 'Promesa firmada',
+  tramite_bancario: 'Trámite bancario',
+  escritura_publica: 'Escritura pública',
+  entrega_llaves: 'Entrega de llaves',
+  post_cierre: 'Post cierre',
 }
 
-const STATUS_PRIORITY: Record<string, number> = {
-  escalated: 4,
-  open: 3,
-  done: 2,
-  skipped: 1,
+const STAGE_STEPS: Record<Stage, number[]> = {
+  contacto_inicial: [1, 2, 3, 4],
+  visitas: [5, 6, 7, 8, 9],
+  negociacion: [10, 35],
+  promesa_firmada: [11, 12, 13, 14, 15, 16, 17, 18, 19],
+  tramite_bancario: [20, 21, 22],
+  escritura_publica: [23, 24, 25, 26],
+  entrega_llaves: [27, 28],
+  post_cierre: [29, 30, 31, 32, 33, 34],
 }
 
-type TaskRow = { step_number: number; title: string; status: string }
+type TaskRow = { step_number: number; status: string }
 
 type Props = {
+  dealId: string
   dealStage: string
+  stageEnteredAt: string | null
   tasks: TaskRow[]
   leadFirstName: string
+  isClosed?: boolean
 }
 
-function bestTaskPerStep(tasks: TaskRow[]): Map<number, TaskRow> {
-  const m = new Map<number, TaskRow>()
-  for (const t of tasks) {
-    const prev = m.get(t.step_number)
-    if (!prev || (STATUS_PRIORITY[t.status] ?? 0) > (STATUS_PRIORITY[prev.status] ?? 0)) {
-      m.set(t.step_number, t)
-    }
-  }
-  return m
+function stageStatus(stage: Stage, currentStage: string): 'past' | 'current' | 'future' {
+  const idx = STAGES.indexOf(stage)
+  const curIdx = STAGES.indexOf(currentStage as Stage)
+
+  if (currentStage === 'closed_won' || currentStage === 'closed_lost') return 'past'
+  if (curIdx === -1) return 'future'
+
+  if (idx < curIdx) return 'past'
+  if (idx === curIdx) return 'current'
+  return 'future'
 }
 
-export function OperacionTaskPipeline({ dealStage, tasks, leadFirstName }: Props) {
-  const taskMap = bestTaskPerStep(tasks)
-  const maxPhase = MAX_PHASE_AT_STAGE[dealStage] ?? 0
+function daysSince(iso: string | null): number | null {
+  if (!iso) return null
+  const ms = Date.now() - new Date(iso).getTime()
+  return Math.max(0, Math.floor(ms / 86_400_000))
+}
 
-  const ctx: TaskContext = {
-    firstName: leadFirstName,
-    leadName: leadFirstName,
+
+export function OperacionTaskPipeline({
+  dealId,
+  dealStage,
+  stageEnteredAt,
+  tasks,
+  leadFirstName,
+  isClosed,
+}: Props) {
+  const router = useRouter()
+  const [pending, startTransition] = useTransition()
+
+  const taskByStep = new Map(tasks.map((t) => [t.step_number, t]))
+  const ctx: TaskContext = { firstName: leadFirstName, leadName: leadFirstName }
+
+  const days = daysSince(stageEnteredAt)
+  const currentStage = STAGES.includes(dealStage as Stage)
+    ? (dealStage as Stage)
+    : null
+  const currentStepNumbers = currentStage ? STAGE_STEPS[currentStage] : []
+  const currentDoneCount = currentStepNumbers.filter(
+    (n) => taskByStep.get(n)?.status === 'done',
+  ).length
+
+  function handleStageClick(stage: Stage) {
+    if (isClosed || pending || stage === dealStage) return
+    startTransition(async () => {
+      const res = await updateDealStage(dealId, stage)
+      if (!res?.error) router.refresh()
+    })
   }
-
-  const groups = PHASE_ORDER.map((phase) => {
-    const reached = PHASE_IDX[phase] <= maxPhase
-    const steps = TASK_CATALOG.filter((e) => e.phase === phase)
-      .sort((a, b) => a.stepNumber - b.stepNumber)
-      .map((entry) => {
-        const task = taskMap.get(entry.stepNumber)
-        let title: string
-        try {
-          title = task?.title ?? entry.titleTemplate(ctx)
-        } catch {
-          title = entry.description
-        }
-        return {
-          stepNumber: entry.stepNumber,
-          title,
-          status: (task?.status ?? 'future') as
-            | 'done'
-            | 'open'
-            | 'escalated'
-            | 'skipped'
-            | 'future',
-        }
-      })
-
-    const doneCount = steps.filter((s) => s.status === 'done').length
-
-    return { phase, reached, steps, doneCount }
-  })
 
   return (
-    <section className="rounded-[12px] border border-bone bg-paper overflow-hidden">
-      <div className="px-4 pt-3.5 pb-2.5 border-b border-bone-soft">
+    <section className="rounded-[12px] border border-bone bg-paper overflow-visible">
+      <div className="px-4 pt-3.5 pb-2.5 border-b border-bone-soft flex items-center justify-between">
         <h3 className="font-mono text-[10px] tracking-[1.4px] uppercase text-steel">
           Pipeline
         </h3>
+        {pending && (
+          <span className="font-mono text-[10px] uppercase tracking-[1px] text-steel-soft">
+            Actualizando…
+          </span>
+        )}
       </div>
 
-      <div className="px-4 py-3 space-y-3">
-        {groups.map(({ phase, reached, steps, doneCount }) => {
-          const allDone = doneCount === steps.length && doneCount > 0
+      <div className={`px-4 py-5 ${pending ? 'opacity-60' : ''}`}>
+        <div className="relative flex items-start min-w-[560px] sm:min-w-0 overflow-x-auto sm:overflow-visible">
+          <div
+            className="absolute top-[10px] h-px bg-bone pointer-events-none"
+            style={{ left: 'calc(100% / 16)', right: 'calc(100% / 16)' }}
+          />
 
-          return (
-            <div key={phase} className={reached ? '' : 'opacity-30'}>
-              {/* Phase header */}
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-mono text-[10px] tracking-[1.2px] uppercase text-steel">
-                  {PHASE_LABEL[phase]}
-                </span>
-                <span className="font-mono text-[10px] text-steel-soft tabular-nums">
-                  {doneCount}/{steps.length}
-                </span>
-                {allDone && (
-                  <Check
-                    className="h-[10px] w-[10px] text-green-mark"
-                    strokeWidth={2.5}
-                  />
+          {STAGES.map((stage) => {
+            const status = stageStatus(stage, dealStage)
+            const stepNumbers = STAGE_STEPS[stage]
+            const doneCount = stepNumbers.filter(
+              (n) => taskByStep.get(n)?.status === 'done',
+            ).length
+
+            return (
+              <StageCell
+                key={stage}
+                stage={stage}
+                status={status}
+                stepNumbers={stepNumbers}
+                doneCount={doneCount}
+                ctx={ctx}
+                taskByStep={taskByStep}
+                onClick={() => handleStageClick(stage)}
+                disabled={isClosed || pending}
+              />
+            )
+          })}
+        </div>
+
+        {currentStage && (
+          <div className="mt-5 pt-4 border-t border-bone-soft">
+            <div className="flex items-baseline justify-between mb-2.5">
+              <span className="font-mono text-[10px] tracking-[1.2px] uppercase text-signal-deep">
+                {STAGE_FULL_LABEL[currentStage]}
+                {days != null && (
+                  <span className="ml-2 text-steel-soft">· Día {days}</span>
                 )}
-              </div>
-
-              {/* Steps */}
-              <ul className="space-y-px">
-                {steps.map((step) => (
+              </span>
+              <span className="font-mono text-[10px] tabular-nums text-steel-soft">
+                {currentDoneCount}/{currentStepNumbers.length}
+              </span>
+            </div>
+            <ul className="space-y-1.5">
+              {currentStepNumbers.map((n) => {
+                const entry = TASK_CATALOG.find((e) => e.stepNumber === n)
+                if (!entry) return null
+                const taskStatus = taskByStep.get(n)?.status
+                const isDone = taskStatus === 'done'
+                const isActive =
+                  taskStatus === 'open' || taskStatus === 'escalated'
+                let title: string
+                try {
+                  title = entry.titleTemplate(ctx)
+                } catch {
+                  title = entry.description
+                }
+                return (
                   <li
-                    key={step.stepNumber}
-                    className="flex items-start gap-2 py-[3px]"
+                    key={n}
+                    className="flex items-start gap-2 text-[12px] leading-[16px]"
                   >
-                    <StepDot status={step.status} />
+                    <StepIcon isDone={isDone} isActive={isActive} />
                     <span
-                      className={`text-[11px] leading-[15px] line-clamp-1 ${
-                        step.status === 'done'
-                          ? 'text-steel-soft'
-                          : step.status === 'open' || step.status === 'escalated'
-                            ? 'text-ink'
+                      className={
+                        isDone
+                          ? 'text-steel'
+                          : isActive
+                            ? 'text-ink font-medium'
                             : 'text-steel-soft'
-                      }`}
+                      }
                     >
-                      {step.title}
+                      {title}
                     </span>
                   </li>
-                ))}
-              </ul>
-            </div>
-          )
-        })}
+                )
+              })}
+            </ul>
+          </div>
+        )}
       </div>
     </section>
   )
 }
 
-function StepDot({ status }: { status: string }) {
-  const base = 'mt-[2px] shrink-0'
+function StageCell({
+  stage,
+  status,
+  stepNumbers,
+  doneCount,
+  ctx,
+  taskByStep,
+  onClick,
+  disabled,
+}: {
+  stage: Stage
+  status: 'past' | 'current' | 'future'
+  stepNumbers: number[]
+  doneCount: number
+  ctx: TaskContext
+  taskByStep: Map<number, TaskRow>
+  onClick: () => void
+  disabled: boolean
+}) {
+  const label = STAGE_LABEL[stage]
+  const interactive = !disabled && status !== 'current'
 
-  switch (status) {
-    case 'done':
-      return (
-        <Check
-          className={`h-[11px] w-[11px] text-green-mark ${base}`}
-          strokeWidth={2.5}
+  const cellClass = `flex-1 flex flex-col items-center min-w-0 relative z-10 group ${
+    interactive
+      ? 'cursor-pointer'
+      : status === 'current'
+        ? 'cursor-default'
+        : 'cursor-not-allowed'
+  }`
+
+  if (status === 'past') {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className={cellClass}
+        title={`Volver a ${STAGE_FULL_LABEL[stage]}`}
+      >
+        <div className="h-[20px] w-[20px] rounded-full bg-ink flex items-center justify-center transition-transform group-hover:scale-110">
+          <Check className="h-[12px] w-[12px] text-paper" strokeWidth={3} />
+        </div>
+        <span className="mt-2 text-[11px] text-steel text-center px-1 line-clamp-1 group-hover:text-ink">
+          {label}
+        </span>
+
+        <StagePopup
+          stage={stage}
+          stepNumbers={stepNumbers}
+          doneCount={doneCount}
+          ctx={ctx}
+          taskByStep={taskByStep}
         />
-      )
-    case 'open':
-      return (
-        <Circle
-          className={`h-[11px] w-[11px] text-signal fill-signal ${base}`}
-          strokeWidth={0}
-        />
-      )
-    case 'escalated':
-      return (
-        <AlertTriangle
-          className={`h-[11px] w-[11px] text-signal ${base}`}
-          strokeWidth={2}
-        />
-      )
-    case 'skipped':
-      return (
-        <Minus
-          className={`h-[11px] w-[11px] text-steel-soft ${base}`}
-          strokeWidth={2}
-        />
-      )
-    default:
-      return (
-        <Circle
-          className={`h-[11px] w-[11px] text-bone ${base}`}
-          strokeWidth={1.5}
-        />
-      )
+      </button>
+    )
   }
+
+  if (status === 'current') {
+    return (
+      <div className="flex-1 flex flex-col items-center min-w-0 relative z-10">
+        <div className="h-[20px] w-[20px] rounded-full bg-signal flex items-center justify-center ring-4 ring-signal-soft">
+          <span className="h-[6px] w-[6px] rounded-full bg-paper" />
+        </div>
+        <span className="mt-2 text-[11px] font-medium text-signal-deep text-center px-1 line-clamp-1">
+          {label}
+        </span>
+      </div>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cellClass}
+      title={`Avanzar a ${STAGE_FULL_LABEL[stage]}`}
+    >
+      <div className="h-[20px] w-[20px] rounded-full border-[1.5px] border-bone bg-paper transition-colors group-hover:border-ink" />
+      <span className="mt-2 text-[11px] text-steel-soft text-center px-1 line-clamp-1 group-hover:text-ink">
+        {label}
+      </span>
+
+      <StagePopup
+        stage={stage}
+        stepNumbers={stepNumbers}
+        doneCount={doneCount}
+        ctx={ctx}
+        taskByStep={taskByStep}
+      />
+    </button>
+  )
+}
+
+function StagePopup({
+  stage,
+  stepNumbers,
+  doneCount,
+  ctx,
+  taskByStep,
+}: {
+  stage: Stage
+  stepNumbers: number[]
+  doneCount: number
+  ctx: TaskContext
+  taskByStep: Map<number, TaskRow>
+}) {
+  return (
+    <div className="hidden group-hover:block absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[280px] rounded-[8px] border border-bone bg-paper p-3 z-50 text-left">
+      <div className="flex items-center justify-between mb-2">
+        <span className="font-mono text-[10px] tracking-[1.2px] uppercase text-steel">
+          {STAGE_FULL_LABEL[stage]}
+        </span>
+        <span className="font-mono text-[10px] tabular-nums text-steel-soft">
+          {doneCount}/{stepNumbers.length}
+        </span>
+      </div>
+      <ul className="space-y-1">
+        {stepNumbers.map((n) => {
+          const entry = TASK_CATALOG.find((e) => e.stepNumber === n)
+          if (!entry) return null
+          const taskStatus = taskByStep.get(n)?.status
+          const isDone = taskStatus === 'done'
+          const isActive = taskStatus === 'open' || taskStatus === 'escalated'
+          let title: string
+          try {
+            title = entry.titleTemplate(ctx)
+          } catch {
+            title = entry.description
+          }
+          return (
+            <li
+              key={n}
+              className="flex items-start gap-1.5 text-[11px] leading-[15px]"
+            >
+              <StepIcon isDone={isDone} isActive={isActive} />
+              <span
+                className={
+                  isDone
+                    ? 'line-clamp-2 text-steel'
+                    : isActive
+                      ? 'line-clamp-2 text-ink'
+                      : 'line-clamp-2 text-steel-soft'
+                }
+              >
+                {title}
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
+  )
+}
+
+function StepIcon({ isDone, isActive }: { isDone: boolean; isActive: boolean }) {
+  if (isDone) {
+    return (
+      <span className="shrink-0 mt-[2px] h-[12px] w-[12px] rounded-full bg-ink flex items-center justify-center">
+        <Check className="h-[8px] w-[8px] text-paper" strokeWidth={3} />
+      </span>
+    )
+  }
+  if (isActive) {
+    return (
+      <span className="shrink-0 mt-[2px] h-[12px] w-[12px] rounded-full bg-signal" />
+    )
+  }
+  return (
+    <Circle
+      className="shrink-0 mt-[2px] h-[12px] w-[12px] text-bone"
+      strokeWidth={1.5}
+    />
+  )
 }

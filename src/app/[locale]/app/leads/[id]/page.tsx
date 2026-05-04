@@ -16,6 +16,10 @@ import { TaskList } from './task-list'
 import { ScheduleVisitButton } from './schedule-visit-button'
 import { ConversationPanel } from './conversation-panel'
 import { getOpenTasksForLead } from '@/lib/tasks/trigger-engine'
+import {
+  LeadDocumentsPanel,
+  type LeadDocumentRow,
+} from '@/components/documents/lead-documents-panel'
 import type { Database } from '@/lib/database.types'
 
 type Lead = Database['public']['Tables']['leads']['Row']
@@ -170,6 +174,24 @@ export default async function LeadDetailPage({
 
   const lead = leadRes.data
   if (!lead) notFound()
+
+  const { data: complianceChecks } = await supabase
+    .from('compliance_checks')
+    .select('id')
+    .eq('lead_id', id)
+    .returns<Array<{ id: string }>>()
+
+  const checkIds = (complianceChecks ?? []).map((c) => c.id)
+  const { data: complianceDocs } =
+    checkIds.length > 0
+      ? await supabase
+          .from('compliance_documents')
+          .select(
+            'id, code, kind, name, category, status, file_path, file_name, uploaded_at, verified_at',
+          )
+          .in('check_id', checkIds)
+          .returns<LeadDocumentRow[]>()
+      : { data: [] as LeadDocumentRow[] }
 
   const allProperties = propertiesRes.data ?? []
   const property = lead.property_id
@@ -389,6 +411,9 @@ export default async function LeadDetailPage({
               />
             </div>
           </section>
+
+          {/* Documents */}
+          <LeadDocumentsPanel documents={complianceDocs ?? []} />
         </div>
 
         {/* ── Sidebar ── */}
