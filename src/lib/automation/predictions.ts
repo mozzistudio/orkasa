@@ -1,23 +1,29 @@
 import { createClient } from '@/lib/supabase/server'
 
+const COMMISSION_RATE = 0.025
+
 export type DealPrediction = {
   dealId: string
   leadId: string
   leadName: string
   propertyTitle: string | null
   amount: number
+  commission: number
   stage: string
   daysInStage: number
   probability: number
   weightedAmount: number
   atRisk: boolean
   riskReason: string | null
+  nextTaskTitle: string | null
+  nextTaskPhase: string | null
 }
 
 export type ForecastSummary = {
   predictions: DealPrediction[]
   totalPipelineValue: number
   weightedForecast: number
+  totalCommission: number
   atRiskCount: number
   atRiskValue: number
 }
@@ -122,7 +128,7 @@ export async function getPipelineForecast(
     .map((d) => d.property_id)
     .filter((id): id is string => !!id)
 
-  const [leadsRes, propertiesRes] = await Promise.all([
+  const [leadsRes, propertiesRes, nextTasksRes] = await Promise.all([
     supabase
       .from('leads')
       .select('id, full_name, ai_score')
@@ -137,10 +143,35 @@ export async function getPipelineForecast(
           .in('id', propertyIds)
           .returns<Array<{ id: string; title: string }>>()
       : { data: [] },
+    supabase
+      .from('tasks')
+      .select('lead_id, step_number, title, phase, due_at')
+      .in('lead_id', leadIds)
+      .in('status', ['open', 'escalated'])
+      .order('step_number', { ascending: true })
+      .returns<
+        Array<{
+          lead_id: string
+          step_number: number
+          title: string
+          phase: string
+          due_at: string | null
+        }>
+      >(),
   ])
 
   const leadById = new Map((leadsRes.data ?? []).map((l) => [l.id, l]))
   const propById = new Map((propertiesRes.data ?? []).map((p) => [p.id, p]))
+
+  const nextTaskByLead = new Map<
+    string,
+    { title: string; phase: string }
+  >()
+  for (const t of nextTasksRes.data ?? []) {
+    if (!nextTaskByLead.has(t.lead_id)) {
+      nextTaskByLead.set(t.lead_id, { title: t.title, phase: t.phase })
+    }
+  }
 
   const predictions: DealPrediction[] = deals.map((d) => {
     const lead = leadById.get(d.lead_id)
@@ -154,6 +185,7 @@ export async function getPipelineForecast(
     )
     const amount = Number(d.amount ?? 0)
     const risk = detectRisk(d.stage, daysInStage)
+    const nextTask = nextTaskByLead.get(d.lead_id) ?? null
 
     return {
       dealId: d.id,
@@ -161,28 +193,33 @@ export async function getPipelineForecast(
       leadName: lead?.full_name ?? 'Lead',
       propertyTitle: prop?.title ?? null,
       amount,
+      commission: Math.round(amount * COMMISSION_RATE),
       stage: d.stage,
       daysInStage,
       probability,
       weightedAmount: Math.round(amount * (probability / 100)),
       atRisk: risk.atRisk,
       riskReason: risk.reason,
+      nextTaskTitle: nextTask?.title ?? null,
+      nextTaskPhase: nextTask?.phase ?? null,
     }
   })
 
-  predictions.sort((a, b) => b.weightedAmount - a.weightedAmount)
+  predictions.sort((a, b) => b.commission - a.commission)
 
   const totalPipelineValue = predictions.reduce((s, p) => s + p.amount, 0)
   const weightedForecast = predictions.reduce(
     (s, p) => s + p.weightedAmount,
     0,
   )
+  const totalCommission = predictions.reduce((s, p) => s + p.commission, 0)
   const atRiskItems = predictions.filter((p) => p.atRisk)
 
   return {
     predictions,
     totalPipelineValue,
     weightedForecast,
+    totalCommission,
     atRiskCount: atRiskItems.length,
     atRiskValue: atRiskItems.reduce((s, p) => s + p.amount, 0),
   }

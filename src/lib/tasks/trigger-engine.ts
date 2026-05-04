@@ -130,6 +130,29 @@ async function buildTriggerContext(
     deal = data
   }
 
+  const { data: providerRows } = await supabase
+    .from('providers')
+    .select('name, phone, service_type')
+    .eq('brokerage_id', payload.brokerageId)
+    .in('service_type', ['notario', 'abogado', 'tasador', 'banco'])
+    .order('is_primary', { ascending: false })
+    .order('updated_at', { ascending: false })
+    .returns<Array<{ name: string; phone: string | null; service_type: string }>>()
+
+  const providerByType = new Map<
+    string,
+    { name: string; phone: string | null }
+  >()
+  for (const p of providerRows ?? []) {
+    if (!providerByType.has(p.service_type)) {
+      providerByType.set(p.service_type, { name: p.name, phone: p.phone })
+    }
+  }
+  const notaryRow = providerByType.get('notario') ?? null
+  const lawyerRow = providerByType.get('abogado') ?? null
+  const appraiserRow = providerByType.get('tasador') ?? null
+  const bankerRow = providerByType.get('banco') ?? null
+
   const daysSinceClosed = deal?.closed_at
     ? Math.floor((Date.now() - new Date(deal.closed_at).getTime()) / 86_400_000)
     : null
@@ -148,6 +171,10 @@ async function buildTriggerContext(
     property,
     deal,
     offer,
+    notary: notaryRow,
+    lawyer: lawyerRow,
+    appraiser: appraiserRow,
+    banker: bankerRow,
     existingOpenSteps: (openTasksRes.data ?? []).map((t) => t.step_number),
     daysSinceClosed,
     lastDoneStepDates,
@@ -174,6 +201,14 @@ function buildTaskContext(ctx: TriggerContext): TaskContext {
     offerLink: ctx.offer?.public_token
       ? `${getAppUrl()}/offer/${ctx.offer.public_token}/pdf`
       : undefined,
+    notaryName: ctx.notary?.name ?? undefined,
+    notaryPhone: ctx.notary?.phone ?? undefined,
+    lawyerName: ctx.lawyer?.name ?? undefined,
+    lawyerPhone: ctx.lawyer?.phone ?? undefined,
+    appraiserName: ctx.appraiser?.name ?? undefined,
+    appraiserPhone: ctx.appraiser?.phone ?? undefined,
+    bankerName: ctx.banker?.name ?? undefined,
+    bankerPhone: ctx.banker?.phone ?? undefined,
   }
 
   const meta = ctx.lead.metadata

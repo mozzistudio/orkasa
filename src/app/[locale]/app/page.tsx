@@ -8,7 +8,7 @@ import { TodoListPanel } from '@/components/dashboard/todo-list-panel'
 import { CoolingLeadsPanel } from '@/components/dashboard/cooling-leads-panel'
 import { PropertiesAttentionPanel } from '@/components/dashboard/properties-attention-panel'
 import { TeamPerformanceTable } from '@/components/dashboard/team-performance-table'
-import { PipelinePredictions } from '@/components/dashboard/pipeline-predictions'
+import { ActiveOperations } from '@/components/dashboard/active-operations'
 import {
   getPipelineSnapshot,
   getUpcomingViewings,
@@ -71,6 +71,7 @@ export default async function HomePage() {
         predictions: [],
         totalPipelineValue: 0,
         weightedForecast: 0,
+        totalCommission: 0,
         atRiskCount: 0,
         atRiskValue: 0,
       }
@@ -90,10 +91,10 @@ export default async function HomePage() {
         <PipelineHero data={pipeline} />
       </Suspense>
 
-      {/* AI Pipeline Predictions */}
+      {/* Active Operations */}
       <div className="mb-7">
         <Suspense fallback={<SectionSkeleton height="h-72" />}>
-          <PipelinePredictions forecast={forecast} />
+          <ActiveOperations forecast={forecast} />
         </Suspense>
       </div>
 

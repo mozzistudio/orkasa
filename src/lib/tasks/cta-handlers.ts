@@ -15,6 +15,9 @@ import {
   askPepRelationship,
   requestSellerDocs,
   promesaDraft,
+  notifyLawyerExpediente,
+  coordinateAppraisal,
+  coordinateNotaryEscritura,
   thankYouAndReview,
   escrituraRegistered,
   welcomeNewOwner,
@@ -82,6 +85,22 @@ function buildWhatsAppMessage(
     }
     case 'promesaDraft':
       return promesaDraft(clientName, propertyTitle)
+    case 'coordinateNotaryEscritura': {
+      const notaryName = (meta.notaryName as string) ?? ''
+      const buyerFullName = (meta.leadFullName as string) ?? clientName
+      return coordinateNotaryEscritura(notaryName, buyerFullName, propertyTitle)
+    }
+    case 'notifyLawyerExpediente': {
+      const lawyerName = (meta.lawyerName as string) ?? ''
+      const buyerFullName = (meta.leadFullName as string) ?? clientName
+      return notifyLawyerExpediente(lawyerName, buyerFullName, propertyTitle)
+    }
+    case 'coordinateAppraisal': {
+      const contactName =
+        (meta.appraiserName as string) ?? (meta.bankerName as string) ?? ''
+      const ownerName = (meta.ownerName as string) ?? ''
+      return coordinateAppraisal(contactName, propertyTitle, ownerName)
+    }
     case 'thankYouAndReview':
       return thankYouAndReview(clientName, propertyTitle)
     case 'escrituraRegistered':
@@ -223,6 +242,47 @@ export function getCtaLabel(action: CtaAction): string {
     case 'navigate':
       return 'Ver'
   }
+}
+
+export function resolveCtaPhone(
+  metadata: Record<string, unknown>,
+  fallbackPhone: string | null = null,
+): string | null {
+  // If the metadata builder set the phone key explicitly (even to null), trust
+  // it — the WhatsApp/call is for a specific contact (notary, lawyer, owner)
+  // and the lead's phone would reach the wrong person.
+  if ('phone' in metadata) {
+    const v = metadata.phone
+    return typeof v === 'string' && v.length > 0 ? v : null
+  }
+  return fallbackPhone
+}
+
+export function isCtaActionable(
+  action: CtaAction,
+  metadata: Record<string, unknown>,
+  fallbackPhone: string | null = null,
+): boolean {
+  if (action === 'open_whatsapp' || action === 'open_call') {
+    return resolveCtaPhone(metadata, fallbackPhone) !== null
+  }
+  return true
+}
+
+export function getCtaUnavailableReason(
+  action: CtaAction,
+  metadata: Record<string, unknown>,
+): string {
+  const target = metadata.target as string | undefined
+  if (action === 'open_whatsapp' || action === 'open_call') {
+    if (target === 'notary') return 'Sin notario configurado en Proveedores'
+    if (target === 'lawyer') return 'Sin abogado configurado en Proveedores'
+    if (target === 'appraiser' || target === 'banker')
+      return 'Sin tasador / banco configurado en Proveedores'
+    if (target === 'seller') return 'Sin teléfono del vendedor en la propiedad'
+    return 'Sin teléfono disponible'
+  }
+  return ''
 }
 
 export function getCtaIcon(action: CtaAction): string {

@@ -20,6 +20,9 @@ import {
   executeCtaAction,
   getCtaIcon,
   getCtaLabel,
+  isCtaActionable,
+  getCtaUnavailableReason,
+  resolveCtaPhone,
 } from '@/lib/tasks/cta-handlers'
 import type { CtaCallbacks } from '@/lib/tasks/cta-handlers'
 import type { CtaAction } from '@/lib/tasks/types'
@@ -94,7 +97,8 @@ export function TodoListPanel({
       propertyId: task.property_id,
       dealId: task.deal_id,
       clientName: task.lead_name.split(' ')[0],
-      phone: task.cta_metadata.phone ?? task.lead_phone,
+      leadFullName: task.lead_name,
+      phone: resolveCtaPhone(task.cta_metadata, task.lead_phone),
     }
     executeCtaAction(task.cta_action as CtaAction, meta, callbacks)
   }
@@ -162,6 +166,17 @@ export function TodoListPanel({
           const u = urgency(task.due_at, task.status)
           const icon = getCtaIcon(task.cta_action as CtaAction)
           const label = getCtaLabel(task.cta_action as CtaAction)
+          const actionable = isCtaActionable(
+            task.cta_action as CtaAction,
+            task.cta_metadata,
+            task.lead_phone,
+          )
+          const unavailableReason = actionable
+            ? ''
+            : getCtaUnavailableReason(
+                task.cta_action as CtaAction,
+                task.cta_metadata,
+              )
           return (
             <li key={task.id} className="px-[18px] py-3">
               <div className="flex items-start justify-between gap-3">
@@ -195,7 +210,13 @@ export function TodoListPanel({
                   <button
                     type="button"
                     onClick={() => handleCta(task)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-[6px] bg-ink text-white text-[11px] font-medium hover:bg-coal transition-colors"
+                    disabled={!actionable}
+                    title={unavailableReason || undefined}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-[6px] text-[11px] font-medium transition-colors ${
+                      actionable
+                        ? 'bg-ink text-white hover:bg-coal'
+                        : 'bg-bone-soft text-steel cursor-not-allowed'
+                    }`}
                   >
                     <CtaIcon icon={icon} />
                     {label}

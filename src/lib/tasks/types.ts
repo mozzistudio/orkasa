@@ -69,6 +69,14 @@ export type TaskContext = {
   ownerName?: string
   ownerPhone?: string
   offerLink?: string
+  notaryName?: string
+  notaryPhone?: string
+  lawyerName?: string
+  lawyerPhone?: string
+  appraiserName?: string
+  appraiserPhone?: string
+  bankerName?: string
+  bankerPhone?: string
 }
 
 export type TriggerContext = TaskEventPayload & {
@@ -98,6 +106,22 @@ export type TriggerContext = TaskEventPayload & {
     amount: number
     currency: string
     public_token: string | null
+  } | null
+  notary?: {
+    name: string
+    phone: string | null
+  } | null
+  lawyer?: {
+    name: string
+    phone: string | null
+  } | null
+  appraiser?: {
+    name: string
+    phone: string | null
+  } | null
+  banker?: {
+    name: string
+    phone: string | null
   } | null
   existingOpenSteps: number[]
   /** Days since `deal.closed_at` (null if no deal or no close date). Used by
@@ -173,6 +197,9 @@ export type TaskWhatsAppTemplate =
   | 'askPepRelationship'
   | 'requestSellerDocs'
   | 'promesaDraft'
+  | 'notifyLawyerExpediente'
+  | 'coordinateAppraisal'
+  | 'coordinateNotaryEscritura'
   | 'thankYouAndReview'
   | 'escrituraRegistered'
   | 'welcomeNewOwner'

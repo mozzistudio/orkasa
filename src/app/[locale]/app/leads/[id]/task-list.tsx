@@ -14,7 +14,14 @@ import {
   X,
 } from 'lucide-react'
 import { completeTask, skipTask } from '../actions'
-import { executeCtaAction, getCtaLabel, getCtaIcon } from '@/lib/tasks/cta-handlers'
+import {
+  executeCtaAction,
+  getCtaLabel,
+  getCtaIcon,
+  isCtaActionable,
+  getCtaUnavailableReason,
+  resolveCtaPhone,
+} from '@/lib/tasks/cta-handlers'
 import type { CtaCallbacks } from '@/lib/tasks/cta-handlers'
 import type { TaskRow, CtaAction } from '@/lib/tasks/types'
 import { ScheduleVisitModal } from '@/components/app/modals/schedule-visit-modal'
@@ -126,14 +133,17 @@ export function TaskList({ tasks, leadName, agentName, phone, propertyPrice }: P
   }
 
   function handleCta(task: TaskRow) {
+    const cta = (task.cta_metadata ?? {}) as Record<string, unknown>
     const meta = {
-      ...((task.cta_metadata ?? {}) as Record<string, unknown>),
+      ...cta,
       taskId: task.id,
       leadId: task.lead_id,
       propertyId: task.property_id,
       dealId: task.deal_id,
       clientName: leadName.split(' ')[0],
+      leadFullName: leadName,
       agentName,
+      phone: resolveCtaPhone(cta, phone ?? null),
     }
     executeCtaAction(task.cta_action as CtaAction, meta, callbacks)
   }
@@ -189,6 +199,17 @@ export function TaskList({ tasks, leadName, agentName, phone, propertyPrice }: P
               const urgency = urgencyFromDueAt(task.due_at, task.status)
               const icon = getCtaIcon(task.cta_action as CtaAction)
               const label = getCtaLabel(task.cta_action as CtaAction)
+              const actionable = isCtaActionable(
+                task.cta_action as CtaAction,
+                task.cta_metadata,
+                phone ?? null,
+              )
+              const unavailableReason = actionable
+                ? ''
+                : getCtaUnavailableReason(
+                    task.cta_action as CtaAction,
+                    task.cta_metadata,
+                  )
 
               return (
                 <div
@@ -213,7 +234,13 @@ export function TaskList({ tasks, leadName, agentName, phone, propertyPrice }: P
                   <div className="shrink-0 flex items-center gap-1.5">
                     <button
                       onClick={() => handleCta(task)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] bg-ink text-white text-[12px] font-medium hover:bg-coal transition-colors"
+                      disabled={!actionable}
+                      title={unavailableReason || undefined}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-[12px] font-medium transition-colors ${
+                        actionable
+                          ? 'bg-ink text-white hover:bg-coal'
+                          : 'bg-bone-soft text-steel cursor-not-allowed'
+                      }`}
                     >
                       <CtaIcon icon={icon} />
                       {label}

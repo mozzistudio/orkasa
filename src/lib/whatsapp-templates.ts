@@ -160,6 +160,36 @@ export function promesaDraft(clientName: string, propertyTitle: string): string 
   return `Hola ${clientName}, el abogado ya preparó el borrador de la promesa de compraventa del ${propertyTitle}. Te lo envío por email para que lo revises. Si tenés comentarios o dudas, me escribís y se los paso al abogado. Gracias!`
 }
 
+export function coordinateNotaryEscritura(
+  notaryName: string,
+  buyerName: string,
+  propertyTitle: string,
+): string {
+  const notarySalutation = notaryName ? `Hola ${notaryName}` : 'Buenas'
+  return `${notarySalutation}, te escribo de Orkasa. El préstamo del comprador ${buyerName} para el ${propertyTitle} fue aprobado oficialmente por el banco. ¿Cuándo podemos coordinar la firma de la escritura pública? Pasame un par de fechas tentativas y confirmo con las partes. Gracias!`
+}
+
+export function notifyLawyerExpediente(
+  lawyerName: string,
+  buyerName: string,
+  propertyTitle: string,
+): string {
+  const salutation = lawyerName ? `Hola ${lawyerName}` : 'Buenas'
+  return `${salutation}, te escribo de Orkasa. El expediente de cumplimiento del comprador ${buyerName} para el ${propertyTitle} ya está completo y verificado. ¿Podés empezar a redactar el borrador de la promesa de compraventa? Te paso los documentos por email — avisame si necesitás algo más. Gracias!`
+}
+
+export function coordinateAppraisal(
+  contactName: string,
+  propertyTitle: string,
+  ownerName: string,
+): string {
+  const salutation = contactName ? `Hola ${contactName}` : 'Buenas'
+  const ownerLine = ownerName
+    ? `El propietario ${ownerName} está al tanto y disponible para coordinar el acceso.`
+    : 'Coordinamos con el propietario el acceso una vez tengamos fecha.'
+  return `${salutation}, te escribo de Orkasa. Necesitamos agendar el avalúo de la propiedad ${propertyTitle} para avanzar con el trámite bancario. ¿Qué fechas tenés disponibles esta semana o la próxima? ${ownerLine} Gracias!`
+}
+
 export function thankYouAndReview(clientName: string, propertyTitle: string): string {
   return `Hola ${clientName}, felicidades por tu nuevo hogar! 🏠 Fue un placer acompañarte en todo el proceso del ${propertyTitle}. Si tenés un minuto, me ayudaría mucho que dejes una reseña en Google — tu experiencia ayuda a otros compradores a confiar en nosotros. Gracias de corazón!`
 }
@@ -196,27 +226,3 @@ export function requestReferral(clientName: string, agentName: string): string {
   return `Hola ${clientName}, soy ${agentName} de Orkasa. Si conocés a alguien que esté buscando propiedad, me encantaría que me lo refieras. Voy a darle la misma atención y dedicación que tuvimos en tu proceso. Gracias!`
 }
 
-export type TaskWhatsAppTemplate =
-  | 'firstContact'
-  | 'sendPropertyOptions'
-  | 'noResponseReminder48h'
-  | 'visitInvitation'
-  | 'preVisitReminder'
-  | 'postVisitFollowUp'
-  | 'offerPresentation'
-  | 'offerAccepted'
-  | 'requestIdentityDocs'
-  | 'requestPayslips'
-  | 'requestBankStatements'
-  | 'askPepRelationship'
-  | 'requestSellerDocs'
-  | 'promesaDraft'
-  | 'thankYouAndReview'
-  | 'escrituraRegistered'
-  | 'welcomeNewOwner'
-  | 'followUp1Month'
-  | 'followUp3Months'
-  | 'followUp6Months'
-  | 'anniversary1Year'
-  | 'annualCheckIn'
-  | 'requestReferral'

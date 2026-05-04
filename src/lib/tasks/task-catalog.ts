@@ -297,10 +297,17 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     stepNumber: 17,
     phase: 'cierre_legal',
     titleTemplate: (ctx) =>
-      `Expediente de ${firstName(ctx)} completo — notificar al abogado para redactar la promesa de compraventa`,
+      `Expediente de ${firstName(ctx)} completo — notificar a ${ctx.lawyerName ? `${ctx.lawyerName}` : 'el abogado'} para redactar la promesa de compraventa`,
     description:
       'Todos los documentos están verificados. Enviar el expediente al abogado para que prepare el borrador de promesa.',
-    ctaAction: 'mark_done',
+    ctaAction: 'open_whatsapp',
+    ctaMetadataBuilder: (ctx) => ({
+      phone: ctx.lawyerPhone ?? null,
+      lawyerName: ctx.lawyerName ?? null,
+      propertyTitle: ctx.propertyTitle ?? null,
+      target: 'lawyer',
+    }),
+    whatsappTemplate: 'notifyLawyerExpediente',
     dueDaysOffset: 2,
     escalationDaysOffset: 7,
     triggerEvents: ['compliance_approved'],
@@ -345,11 +352,23 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
   {
     stepNumber: 20,
     phase: 'tramite_bancario',
-    titleTemplate: (ctx) =>
-      `Coordinar visita de avalúo del banco para ${ctx.propertyTitle ?? 'la propiedad'}`,
+    titleTemplate: (ctx) => {
+      const contact =
+        ctx.appraiserName ?? ctx.bankerName ?? 'el tasador del banco'
+      return `Coordinar avalúo de ${ctx.propertyTitle ?? 'la propiedad'} con ${contact}`
+    },
     description:
-      'Avisar al dueño, confirmar la dirección y coordinar la cita del perito bancario.',
-    ctaAction: 'schedule_visit',
+      'Coordinar la cita del perito bancario por WhatsApp y luego confirmar el acceso con el dueño.',
+    ctaAction: 'open_whatsapp',
+    ctaMetadataBuilder: (ctx) => ({
+      phone: ctx.appraiserPhone ?? ctx.bankerPhone ?? null,
+      appraiserName: ctx.appraiserName ?? null,
+      bankerName: ctx.bankerName ?? null,
+      ownerName: ctx.ownerName ?? null,
+      propertyTitle: ctx.propertyTitle ?? null,
+      target: ctx.appraiserPhone ? 'appraiser' : 'banker',
+    }),
+    whatsappTemplate: 'coordinateAppraisal',
     dueDaysOffset: 5,
     escalationDaysOffset: 14,
     triggerEvents: ['deal_stage_changed'],
@@ -377,10 +396,17 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     stepNumber: 22,
     phase: 'tramite_bancario',
     titleTemplate: (ctx) =>
-      `Préstamo aprobado — coordinar escritura pública con el notario para ${ctx.propertyTitle ?? 'la propiedad'}`,
+      `Préstamo aprobado — coordinar escritura pública con ${ctx.notaryName ? `el notario ${ctx.notaryName}` : 'el notario'} para ${ctx.propertyTitle ?? 'la propiedad'}`,
     description:
       'El banco aprobó el préstamo oficialmente. Coordinar con el notario la fecha de firma de la escritura.',
-    ctaAction: 'mark_done',
+    ctaAction: 'open_whatsapp',
+    ctaMetadataBuilder: (ctx) => ({
+      phone: ctx.notaryPhone ?? null,
+      notaryName: ctx.notaryName ?? null,
+      propertyTitle: ctx.propertyTitle ?? null,
+      target: 'notary',
+    }),
+    whatsappTemplate: 'coordinateNotaryEscritura',
     dueDaysOffset: 3,
     escalationDaysOffset: 7,
     triggerEvents: ['deal_stage_changed'],
