@@ -42,6 +42,7 @@ export function Footer() {
       links: [
         { label: t('docs'), href: '/recursos' },
         { label: t('api'), href: '/recursos' },
+        { label: 'Méthodologie broker', href: '/methodologie' },
         { label: t('status'), href: 'https://status.orkasa.io', external: true },
       ],
     },
