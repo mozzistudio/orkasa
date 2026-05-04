@@ -27,25 +27,23 @@ function str(formData: FormData, key: string): string | null {
   return v.length > 0 ? v : null
 }
 
-async function getBrokerageId(): Promise<{
-  brokerageId: string
-  error?: undefined
-} | {
-  brokerageId?: undefined
-  error: string
-}> {
+type BrokerageAuth =
+  | { ok: true; brokerageId: string }
+  | { ok: false; error: string }
+
+async function getBrokerageId(): Promise<BrokerageAuth> {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated' }
+  if (!user) return { ok: false, error: 'Not authenticated' }
   const { data: agent } = await supabase
     .from('agents')
     .select('brokerage_id')
     .eq('id', user.id)
     .maybeSingle<{ brokerage_id: string | null }>()
-  if (!agent?.brokerage_id) return { error: 'No brokerage' }
-  return { brokerageId: agent.brokerage_id }
+  if (!agent?.brokerage_id) return { ok: false, error: 'No brokerage' }
+  return { ok: true, brokerageId: agent.brokerage_id }
 }
 
 export async function createProvider(
@@ -53,7 +51,7 @@ export async function createProvider(
 ): Promise<{ id?: string; error?: string }> {
   const supabase = await createClient()
   const auth = await getBrokerageId()
-  if (auth.error) return { error: auth.error }
+  if (!auth.ok) return { error: auth.error }
 
   const serviceType = (formData.get('service_type') as string) ?? ''
   if (!isValidServiceType(serviceType)) {
@@ -102,7 +100,7 @@ export async function updateProvider(
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
   const auth = await getBrokerageId()
-  if (auth.error) return { error: auth.error }
+  if (!auth.ok) return { error: auth.error }
 
   const serviceType = (formData.get('service_type') as string) ?? ''
   if (!isValidServiceType(serviceType)) {
@@ -149,7 +147,7 @@ export async function deleteProvider(
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
   const auth = await getBrokerageId()
-  if (auth.error) return { error: auth.error }
+  if (!auth.ok) return { error: auth.error }
 
   const { error } = await supabase
     .from('providers')
