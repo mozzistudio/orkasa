@@ -1,5 +1,5 @@
 function sanitizePhone(phone: string): string {
-  return phone.replace(/[^0-9+]/g, '')
+  return phone.replace(/[^0-9]/g, '')
 }
 
 export function buildReminderUrl(phone: string, message: string): string {

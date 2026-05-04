@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { ChevronLeft, Plus, Search } from 'lucide-react'
+import { ChevronLeft, Plus, Search, Upload } from 'lucide-react'
 import { Link, usePathname } from '@/i18n/navigation'
 import { CommandPaletteTrigger } from './command-palette'
 import { LogoMark } from '@/components/ui/logo'
@@ -157,10 +157,10 @@ export function Topbar() {
             </div>
             <Link
               href="/app/properties/new"
-              className="inline-flex items-center gap-1.5 h-9 rounded-[4px] border border-ink/15 bg-paper px-3 text-[13px] font-medium text-ink hover:bg-ink hover:text-paper hover:border-ink transition-colors md:px-3.5"
+              className="inline-flex items-center gap-1.5 h-9 rounded-[4px] border border-ink/15 bg-paper px-3 text-[13px] font-medium text-steel hover:text-ink hover:border-ink/30 transition-colors md:px-3.5"
               aria-label={t('uploadProperty')}
             >
-              <Plus className="h-4 w-4 md:h-3.5 md:w-3.5" strokeWidth={1.5} />
+              <Upload className="h-3.5 w-3.5" strokeWidth={1.5} />
               <span className="hidden md:inline">{t('uploadProperty')}</span>
             </Link>
           </>

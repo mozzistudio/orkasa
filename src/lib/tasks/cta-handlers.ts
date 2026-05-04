@@ -76,8 +76,10 @@ function buildWhatsAppMessage(
       return requestBankStatements(clientName, propertyTitle)
     case 'askPepRelationship':
       return askPepRelationship(clientName)
-    case 'requestSellerDocs':
-      return requestSellerDocs(clientName, propertyTitle)
+    case 'requestSellerDocs': {
+      const sellerName = (meta.ownerName as string) ?? 'propietario'
+      return requestSellerDocs(sellerName, propertyTitle)
+    }
     case 'promesaDraft':
       return promesaDraft(clientName, propertyTitle)
     case 'thankYouAndReview':

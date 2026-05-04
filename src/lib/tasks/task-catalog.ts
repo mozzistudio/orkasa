@@ -408,18 +408,11 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     },
     description:
       'Documentos que el vendedor debe entregar antes del cierre para garantizar que la propiedad está libre de deudas.',
-    ctaAction: 'request_doc',
+    ctaAction: 'open_whatsapp',
     ctaMetadataBuilder: (ctx) => {
       const isAptOrCondo =
         (ctx as TaskContext & { propertyType?: string }).propertyType === 'apartment' ||
         (ctx as TaskContext & { propertyType?: string }).propertyType === 'condo'
-      const codes = [
-        'paz_y_salvo_nacional',
-        'paz_y_salvo_municipal',
-        'registro_publico_libre_gravamenes',
-        'recibos_servicios_publicos',
-      ]
-      if (isAptOrCondo) codes.splice(2, 0, 'cuotas_mantenimiento')
       const realCodes = [
         'property_paz_idaan',
         'property_paz_imu',
@@ -428,7 +421,9 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
       ]
       if (isAptOrCondo) realCodes.push('property_paz_condo')
       return {
-        docCodes: codes,
+        phone: ctx.ownerPhone ?? null,
+        ownerName: ctx.ownerName ?? null,
+        propertyTitle: ctx.propertyTitle ?? null,
         target: 'seller',
         requiredDocCodesAll: realCodes,
       }

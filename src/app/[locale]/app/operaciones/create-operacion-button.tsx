@@ -142,8 +142,8 @@ export function CreateOperacionButton({
 
   const buttonClass =
     variant === 'primary'
-      ? 'inline-flex items-center gap-1.5 h-9 px-3.5 rounded-[4px] border border-ink/15 bg-paper text-ink text-[13px] font-medium hover:bg-ink hover:text-paper hover:border-ink transition-colors'
-      : 'inline-flex items-center gap-1.5 h-9 px-3 rounded-[4px] border border-ink/15 bg-paper text-ink text-[13px] font-medium hover:bg-ink hover:text-paper hover:border-ink transition-colors'
+      ? 'inline-flex items-center gap-1.5 h-9 px-3.5 rounded-[4px] bg-ink text-paper text-[13px] font-medium hover:bg-coal transition-colors'
+      : 'inline-flex items-center gap-1.5 h-9 px-3 rounded-[4px] bg-ink text-paper text-[13px] font-medium hover:bg-coal transition-colors'
 
   return (
     <>
