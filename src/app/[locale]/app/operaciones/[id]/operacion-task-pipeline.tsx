@@ -64,7 +64,7 @@ const STEP_SHORT_LABEL: Record<number, string> = {
   8: 'Seguimiento post-visita',
   10: 'Registrar oferta verbal',
   11: 'Recolectar expediente compliance',
-  16: 'Aclarar verificación',
+  16: 'Verificar PEP + sanciones',
   17: 'Notificar al abogado',
   18: 'Enviar borrador de promesa',
   19: 'Promesa firmada',
@@ -85,6 +85,8 @@ const STEP_SHORT_LABEL: Record<number, string> = {
   34: 'Check-in anual',
   35: 'Transmitir oferta al propietario',
   36: 'Pedir carta de pre-aprobación',
+  37: 'Avisar al propietario',
+  38: 'Avisar al cliente',
 }
 
 type TaskRow = { step_number: number; status: string }

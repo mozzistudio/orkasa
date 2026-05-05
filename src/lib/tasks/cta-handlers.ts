@@ -11,6 +11,8 @@ import {
   transmitOfferToOwner,
   offerAccepted,
   requestIdentityDocs,
+  notifyOwnerComplianceIssue,
+  notifyClientComplianceIssue,
   requestSellerDocs,
   promesaDraft,
   notifyLawyerExpediente,
@@ -73,6 +75,12 @@ function buildWhatsAppMessage(
       return offerAccepted(clientName, propertyTitle)
     case 'requestIdentityDocs':
       return requestIdentityDocs(clientName, propertyTitle)
+    case 'notifyOwnerComplianceIssue': {
+      const ownerName = (meta.ownerName as string) ?? ''
+      return notifyOwnerComplianceIssue(ownerName, propertyTitle)
+    }
+    case 'notifyClientComplianceIssue':
+      return notifyClientComplianceIssue(clientName, propertyTitle)
     case 'requestSellerDocs': {
       const sellerName = (meta.ownerName as string) ?? 'propietario'
       return requestSellerDocs(sellerName, propertyTitle)
@@ -195,6 +203,7 @@ export function executeCtaAction(
       break
 
     case 'post_visit_decision':
+    case 'pep_verification_decision':
       // Handled inline by the task row UI (two-button decision).
       break
 
@@ -224,6 +233,8 @@ const WHATSAPP_TEMPLATE_LABELS: Record<string, string> = {
   transmitOfferToOwner: 'Enviar oferta',
   offerAccepted: 'Avisar aceptación',
   requestIdentityDocs: 'Pedir cédula',
+  notifyOwnerComplianceIssue: 'Avisar al propietario',
+  notifyClientComplianceIssue: 'Avisar al cliente',
   requestSellerDocs: 'Pedir docs',
   promesaDraft: 'Enviar borrador',
   notifyLawyerExpediente: 'Avisar abogado',
@@ -264,6 +275,8 @@ export function getCtaLabel(
       return 'Revisar'
     case 'post_visit_decision':
       return 'Decidir'
+    case 'pep_verification_decision':
+      return 'Aprobar / Rechazar'
     case 'mark_done':
       return 'Listo'
     case 'navigate':
@@ -388,6 +401,8 @@ export function getCtaIcon(action: CtaAction): string {
       return 'shield'
     case 'post_visit_decision':
       return 'check'
+    case 'pep_verification_decision':
+      return 'shield'
     case 'mark_done':
       return 'check'
     case 'navigate':

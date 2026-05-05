@@ -27,6 +27,7 @@ import {
 import type { CtaCallbacks } from '@/lib/tasks/cta-handlers'
 import type { CtaAction } from '@/lib/tasks/types'
 import { PostVisitDecisionButtons } from '@/components/tasks/post-visit-decision-buttons'
+import { PepVerificationButtons } from '@/components/tasks/pep-verification-buttons'
 
 type TaskWithContext = {
   id: string
@@ -221,6 +222,18 @@ export function TaskPageList({ tasks }: { tasks: TaskWithContext[] }) {
                   {task.cta_action === 'post_visit_decision' ? (
                     <>
                       <PostVisitDecisionButtons taskId={task.id} />
+                      <button
+                        onClick={() => handleSkip(task.id)}
+                        className="inline-flex items-center gap-1 px-2 py-1.5 rounded-[6px] border border-bone text-steel hover:text-signal-deep hover:border-signal/30 transition-colors text-[11px]"
+                        title="Ignorar esta tarea"
+                      >
+                        <X className="h-3 w-3" strokeWidth={1.5} />
+                        Ignorar
+                      </button>
+                    </>
+                  ) : task.cta_action === 'pep_verification_decision' ? (
+                    <>
+                      <PepVerificationButtons taskId={task.id} />
                       <button
                         onClick={() => handleSkip(task.id)}
                         className="inline-flex items-center gap-1 px-2 py-1.5 rounded-[6px] border border-bone text-steel hover:text-signal-deep hover:border-signal/30 transition-colors text-[11px]"

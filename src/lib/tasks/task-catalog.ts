@@ -212,14 +212,14 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     stepNumber: 16,
     phase: 'cumplimiento',
     titleTemplate: (ctx) =>
-      `Verificación de ${firstName(ctx)} requiere aclaración — revisar con el equipo`,
+      `Verificar PEP y sanciones de ${firstName(ctx)}`,
     description:
-      'Se detectó una coincidencia en la verificación. Hay que aclarar la situación antes de continuar.',
-    ctaAction: 'open_compliance_check',
+      'Revisá la declaración PEP firmada y verificá que el cliente no aparece en listas de sanciones (OFAC, UN, EU). Aprobá si todo está limpio. Rechazá si hay un match — vamos a notificar al cliente y al propietario.',
+    ctaAction: 'pep_verification_decision',
     dueDaysOffset: 1,
     escalationDaysOffset: 3,
-    triggerEvents: ['pep_match_flagged'],
-    autoCompleteOn: 'compliance:pep_cleared',
+    triggerEvents: ['task_completed'],
+    triggerCondition: (ctx) => ctx.completedStep === 11,
   },
 
   // ═════════════���═══════════════════════════════��═════════════════════
@@ -578,6 +578,49 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
         (Date.now() - new Date(lastDone).getTime()) / 86_400_000
       return daysSinceLast >= 365
     },
+    autoCompleteOn: 'interaction:whatsapp',
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Phase: CUMPLIMIENTO — Steps 37 & 38 (post-rejection notifications)
+  // Only fire when the broker rejects the PEP / sanctions verification
+  // at step 16. Step 37 notifies the property owner that we can't move
+  // forward; step 38 closes the loop with the buyer.
+  // ═══════════════════════════════════════════════════════════════════
+
+  {
+    stepNumber: 37,
+    phase: 'cumplimiento',
+    titleTemplate: (ctx) =>
+      `Avisar al propietario ${ctx.ownerName ?? ''} que no podemos avanzar con ${firstName(ctx)}`.trim(),
+    description:
+      'La verificación de compliance no se aprobó. Hay que notificar al propietario por WhatsApp para que sepa que el deal no puede avanzar y pueda volver a poner la propiedad en el mercado.',
+    ctaAction: 'open_whatsapp',
+    whatsappTemplate: 'notifyOwnerComplianceIssue',
+    ctaMetadataBuilder: (ctx) => ({
+      phone: ctx.ownerPhone ?? null,
+      ownerName: ctx.ownerName ?? null,
+      propertyTitle: ctx.propertyTitle ?? null,
+      target: 'seller',
+    }),
+    dueDaysOffset: 1,
+    escalationDaysOffset: 3,
+    triggerEvents: ['pep_verification_rejected'],
+    autoCompleteOn: 'interaction:whatsapp',
+  },
+
+  {
+    stepNumber: 38,
+    phase: 'cumplimiento',
+    titleTemplate: (ctx) =>
+      `Avisar a ${firstName(ctx)} que no podemos avanzar por motivos de compliance`,
+    description:
+      'La verificación de compliance no se aprobó. Hay que notificar al cliente por WhatsApp con un mensaje neutral, sin entrar en detalles del motivo del rechazo.',
+    ctaAction: 'open_whatsapp',
+    whatsappTemplate: 'notifyClientComplianceIssue',
+    dueDaysOffset: 1,
+    escalationDaysOffset: 3,
+    triggerEvents: ['pep_verification_rejected'],
     autoCompleteOn: 'interaction:whatsapp',
   },
 ]

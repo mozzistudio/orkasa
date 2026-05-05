@@ -105,7 +105,7 @@ export default function MethodologiePage() {
             claires : à chaque moment du parcours d’achat, le système crée la
             bonne tâche, propose le bon message à envoyer et garde la trace de
             ce qui s’est passé. Cette page documente le flow complet —{' '}
-            <strong className="text-ink">8 phases, 30 étapes</strong> — et la
+            <strong className="text-ink">8 phases, 32 étapes</strong> — et la
             façon dont l’agent interagit avec chaque tâche.
           </p>
           <p className="mt-5 max-w-2xl text-[14px] text-steel">
@@ -147,7 +147,7 @@ export default function MethodologiePage() {
               ['1', 'Contact initial', '4 étapes — premier message → qualification → propositions de propriétés'],
               ['2', 'Visites', '3 étapes — rappel → visite du jour → décision post-visite'],
               ['3', 'Négociation', '3 étapes — registrar oferta → carta de pre-aprobación → transmettre au propriétaire'],
-              ['4', 'Conformité (KYC Loi 23)', '2 étapes — expediente client (cédula + domicilio + déclaration PEP) → escalation si match'],
+              ['4', 'Conformité (KYC Loi 23)', '2 étapes principales — expediente client (cédula + domicilio + déclaration PEP) → vérification PEP/sanctions par le broker. + 2 étapes conditionnelles si rejet (avisar propriétaire et client).'],
               ['5', 'Cierre legal — promesa', '3 étapes — expediente abogado → borrador → promesa firmée'],
               ['6', 'Trámite bancario', '3 étapes — avalúo bancaire → confirmation → coordination notaire'],
               ['7', 'Cierre legal — vendeur + firma', '4 étapes — paz y salvos vendeur → inspection → escritura'],
@@ -363,7 +363,7 @@ export default function MethodologiePage() {
           />
           <div className="mb-5 rounded-[4px] border border-bone bg-paper p-4">
             <p className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
-              Pourquoi une seule étape côté agent ?
+              Périmètre côté agent vs banque
             </p>
             <p className="mt-1.5 text-[13px] leading-relaxed text-steel">
               La Loi 23 oblige l’agent immobilier à identifier son client
@@ -371,8 +371,15 @@ export default function MethodologiePage() {
               qui touche à la solvabilité (fichas de pago, capacité de
               paiement, états bancaires, ratio cuota/revenu) relève du KYC
               bancaire — la <em>carta de pre-aprobación</em> reçue à l’étape 36
-              en est la preuve. Orkasa s’abstient de redemander ces documents
-              au client pour éviter le doublon.
+              en est la preuve.
+            </p>
+            <p className="mt-2 text-[13px] leading-relaxed text-steel">
+              <strong className="text-ink">Vérification manuelle :</strong>{' '}
+              Orkasa ne flag pas automatiquement les PEP ni les sanctions. Une
+              fois les 3 documents collectés, une tâche de vérification (étape
+              16) est créée pour que le broker prenne la décision lui-même —
+              soit parce qu’il connaît le client, soit après vérification dans
+              les listes officielles.
             </p>
           </div>
           <div className="space-y-3">
@@ -380,16 +387,37 @@ export default function MethodologiePage() {
               n={11}
               title="Recolectar expediente compliance du client"
               trigger="Quand la oferta est acceptée."
-              action="Demander en un seul message : cédula panaméenne (ou passeport si étranger), reçu de services publics de moins de 3 mois, et déclaration PEP (formulaire signé). La tâche se ferme toute seule quand les 3 documents sont uploadés et vérifiés."
+              action="Demander en un seul message : cédula panaméenne (ou passeport si étranger), reçu de services publics de moins de 3 mois, et déclaration PEP (formulaire signé). La tâche se ferme toute seule quand les 3 documents sont uploadés et vérifiés — et l'étape 16 se déclenche automatiquement derrière."
               cta="Pedir docs"
             />
             <Step
               n={16}
-              title="Lever un match de vérification"
-              trigger="Quand le système flag un match suspect (PEP / sanctions)."
-              action="Aller dans le dossier compliance, examiner le match, le valider ou le rejeter avec justification."
-              cta="Revisar"
+              title="Vérifier PEP + sanctions du client"
+              trigger="Automatique dès que les 3 documents de l'étape 11 sont vérifiés."
+              action="Le broker lit la déclaration PEP signée et confirme que le client n'apparaît pas dans les listes de sanctions (OFAC, UN, EU). Deux boutons : Aprobar (le dossier passe en validé) ou Rechazar (modale qui demande le motif — PEP / Sanctions / les deux — et une justification de 30 caractères minimum). Le rejet déclenche les étapes 37 et 38."
+              cta="Aprobar / Rechazar"
             />
+          </div>
+          <div className="mt-5">
+            <p className="mb-2 font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
+              Si le broker rejette la vérification (étape 16)
+            </p>
+            <div className="space-y-3">
+              <Step
+                n={37}
+                title="Avisar al propietario"
+                trigger="Automatique sur rejet de l'étape 16."
+                action="Envoyer un WhatsApp au propriétaire pour lui dire qu'on ne peut pas avancer avec ce comprador, sans révéler le motif du rejet (compliance reste confidentiel). La propriété peut être remise sur le marché."
+                cta="WhatsApp · Avisar al propietario"
+              />
+              <Step
+                n={38}
+                title="Avisar al cliente"
+                trigger="Automatique sur rejet de l'étape 16."
+                action="Envoyer un WhatsApp au client avec un message neutre — on ne peut pas avancer avec l'opération. Pas d'explication détaillée des résultats du screening."
+                cta="WhatsApp · Avisar al cliente"
+              />
+            </div>
           </div>
         </div>
       </section>

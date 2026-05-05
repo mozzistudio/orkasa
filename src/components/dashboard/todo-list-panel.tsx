@@ -29,6 +29,7 @@ import type { CtaCallbacks } from '@/lib/tasks/cta-handlers'
 import type { CtaAction } from '@/lib/tasks/types'
 import type { DashboardTodo } from '@/lib/queries/dashboard'
 import { PostVisitDecisionButtons } from '@/components/tasks/post-visit-decision-buttons'
+import { PepVerificationButtons } from '@/components/tasks/pep-verification-buttons'
 
 function CtaIcon({ icon }: { icon: string }) {
   const props = { className: 'h-3 w-3', strokeWidth: 1.5 } as const
@@ -226,6 +227,18 @@ export function TodoListPanel({
                   {task.cta_action === 'post_visit_decision' ? (
                     <>
                       <PostVisitDecisionButtons taskId={task.id} size="sm" />
+                      <button
+                        type="button"
+                        onClick={() => handleSkip(task.id)}
+                        title="Ignorar"
+                        className="p-1.5 rounded-[6px] border border-bone text-steel hover:text-signal-deep hover:border-signal/30 transition-colors"
+                      >
+                        <X className="h-3 w-3" strokeWidth={1.5} />
+                      </button>
+                    </>
+                  ) : task.cta_action === 'pep_verification_decision' ? (
+                    <>
+                      <PepVerificationButtons taskId={task.id} size="sm" />
                       <button
                         type="button"
                         onClick={() => handleSkip(task.id)}

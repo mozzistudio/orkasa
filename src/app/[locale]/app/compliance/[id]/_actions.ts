@@ -222,3 +222,168 @@ export async function escalateDossier(
   revalidatePath(`/app/compliance/${checkId}`)
   return {}
 }
+
+type PepRejectReason = 'pep' | 'sanctions' | 'both'
+
+async function completeTask(
+  taskId: string,
+  agentId: string,
+): Promise<{ leadId: string; brokerageId: string; stepNumber: number } | null> {
+  const supabase = await createClient()
+
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('id, lead_id, brokerage_id, step_number')
+    .eq('id', taskId)
+    .eq('status', 'open')
+    .maybeSingle<{
+      id: string
+      lead_id: string
+      brokerage_id: string
+      step_number: number
+    }>()
+
+  if (!task) return null
+
+  const now = new Date().toISOString()
+  const { error } = await supabase
+    .from('tasks')
+    .update({
+      status: 'done',
+      completed_at: now,
+      completed_by: agentId,
+      updated_at: now,
+    })
+    .eq('id', taskId)
+    .eq('status', 'open')
+
+  if (error) return null
+
+  const { logTaskAudit } = await import('@/lib/tasks/trigger-engine')
+  await logTaskAudit(taskId, task.brokerage_id, agentId, 'completed', {
+    stepNumber: task.step_number,
+  })
+
+  return {
+    leadId: task.lead_id,
+    brokerageId: task.brokerage_id,
+    stepNumber: task.step_number,
+  }
+}
+
+/**
+ * Approve the manual PEP / sanctions verification (Step 16). Closes the task,
+ * clears any auto-set match flags on the lead's compliance check, and lets
+ * downstream steps fire (notably Step 17 — notify lawyer — once the dossier
+ * is approved on the compliance page).
+ */
+export async function approvePepVerification(
+  taskId: string,
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const completed = await completeTask(taskId, user.id)
+  if (!completed) return { error: 'Task not found or already done' }
+
+  // Clear any pre-existing match flags on the lead's compliance check —
+  // the broker has manually verified the client is clean.
+  const { data: check } = await supabase
+    .from('compliance_checks')
+    .select('id')
+    .eq('lead_id', completed.leadId)
+    .maybeSingle<{ id: string }>()
+
+  if (check) {
+    await supabase
+      .from('compliance_checks')
+      .update({ pep_match: false, sanctions_match: false })
+      .eq('id', check.id)
+
+    await logAudit(check.id, 'pep_verified_by_broker', {
+      verified_by: user.id,
+      taskId,
+    })
+  }
+
+  const { processTaskEvent } = await import('@/lib/tasks/trigger-engine')
+  processTaskEvent({
+    event: 'task_completed',
+    leadId: completed.leadId,
+    brokerageId: completed.brokerageId,
+    agentId: user.id,
+    completedStep: completed.stepNumber,
+  }).catch(() => {})
+
+  revalidatePath(`/app/compliance/${check?.id ?? ''}`)
+  revalidatePath(`/app/leads/${completed.leadId}`)
+  revalidatePath('/app/tasks')
+  return {}
+}
+
+/**
+ * Reject the manual PEP / sanctions verification (Step 16). Closes the task
+ * with rejection metadata, sets the corresponding match flag(s), keeps the
+ * dossier in a flagged state, and fires `pep_verification_rejected` so the
+ * follow-up notification tasks (Step 37 — owner, Step 38 — client) get
+ * created.
+ */
+export async function rejectPepVerification(
+  taskId: string,
+  reason: PepRejectReason,
+  justification: string,
+): Promise<{ error?: string }> {
+  if (!justification || justification.trim().length < 30) {
+    return { error: 'Justificación demasiado corta (mínimo 30 caracteres)' }
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const completed = await completeTask(taskId, user.id)
+  if (!completed) return { error: 'Task not found or already done' }
+
+  const { data: check } = await supabase
+    .from('compliance_checks')
+    .select('id')
+    .eq('lead_id', completed.leadId)
+    .maybeSingle<{ id: string }>()
+
+  if (check) {
+    const updates: { pep_match?: boolean; sanctions_match?: boolean } = {}
+    if (reason === 'pep' || reason === 'both') updates.pep_match = true
+    if (reason === 'sanctions' || reason === 'both') updates.sanctions_match = true
+
+    await supabase
+      .from('compliance_checks')
+      .update(updates)
+      .eq('id', check.id)
+
+    await logAudit(check.id, 'pep_rejected_by_broker', {
+      rejected_by: user.id,
+      reason,
+      justification,
+      taskId,
+    })
+  }
+
+  const { processTaskEvent } = await import('@/lib/tasks/trigger-engine')
+  processTaskEvent({
+    event: 'pep_verification_rejected',
+    leadId: completed.leadId,
+    brokerageId: completed.brokerageId,
+    agentId: user.id,
+    metadata: { reason, justification, checkId: check?.id ?? null },
+  }).catch(() => {})
+
+  revalidatePath(`/app/compliance/${check?.id ?? ''}`)
+  revalidatePath(`/app/leads/${completed.leadId}`)
+  revalidatePath('/app/tasks')
+  return {}
+}

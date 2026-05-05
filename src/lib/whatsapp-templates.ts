@@ -148,6 +148,21 @@ export function requestIdentityDocs(clientName: string, propertyTitle: string): 
   return `Hola ${clientName}, para avanzar con la compra del ${propertyTitle} necesitamos:\n\n• Copia de tu cédula panameña vigente (o pasaporte si sos extranjero)\n• Un comprobante de domicilio reciente (recibo de luz o agua de menos de 3 meses)\n\n¿Me los podés enviar por acá? Gracias!`
 }
 
+export function notifyOwnerComplianceIssue(
+  ownerName: string,
+  propertyTitle: string,
+): string {
+  const greeting = ownerName ? `Hola ${ownerName}` : 'Buenas'
+  return `${greeting}, te escribo de Orkasa con una novedad sobre la oferta que recibiste por el ${propertyTitle}. Lamentablemente no podemos avanzar con este comprador por motivos de compliance que no podemos compartir. La propiedad queda disponible nuevamente — ¿querés que la volvamos a poner activa? Cualquier duda, escribime. Gracias por la paciencia.`
+}
+
+export function notifyClientComplianceIssue(
+  clientName: string,
+  propertyTitle: string,
+): string {
+  return `Hola ${clientName}, te escribo de Orkasa. Lamentablemente, después de la revisión interna no vamos a poder avanzar con la operación del ${propertyTitle}. Sé que es una noticia difícil y entiendo si tenés preguntas — escribime y vemos cómo te puedo ayudar. Gracias por tu confianza.`
+}
+
 export function requestSellerDocs(sellerName: string, propertyTitle: string): string {
   return `Hola ${sellerName}, para avanzar con la venta del ${propertyTitle} necesitamos los siguientes documentos:\n\n• Certificado de paz y salvo nacional\n• Certificado de paz y salvo municipal\n• Certificado del Registro Público libre de gravámenes (con menos de 30 días)\n• Recibos de servicios públicos al día (luz, agua, gas)\n\nSi el inmueble es PH, también necesitamos el certificado de cuotas de mantenimiento al día.\n\n¿Podemos coordinar? Gracias!`
 }

@@ -243,8 +243,12 @@ export async function setDocumentStatus(
 /**
  * Trigger a sanctions / PEP re-screen. Mock for now — sets the result fields
  * deterministically based on the lead's name hash. A real impl would queue a
- * check against OFAC, UN, EU lists. Names whose hash mod 5 === 0 flag PEP, so
- * the demo can exercise the pep_match_flagged path without manual seeding.
+ * check against OFAC, UN, EU lists.
+ *
+ * The function still updates `pep_match` / `sanctions_match` columns for
+ * visibility in the dossier, but no longer fires a task event — broker
+ * verification of PEP and sanctions is fully manual via the Step 16 task
+ * created automatically once Step 11 (compliance docs) is complete.
  */
 export async function rerunScreening(
   checkId: string,
@@ -287,16 +291,6 @@ export async function rerunScreening(
   }
 
   await logAudit(checkId, 'screening_rerun', { sanctionsMatch, pepMatch })
-
-  if ((pepMatch || sanctionsMatch) && checkRow?.lead_id) {
-    processTaskEvent({
-      event: 'pep_match_flagged',
-      leadId: checkRow.lead_id,
-      brokerageId: checkRow.brokerage_id,
-      agentId: user.id,
-      metadata: { sanctionsMatch, pepMatch, checkId },
-    }).catch(() => {})
-  }
 
   revalidatePath(`/app/compliance/${checkId}`)
   return { sanctionsMatch, pepMatch }
