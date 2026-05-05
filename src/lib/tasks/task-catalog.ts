@@ -1,4 +1,4 @@
-import type { TaskCatalogEntry, TaskContext, TriggerContext } from './types'
+import type { TaskCatalogEntry, TaskContext } from './types'
 
 function firstName(ctx: TaskContext): string {
   return ctx.firstName
@@ -119,9 +119,12 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     triggerEvents: ['viewing_completed'],
   },
 
-  // ════���═════════════════════════════════════════════════════════��════
-  // Phase: NEGOCIACION (Step 10)
-  // ═══════════════���═══════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════
+  // Phase: NEGOCIACION (Steps 10, 36, 35)
+  // After registering the offer (10) we ask the buyer for the bank
+  // pre-approval letter (36). Once that letter arrives, step 35 fires
+  // to transmit the offer + pre-approval package to the property owner.
+  // ═══════════════════════════════════════════════════════════════════
 
   {
     stepNumber: 10,
@@ -140,120 +143,69 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
     autoCompleteOn: 'offer_created',
   },
 
-  // ═══════════════════════════���═══════════════════════════════════════
-  // Phase: CUMPLIMIENTO (Steps 11–16)
-  // ��═════════════════════════════════════════════���════════════════════
+  {
+    stepNumber: 36,
+    phase: 'negociacion',
+    titleTemplate: (ctx) =>
+      `Pedir carta de pre-aprobación bancaria a ${firstName(ctx)}`,
+    description:
+      'Antes de transmitir la oferta al propietario, necesitamos la carta de pre-aprobación del banco. Le da peso a la oferta y demuestra que el cliente puede pagar.',
+    ctaAction: 'open_whatsapp',
+    whatsappTemplate: 'requestPreapprovalLetter',
+    dueDaysOffset: 1,
+    escalationDaysOffset: 3,
+    triggerEvents: ['offer_created'],
+    autoCompleteOn: 'doc:sof_credit_preapproval',
+  },
+
+  {
+    stepNumber: 35,
+    phase: 'negociacion',
+    titleTemplate: (ctx) =>
+      `Transmitir la oferta de ${firstName(ctx)} (${ctx.formattedAmount ?? ''}) al propietario${ctx.ownerName ? ` ${ctx.ownerName}` : ''}`,
+    description:
+      'Ya tenemos la oferta y la carta de pre-aprobación. Enviar al propietario por WhatsApp el paquete completo: carta de oferta formal + pre-aprobación bancaria.',
+    ctaAction: 'open_whatsapp',
+    whatsappTemplate: 'transmitOfferToOwner',
+    ctaMetadataBuilder: (ctx) => ({
+      phone: ctx.ownerPhone ?? null,
+      ownerName: ctx.ownerName ?? null,
+      offerLink: ctx.offerLink ?? null,
+      propertyTitle: ctx.propertyTitle ?? null,
+      formattedAmount: ctx.formattedAmount ?? null,
+    }),
+    dueDaysOffset: 0,
+    escalationDaysOffset: 1,
+    triggerEvents: ['task_completed'],
+    triggerCondition: (ctx) => ctx.completedStep === 36,
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Phase: CUMPLIMIENTO (Steps 11, 16)
+  // The broker's KYC obligations under Panama Law 23 boil down to: client
+  // identity + address + PEP self-declaration. Income, payslips, bank
+  // statements and the cuota/income ratio are the bank's responsibility —
+  // the pre-approval letter (collected at step 36) is the bank's proof of
+  // having done that work, so we don't duplicate it here.
+  // ═══════════════════════════════════════════════════════════════════
 
   {
     stepNumber: 11,
     phase: 'cumplimiento',
     titleTemplate: (ctx) =>
-      `Pedirle a ${firstName(ctx)} su cédula panameña (o pasaporte si es extranjero) y un comprobante de domicilio reciente (recibo de luz o agua de menos de 3 meses)`,
+      `Recolectar expediente compliance de ${firstName(ctx)}: cédula (o pasaporte), comprobante de domicilio reciente y declaración PEP`,
     description:
-      'Documentos de identidad necesarios para abrir el expediente de la operación.',
+      'Obligación de debida diligencia bajo la Ley 23 de Panamá. Pedir todos los documentos en un solo mensaje.',
     ctaAction: 'request_doc',
     ctaMetadataBuilder: () => ({
-      docCodes: ['identity', 'address_proof'],
+      docCodes: ['identity', 'address_proof', 'pep_declaration'],
       requiredDocCodesAny: ['identity_id_panamanian', 'identity_id_foreign'],
-      requiredDocCodesAll: ['identity_address_proof'],
+      requiredDocCodesAll: ['identity_address_proof', 'pep_declaration'],
     }),
     dueDaysOffset: 3,
     escalationDaysOffset: 7,
     triggerEvents: ['offer_accepted'],
-    autoCompleteOn: 'doc:identity',
     whatsappTemplate: 'requestIdentityDocs',
-  },
-
-  {
-    stepNumber: 12,
-    phase: 'cumplimiento',
-    titleTemplate: (ctx) => {
-      const meta = ctx as TaskContext & { isAutonomo?: boolean }
-      if (meta.isAutonomo) {
-        return `Pedirle a ${firstName(ctx)} sus estados financieros de los 2 últimos años`
-      }
-      return `Pedirle a ${firstName(ctx)} sus 3 últimas fichas de pago (o carta del empleador con salario)`
-    },
-    description:
-      'Documentos que demuestran la capacidad financiera del comprador.',
-    ctaAction: 'request_doc',
-    ctaMetadataBuilder: () => ({
-      docCodes: ['income_proof'],
-    }),
-    dueDaysOffset: 3,
-    escalationDaysOffset: 7,
-    triggerEvents: ['task_completed'],
-    triggerCondition: (ctx) => ctx.completedStep === 11,
-    autoCompleteOn: 'doc:income_proof',
-    whatsappTemplate: 'requestPayslips',
-  },
-
-  {
-    stepNumber: 13,
-    phase: 'cumplimiento',
-    titleTemplate: (ctx) =>
-      `Verificar que los ingresos de ${firstName(ctx)} cubran la cuota (máximo 30% de ingreso mensual)`,
-    description:
-      'Confirmar que el monto de la cuota no supera el 30% de los ingresos declarados.',
-    ctaAction: 'mark_done',
-    dueDaysOffset: 2,
-    escalationDaysOffset: 5,
-    triggerEvents: ['task_completed'],
-    triggerCondition: (ctx) => ctx.completedStep === 12,
-  },
-
-  {
-    stepNumber: 14,
-    phase: 'cumplimiento',
-    titleTemplate: (ctx) => {
-      const meta = ctx as TaskContext & { isCash?: boolean }
-      if (meta.isCash) {
-        return `Pedirle a ${firstName(ctx)} sus estados bancarios de los últimos 6 meses y una carta de constitución de fondos`
-      }
-      return `Pedirle a ${firstName(ctx)} sus estados bancarios de los últimos 6 meses y la pre-aprobación del banco`
-    },
-    description:
-      'Documentos para verificar de dónde vienen los fondos de la compra.',
-    ctaAction: 'request_doc',
-    ctaMetadataBuilder: (ctx) => {
-      const meta = ctx as TaskContext & { isCash?: boolean }
-      const baseCodes = meta.isCash
-        ? ['bank_statements_6m', 'funds_constitution_letter']
-        : ['bank_statements_6m', 'pre_approval']
-      const realCodes = meta.isCash
-        ? ['sof_bank_statements']
-        : ['sof_bank_statements', 'sof_credit_preapproval']
-      return {
-        docCodes: baseCodes,
-        requiredDocCodesAll: realCodes,
-      }
-    },
-    dueDaysOffset: 5,
-    escalationDaysOffset: 10,
-    triggerEvents: ['task_completed'],
-    triggerCondition: (ctx) => ctx.completedStep === 13,
-    autoCompleteOn: 'doc:funds_origin',
-    whatsappTemplate: 'requestBankStatements',
-  },
-
-  {
-    stepNumber: 15,
-    phase: 'cumplimiento',
-    titleTemplate: (ctx) =>
-      `Preguntarle a ${firstName(ctx)} si tiene parientes cercanos en cargos de gobierno`,
-    description:
-      'Pregunta obligatoria cuando el monto supera los $300,000. Si la respuesta es sí, se necesitarán documentos adicionales según el origen de los fondos.',
-    ctaAction: 'open_whatsapp',
-    whatsappTemplate: 'askPepRelationship',
-    dueDaysOffset: 2,
-    escalationDaysOffset: 5,
-    triggerEvents: ['task_completed'],
-    triggerCondition: (ctx) => {
-      if (ctx.completedStep !== 14) return false
-      const amount = ctx.deal?.amount ?? 0
-      return amount > 300_000
-    },
-    autoCompleteOn: 'doc:pep_declaration',
   },
 
   {
@@ -627,49 +579,6 @@ export const TASK_CATALOG: TaskCatalogEntry[] = [
       return daysSinceLast >= 365
     },
     autoCompleteOn: 'interaction:whatsapp',
-  },
-
-  // ═══════════════════════════════════════════════════════════════════
-  // Phase: NEGOCIACION — Steps 35 & 36 (post-Step-10)
-  // After an offer is created we ask the buyer for a bank pre-approval
-  // letter (Step 36). Only once that letter is in does Step 35 fire,
-  // transmitting the formal offer + pre-approval to the property owner.
-  // ═══════════════════════════════════════════════════════════════════
-
-  {
-    stepNumber: 36,
-    phase: 'negociacion',
-    titleTemplate: (ctx) =>
-      `Pedir carta de pre-aprobación bancaria a ${firstName(ctx)}`,
-    description:
-      'Antes de transmitir la oferta al propietario, necesitamos la carta de pre-aprobación del banco. Le da peso a la oferta y demuestra que el cliente puede pagar.',
-    ctaAction: 'open_whatsapp',
-    whatsappTemplate: 'requestPreapprovalLetter',
-    dueDaysOffset: 1,
-    escalationDaysOffset: 3,
-    triggerEvents: ['offer_created'],
-  },
-
-  {
-    stepNumber: 35,
-    phase: 'negociacion',
-    titleTemplate: (ctx) =>
-      `Transmitir la oferta de ${firstName(ctx)} (${ctx.formattedAmount ?? ''}) al propietario${ctx.ownerName ? ` ${ctx.ownerName}` : ''}`,
-    description:
-      'Ya tenemos la oferta y la carta de pre-aprobación. Enviar al propietario por WhatsApp el paquete completo: carta de oferta formal + pre-aprobación bancaria.',
-    ctaAction: 'open_whatsapp',
-    whatsappTemplate: 'transmitOfferToOwner',
-    ctaMetadataBuilder: (ctx) => ({
-      phone: ctx.ownerPhone ?? null,
-      ownerName: ctx.ownerName ?? null,
-      offerLink: ctx.offerLink ?? null,
-      propertyTitle: ctx.propertyTitle ?? null,
-      formattedAmount: ctx.formattedAmount ?? null,
-    }),
-    dueDaysOffset: 0,
-    escalationDaysOffset: 1,
-    triggerEvents: ['task_completed'],
-    triggerCondition: (ctx) => ctx.completedStep === 36,
   },
 ]
 

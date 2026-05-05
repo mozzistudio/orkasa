@@ -45,10 +45,6 @@ export type DashboardReminderType = 'reactivate' | 'pre_visit' | 'price_drop'
 
 export type DocumentReminderType = 'identity' | 'income_proof' | 'funds_origin' | 'company_ubo' | 'ready_to_sign'
 
-export function requestPayslips(clientName: string, propertyTitle: string): string {
-  return `Hola ${clientName}, te escribo de Orkasa. Para avanzar con la compra del ${propertyTitle}, el banco nos pide tus 3 últimas fichas de pago. ¿Me las podrías enviar por aquí cuando puedas? Gracias!`
-}
-
 export function askPepRelationship(clientName: string): string {
   return `Hola ${clientName}, una pregunta rápida obligatoria: ¿tenés parientes cercanos (padres, hermanos, cónyuge, hijos) que ocupen o hayan ocupado cargos públicos en el gobierno panameño? Si la respuesta es no, perfecto. Si es sí, vamos a necesitarte un papel adicional. Gracias!`
 }
@@ -150,10 +146,6 @@ export function offerAccepted(clientName: string, propertyTitle: string): string
 
 export function requestIdentityDocs(clientName: string, propertyTitle: string): string {
   return `Hola ${clientName}, para avanzar con la compra del ${propertyTitle} necesitamos:\n\n• Copia de tu cédula panameña vigente (o pasaporte si sos extranjero)\n• Un comprobante de domicilio reciente (recibo de luz o agua de menos de 3 meses)\n\n¿Me los podés enviar por acá? Gracias!`
-}
-
-export function requestBankStatements(clientName: string, propertyTitle: string): string {
-  return `Hola ${clientName}, te escribo de Orkasa. Para completar el expediente del ${propertyTitle}, necesitamos tus estados bancarios de los últimos 6 meses. ¿Me los podés enviar por acá? Gracias!`
 }
 
 export function requestSellerDocs(sellerName: string, propertyTitle: string): string {

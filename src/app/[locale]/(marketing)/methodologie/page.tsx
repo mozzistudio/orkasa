@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     'Le parcours complet d’une opération immobilière sur Orkasa, étape par étape, avec les actions automatiques et les CTAs vus par l’agent.',
 }
 
-const LAST_UPDATED = '4 mai 2026'
+const LAST_UPDATED = '5 mai 2026'
 
 function PhaseHeading({
   number,
@@ -105,7 +105,7 @@ export default function MethodologiePage() {
             claires : à chaque moment du parcours d’achat, le système crée la
             bonne tâche, propose le bon message à envoyer et garde la trace de
             ce qui s’est passé. Cette page documente le flow complet —{' '}
-            <strong className="text-ink">8 phases, 34 étapes</strong> — et la
+            <strong className="text-ink">8 phases, 30 étapes</strong> — et la
             façon dont l’agent interagit avec chaque tâche.
           </p>
           <p className="mt-5 max-w-2xl text-[14px] text-steel">
@@ -114,6 +114,15 @@ export default function MethodologiePage() {
             la suivante quand un événement se produit (visite faite, oferta
             créée, document chargé, etc.). L’agent reste maître du tempo, mais
             n’a jamais à chercher quoi faire ensuite.
+          </p>
+          <p className="mt-5 max-w-2xl text-[14px] text-steel">
+            <strong className="text-ink">Compliance ≠ KYC bancaire :</strong>{' '}
+            quand le client achète à crédit, la banque fait son propre KYC
+            (revenus, capacité de paiement, origine des fonds). La{' '}
+            <em>carta de pre-aprobación</em> remise à l’étape 36 prouve que la
+            banque a validé le client. Orkasa évite de dédoubler ce travail :
+            l’agent immobilier se concentre sur ses propres obligations sous
+            la Loi 23 de Panama (identité, domicile, déclaration PEP).
           </p>
           <p className="mt-6 font-mono text-[11px] text-steel-soft">
             Dernière mise à jour : {LAST_UPDATED}
@@ -138,7 +147,7 @@ export default function MethodologiePage() {
               ['1', 'Contact initial', '4 étapes — premier message → qualification → propositions de propriétés'],
               ['2', 'Visites', '3 étapes — rappel → visite du jour → décision post-visite'],
               ['3', 'Négociation', '3 étapes — registrar oferta → carta de pre-aprobación → transmettre au propriétaire'],
-              ['4', 'Conformité (KYC)', '6 étapes — pièces d’identité, revenus, origine des fonds, PEP'],
+              ['4', 'Conformité (KYC Loi 23)', '2 étapes — expediente client (cédula + domicilio + déclaration PEP) → escalation si match'],
               ['5', 'Cierre legal — promesa', '3 étapes — expediente abogado → borrador → promesa firmée'],
               ['6', 'Trámite bancario', '3 étapes — avalúo bancaire → confirmation → coordination notaire'],
               ['7', 'Cierre legal — vendeur + firma', '4 étapes — paz y salvos vendeur → inspection → escritura'],
@@ -330,7 +339,7 @@ export default function MethodologiePage() {
               n={36}
               title="Demander la carta de pre-aprobación bancaire au client"
               trigger="Automatique dès qu’une oferta est créée (étape 10)."
-              action="Envoyer un WhatsApp au client pour demander la carta de pre-aprobación du banque. C’est ce qui valide qu’il peut payer et donne du poids à l’oferta. L’agent marque la tâche comme faite quand la lettre est reçue."
+              action="Envoyer un WhatsApp au client pour demander la carta de pre-aprobación du banque. C’est ce qui valide qu’il peut payer et donne du poids à l’oferta. La tâche se ferme toute seule dès que la lettre est uploadée — pas besoin de cocher manuellement."
               cta="WhatsApp · Pedir pre-aprobación"
             />
             <Step
@@ -349,44 +358,30 @@ export default function MethodologiePage() {
         <div className="mx-auto max-w-4xl">
           <PhaseHeading
             number="4"
-            title="Conformité (KYC / origine des fonds)"
-            subtitle="Une fois la oferta acceptée par le propriétaire, on ouvre le dossier de conformité du client. Documents obligatoires selon la loi 23 (Panama)."
+            title="Conformité (KYC Loi 23 de Panama)"
+            subtitle="Une fois la oferta acceptée, on ouvre le dossier de conformité du client. Le périmètre est limité aux obligations propres au courtier immobilier — la banque a son propre KYC en amont de la pre-aprobación."
           />
+          <div className="mb-5 rounded-[4px] border border-bone bg-paper p-4">
+            <p className="font-mono text-[10px] uppercase tracking-[1.5px] text-steel">
+              Pourquoi une seule étape côté agent ?
+            </p>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-steel">
+              La Loi 23 oblige l’agent immobilier à identifier son client
+              (cédula + domicilio) et à capturer une déclaration PEP. Tout ce
+              qui touche à la solvabilité (fichas de pago, capacité de
+              paiement, états bancaires, ratio cuota/revenu) relève du KYC
+              bancaire — la <em>carta de pre-aprobación</em> reçue à l’étape 36
+              en est la preuve. Orkasa s’abstient de redemander ces documents
+              au client pour éviter le doublon.
+            </p>
+          </div>
           <div className="space-y-3">
             <Step
               n={11}
-              title="Demander pièce d’identité + justificatif de domicile"
+              title="Recolectar expediente compliance du client"
               trigger="Quand la oferta est acceptée."
-              action="Demander cédula panaméenne (ou passeport si étranger) + reçu d’électricité/eau de moins de 3 mois."
+              action="Demander en un seul message : cédula panaméenne (ou passeport si étranger), reçu de services publics de moins de 3 mois, et déclaration PEP (formulaire signé). La tâche se ferme toute seule quand les 3 documents sont uploadés et vérifiés."
               cta="Pedir docs"
-            />
-            <Step
-              n={12}
-              title="Demander justificatifs de revenus"
-              trigger="Quand l’étape 11 est faite."
-              action="Salarié : 3 dernières fichas de pago ou lettre employeur. Indépendant : états financiers des 2 dernières années."
-              cta="Pedir docs"
-            />
-            <Step
-              n={13}
-              title="Vérifier que les revenus couvrent la cuota"
-              trigger="Quand l’étape 12 est faite."
-              action="Confirmer que la mensualité ne dépasse pas 30 % du revenu mensuel."
-              cta="Listo"
-            />
-            <Step
-              n={14}
-              title="Demander origine des fonds"
-              trigger="Quand l’étape 13 est faite."
-              action="Comptant : états bancaires 6 mois + lettre de constitution des fonds. Crédit : états bancaires 6 mois + pré-approbation du banque."
-              cta="Pedir docs"
-            />
-            <Step
-              n={15}
-              title="Question PEP (personne politiquement exposée)"
-              trigger="Quand l’étape 14 est faite ET le montant dépasse 300 000 USD."
-              action="Demander si le client a des proches à des postes gouvernementaux. Si oui, documents supplémentaires selon l’origine des fonds."
-              cta="WhatsApp · Preguntar PEP"
             />
             <Step
               n={16}

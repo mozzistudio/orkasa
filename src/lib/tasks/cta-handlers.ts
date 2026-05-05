@@ -11,9 +11,6 @@ import {
   transmitOfferToOwner,
   offerAccepted,
   requestIdentityDocs,
-  requestPayslips,
-  requestBankStatements,
-  askPepRelationship,
   requestSellerDocs,
   promesaDraft,
   notifyLawyerExpediente,
@@ -76,12 +73,6 @@ function buildWhatsAppMessage(
       return offerAccepted(clientName, propertyTitle)
     case 'requestIdentityDocs':
       return requestIdentityDocs(clientName, propertyTitle)
-    case 'requestPayslips':
-      return requestPayslips(clientName, propertyTitle)
-    case 'requestBankStatements':
-      return requestBankStatements(clientName, propertyTitle)
-    case 'askPepRelationship':
-      return askPepRelationship(clientName)
     case 'requestSellerDocs': {
       const sellerName = (meta.ownerName as string) ?? 'propietario'
       return requestSellerDocs(sellerName, propertyTitle)
@@ -233,9 +224,6 @@ const WHATSAPP_TEMPLATE_LABELS: Record<string, string> = {
   transmitOfferToOwner: 'Enviar oferta',
   offerAccepted: 'Avisar aceptación',
   requestIdentityDocs: 'Pedir cédula',
-  requestPayslips: 'Pedir fichas',
-  requestBankStatements: 'Pedir bancos',
-  askPepRelationship: 'Preguntar PEP',
   requestSellerDocs: 'Pedir docs',
   promesaDraft: 'Enviar borrador',
   notifyLawyerExpediente: 'Avisar abogado',
